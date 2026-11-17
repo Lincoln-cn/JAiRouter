@@ -121,6 +121,7 @@
       "endTime": "结束时间",
       "query": "查询",
       "reset": "重置",
+      "refresh": "刷新",
       "totalEventsLabel": "异常总数",
       "totalTypesLabel": "异常类型数",
       "topErrorTypeLabel": "最多错误类型",

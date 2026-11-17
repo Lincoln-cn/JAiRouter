@@ -1,165 +1,112 @@
 <template>
-  <PageSkeleton :title="t('loadBalancer.strategyConfig.pageTitle')">
-    <!-- 全局配置卡片 -->
-    <el-card class="config-card">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('loadBalancer.strategyConfig.globalTitle') }}</span>
-        </div>
-      </template>
-
-      <el-form :model="globalConfig" label-width="150px" class="config-form">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item :label="t('loadBalancer.strategyConfig.defaultStrategy')">
-              <el-select
-                v-model="globalConfig.type"
-                :placeholder="t('loadBalancer.strategyConfig.selectStrategy')"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="strategy in strategies"
-                  :key="strategy.name"
-                  :label="strategyDisplayLabel(strategy)"
-                  :value="strategy.name"
-                >
-                  <div style="display: flex; align-items: center; gap: var(--ja-space-2)">
-                    <span>{{ strategyDisplayLabel(strategy) }}</span>
-                    <span
-                      style="
-                        margin-left: auto;
-                        text-align: right;
-                        color: var(--ja-ink-3);
-                        font-size: 12px;
-                      "
-                    >
-                      {{ strategyDescriptionLabel(strategy) }}
-                    </span>
-                  </div>
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item :label="t('loadBalancer.strategyConfig.hashAlgorithm')" v-if="isHashStrategy(globalConfig.type)">
-              <el-select v-model="globalConfig.hashAlgorithm" :placeholder="t('loadBalancer.strategyConfig.selectHashAlgorithm')">
-                <el-option label="MD5" value="md5" />
-                <el-option label="SHA256" value="sha256" />
-                <el-option label="MurmurHash" value="murmur" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20" v-if="globalConfig.type === 'consistent-hash'">
-          <el-col :span="12">
-            <el-form-item :label="t('loadBalancer.strategyConfig.virtualNodes')">
-              <el-input-number
-                v-model="globalConfig.virtualNodes"
-                :min="50"
-                :max="500"
-                :step="50"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-    </el-card>
-
-    <!-- 服务级配置表格 -->
-    <el-card class="service-config-card">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('loadBalancer.strategyConfig.serviceConfigsTitle') }}</span>
-          <el-tag type="info">{{ t('loadBalancer.strategyConfig.configureHint') }}</el-tag>
-        </div>
-      </template>
-
-      <el-table :data="serviceConfigs" stripe v-loading="loadingConfigs" class="flex-table">
-        <el-table-column prop="serviceType" :label="t('loadBalancer.strategyConfig.columns.serviceType')" min-width="120">
-          <template #default="{ row }">
-            <el-tag type="info">{{ row.serviceType }}</el-tag>
+  <ConfigPageShell
+    :title="t('loadBalancer.strategyConfig.pageTitle')"
+    :description="t('loadBalancer.strategyConfig.pageDesc')"
+    :loading="loading"
+    :saving="saving"
+    :saving-label="savingLabel"
+    :dirty-count="dirtyCount"
+    :can-write="canWrite"
+    save-permission="lb:config:write"
+    @refresh="loadAll"
+    @save="handleSave"
+    @discard="resetRows"
+  >
+    <el-tabs v-model="activeTab">
+      <!-- 全局策略：来自配置文件，控制台只读展示 -->
+      <el-tab-pane :label="t('loadBalancer.strategyConfig.tabs.global')" name="global">
+        <ConfigSectionCard
+          :title="t('loadBalancer.strategyConfig.globalTitle')"
+          :description="t('loadBalancer.strategyConfig.globalReadonlyHint')"
+        >
+          <template #actions>
+            <el-tag size="small" type="info" effect="plain">{{ t('loadBalancer.strategyConfig.readonlyTag') }}</el-tag>
           </template>
-        </el-table-column>
-        <el-table-column prop="type" :label="t('loadBalancer.strategyConfig.columns.strategy')" min-width="150">
-          <template #default="{ row }">
-            <el-tag type="info">
-              {{ getStrategyDisplayName(row.type) }}
-            </el-tag>
-            <el-tag v-if="row.isGlobal" type="info" size="small" style="margin-left: 8px">{{ t('loadBalancer.strategyConfig.defaultTag') }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="hashAlgorithm" :label="t('loadBalancer.strategyConfig.columns.hashAlgorithm')" min-width="100">
-          <template #default="{ row }">
-            <span v-if="row.hashAlgorithm">{{ row.hashAlgorithm }}</span>
-            <span v-else style="color: var(--ja-ink-3)">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="virtualNodes" :label="t('loadBalancer.strategyConfig.columns.virtualNodes')" min-width="80">
-          <template #default="{ row }">
-            <span v-if="row.virtualNodes">{{ row.virtualNodes }}</span>
-            <span v-else style="color: var(--ja-ink-3)">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('loadBalancer.strategyConfig.columns.actions')" min-width="100" fixed="right">
-          <template #default="{ row }">
-            <el-button v-permission="'lb:config:write'" size="small" type="primary" @click="showConfigDialog(row)">{{ t('loadBalancer.strategyConfig.configure') }}</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+          <el-descriptions :column="3" border size="small">
+            <el-descriptions-item :label="t('loadBalancer.strategyConfig.defaultStrategy')">
+              {{ getStrategyDisplayName(globalConfig.type) }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('loadBalancer.strategyConfig.hashAlgorithm')">
+              {{ isHashStrategy(globalConfig.type) ? globalConfig.hashAlgorithm || '-' : '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('loadBalancer.strategyConfig.virtualNodes')">
+              {{ globalConfig.type === 'consistent-hash' ? globalConfig.virtualNodes : '-' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </ConfigSectionCard>
+      </el-tab-pane>
 
-    <!-- 配置对话框 -->
-    <el-dialog
-      v-model="configDialogVisible"
-      :title="t('loadBalancer.strategyConfig.configureDialogTitle', { serviceType: currentService?.serviceType })"
-      width="500px"
-    >
-      <el-form :model="serviceConfig" label-width="150px">
-        <el-form-item :label="t('loadBalancer.strategyConfig.loadBalanceStrategy')">
-          <el-select
-            v-model="serviceConfig.type"
-            :placeholder="t('loadBalancer.strategyConfig.selectStrategy')"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="strategy in strategies"
-              :key="strategy.name"
-              :label="strategyDisplayLabel(strategy)"
-              :value="strategy.name"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('loadBalancer.strategyConfig.hashAlgorithm')" v-if="isHashStrategy(serviceConfig.type)">
-          <el-select v-model="serviceConfig.hashAlgorithm" :placeholder="t('loadBalancer.strategyConfig.selectHashAlgorithm')">
-            <el-option label="MD5" value="md5" />
-            <el-option label="SHA256" value="sha256" />
-            <el-option label="MurmurHash" value="murmur" />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('loadBalancer.strategyConfig.virtualNodes')" v-if="serviceConfig.type === 'consistent-hash'">
-          <el-input-number
-            v-model="serviceConfig.virtualNodes"
-            :min="50"
-            :max="500"
-            :step="50"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="configDialogVisible = false">{{ t('loadBalancer.strategyConfig.cancel') }}</el-button>
-        <el-button v-permission="'lb:config:write'" type="primary" @click="saveServiceConfig" :loading="saving">{{ t('loadBalancer.strategyConfig.save') }}</el-button>
-      </template>
-    </el-dialog>
-  </PageSkeleton>
+      <!-- 服务配置：每行一个服务的生效策略，改动随底部动作条保存 -->
+      <el-tab-pane :label="t('loadBalancer.strategyConfig.tabs.services')" name="services">
+        <ConfigSectionCard
+          :title="t('loadBalancer.strategyConfig.serviceConfigsTitle')"
+          :description="t('loadBalancer.strategyConfig.configureHint')"
+          :error="errors.services"
+        >
+          <el-table :data="rows" v-loading="loadingConfigs" style="width: 100%">
+            <el-table-column :label="t('loadBalancer.strategyConfig.columns.serviceType')" min-width="200">
+              <template #default="{ row }">
+                <div class="service-cell">
+                  <el-tag type="info">{{ row.serviceType }}</el-tag>
+                  <el-tag v-if="row.isGlobal" size="small" type="info" effect="plain">
+                    {{ t('loadBalancer.strategyConfig.defaultTag') }}
+                  </el-tag>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('loadBalancer.strategyConfig.columns.strategy')" min-width="220">
+              <template #default="{ row }">
+                <el-select v-model="row.type" :disabled="!canWrite" style="width: 100%">
+                  <el-option
+                    v-for="strategy in strategies"
+                    :key="strategy.name"
+                    :label="strategyDisplayLabel(strategy)"
+                    :value="strategy.name"
+                  />
+                </el-select>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('loadBalancer.strategyConfig.columns.hashAlgorithm')" width="160">
+              <template #default="{ row }">
+                <el-select v-if="isHashStrategy(row.type)" v-model="row.hashAlgorithm" :disabled="!canWrite">
+                  <el-option label="MD5" value="md5" />
+                  <el-option label="SHA256" value="sha256" />
+                  <el-option label="MurmurHash" value="murmur" />
+                </el-select>
+                <span v-else class="muted">-</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('loadBalancer.strategyConfig.columns.virtualNodes')" width="170">
+              <template #default="{ row }">
+                <el-input-number
+                  v-if="row.type === 'consistent-hash'"
+                  v-model="row.virtualNodes"
+                  :min="50"
+                  :max="500"
+                  :step="50"
+                  :disabled="!canWrite"
+                  controls-position="right"
+                />
+                <span v-else class="muted">-</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <p class="save-hint">{{ t('loadBalancer.strategyConfig.saveHint') }}</p>
+        </ConfigSectionCard>
+      </el-tab-pane>
+    </el-tabs>
+  </ConfigPageShell>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
+import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
+import { usePermission } from '@/composables/usePermission'
+import { useConfigDraft } from '@/composables/useConfigDraft'
 import request from '@/utils/request'
-import PageSkeleton from '@/components/PageSkeleton.vue'
 
 interface StrategyInfo {
   name: string
@@ -167,27 +114,45 @@ interface StrategyInfo {
   description: string
 }
 
-interface ServiceConfig {
+/** 表格行即一个服务的「生效负载均衡配置」草稿。 */
+interface ServiceRow {
   serviceType: string
   type: string
-  hashAlgorithm?: string
-  virtualNodes?: number
-  isGlobal?: boolean
+  hashAlgorithm: string
+  virtualNodes: number
+  ewmaAlpha?: number
+  /** 后端当前没有服务级配置、行内值取自全局默认（issue #575 的兜底行）。 */
+  isGlobal: boolean
 }
 
 interface LoadBalanceConfig {
   type: string
   hashAlgorithm: string
   virtualNodes: number
-  /** 后端全局配置里可带该字段；「按全局默认」的兜底行沿用（issue #575） */
   ewmaAlpha?: number
 }
 
 const apiBaseUrl = '/loadbalancer'
 
 const { t } = useI18n()
+const { hasPermission } = usePermission()
 
-/** 策略名(如 round-robin) -> 语言包 key 后缀 */
+/** 与原页面一致：写操作走 lb:config:write。 */
+const canWrite = computed(() => hasPermission('lb:config:write'))
+
+const loadingStrategies = ref(false)
+const loadingGlobal = ref(false)
+const loadingConfigs = ref(false)
+const loading = computed(() => loadingStrategies.value || loadingGlobal.value || loadingConfigs.value)
+
+const activeTab = ref('global')
+const strategies = ref<StrategyInfo[]>([])
+const globalConfig = ref<LoadBalanceConfig>({ type: 'random', hashAlgorithm: 'md5', virtualNodes: 150 })
+const globalConfigLoaded = ref(false)
+const rows = ref<ServiceRow[]>([])
+/** 基线：按 serviceType 索引的已保存值，dirty 判定与「放弃修改」都以它为准。 */
+const baseline = ref<Record<string, ServiceRow>>({})
+
 const strategyNameKeys: Record<string, string> = {
   random: 'random',
   'round-robin': 'roundRobin',
@@ -197,206 +162,221 @@ const strategyNameKeys: Record<string, string> = {
   latency: 'latency'
 }
 
-const getStrategyNameKey = (name: string) => strategyNameKeys[name] || null
+const getStrategyNameKey = (strategy: string): string => strategyNameKeys[strategy] || strategy
 
-const strategyDisplayLabel = (strategy: StrategyInfo) => {
+const strategyDisplayLabel = (strategy: StrategyInfo): string => {
   const key = getStrategyNameKey(strategy.name)
-  return key ? t(`loadBalancer.strategyConfig.strategies.${key}`) : strategy.displayName
+  const label = t(`loadBalancer.strategyConfig.strategies.${key}`)
+  return label === `loadBalancer.strategyConfig.strategies.${key}` ? strategy.displayName : label
 }
 
-const strategyDescriptionLabel = (strategy: StrategyInfo) => {
-  const key = getStrategyNameKey(strategy.name)
-  return key ? t(`loadBalancer.strategyConfig.strategyDescriptions.${key}`) : strategy.description
+const getStrategyDisplayName = (strategy: string): string => {
+  const key = getStrategyNameKey(strategy)
+  const label = t(`loadBalancer.strategyConfig.strategies.${key}`)
+  return label === `loadBalancer.strategyConfig.strategies.${key}` ? strategy : label
 }
 
-const strategies = ref<StrategyInfo[]>([])
-const globalConfig = ref<LoadBalanceConfig>({
-  type: 'random',
-  hashAlgorithm: 'md5',
-  virtualNodes: 150
-})
-/** 全局配置是否已从服务端加载过（初值非空，不能用值判空代替，见 loadServiceConfigs） */
-const globalConfigLoaded = ref(false)
-const serviceConfigs = ref<ServiceConfig[]>([])
-const loadingConfigs = ref(false)
-const configDialogVisible = ref(false)
-const saving = ref(false)
-const currentService = ref<ServiceConfig | null>(null)
-const serviceConfig = ref<LoadBalanceConfig>({
-  type: 'random',
-  hashAlgorithm: 'md5',
-  virtualNodes: 150
-})
+const isHashStrategy = (strategy: string): boolean => strategy === 'ip-hash' || strategy === 'consistent-hash'
 
-const isHashStrategy = (strategy: string) => {
-  return strategy === 'ip-hash' || strategy === 'consistent-hash'
-}
-
-/**
- * 从 catch 到的未知异常里取 HTTP 状态码。
- *
- * `frontend/src/utils/request.ts` 的响应拦截器对非 2xx 一律 `Promise.reject(error)`，
- * error 是 axios 的 `AxiosError` ⇒ 真实状态码在 `error.response.status`
- * （网络层失败没有 `response`，此处返回 undefined）。
- * 收窄成具名形状而不是 `error: any`，与 `src/utils/error.ts` 的做法一致。
- */
 const getResponseStatus = (error: unknown): number | undefined => {
-  if (typeof error !== 'object' || error === null) return undefined
+  if (typeof error !== 'object' || error === null) {
+    return undefined
+  }
   return (error as { response?: { status?: number } }).response?.status
 }
 
-const loadStrategies = async () => {
+const localStrategyFallbacks = (): StrategyInfo[] => [
+  { name: 'random', displayName: t('loadBalancer.strategyConfig.strategies.random'), description: t('loadBalancer.strategyConfig.strategyDescriptions.random') },
+  { name: 'round-robin', displayName: t('loadBalancer.strategyConfig.strategies.roundRobin'), description: t('loadBalancer.strategyConfig.strategyDescriptions.roundRobin') },
+  { name: 'least-connections', displayName: t('loadBalancer.strategyConfig.strategies.leastConnections'), description: t('loadBalancer.strategyConfig.strategyDescriptions.leastConnections') },
+  { name: 'ip-hash', displayName: t('loadBalancer.strategyConfig.strategies.ipHash'), description: t('loadBalancer.strategyConfig.strategyDescriptions.ipHash') },
+  { name: 'consistent-hash', displayName: t('loadBalancer.strategyConfig.strategies.consistentHash'), description: t('loadBalancer.strategyConfig.strategyDescriptions.consistentHash') },
+  { name: 'latency', displayName: t('loadBalancer.strategyConfig.strategies.latency'), description: t('loadBalancer.strategyConfig.strategyDescriptions.latency') }
+]
+
+const loadStrategies = async (): Promise<void> => {
+  loadingStrategies.value = true
   try {
     const response = await request.get(`${apiBaseUrl}/strategies`)
     if (response.data?.success) {
       strategies.value = response.data.data
+    } else {
+      strategies.value = localStrategyFallbacks()
     }
   } catch (error) {
-    console.error('Failed to load strategies:', error)
-    strategies.value = [
-      { name: 'random', displayName: t('loadBalancer.strategyConfig.strategies.random'), description: t('loadBalancer.strategyConfig.strategyDescriptions.random') },
-      { name: 'round-robin', displayName: t('loadBalancer.strategyConfig.strategies.roundRobin'), description: t('loadBalancer.strategyConfig.strategyDescriptions.roundRobin') },
-      { name: 'least-connections', displayName: t('loadBalancer.strategyConfig.strategies.leastConnections'), description: t('loadBalancer.strategyConfig.strategyDescriptions.leastConnections') },
-      { name: 'ip-hash', displayName: t('loadBalancer.strategyConfig.strategies.ipHash'), description: t('loadBalancer.strategyConfig.strategyDescriptions.ipHash') },
-      { name: 'consistent-hash', displayName: t('loadBalancer.strategyConfig.strategies.consistentHash'), description: t('loadBalancer.strategyConfig.strategyDescriptions.consistentHash') },
-      { name: 'latency', displayName: t('loadBalancer.strategyConfig.strategies.latency'), description: t('loadBalancer.strategyConfig.strategyDescriptions.latency') }
-    ]
+    console.error('加载策略列表失败:', error)
+    strategies.value = localStrategyFallbacks()
+  } finally {
+    loadingStrategies.value = false
   }
 }
 
-const getStrategyDisplayName = (strategy: string) => {
-  const key = getStrategyNameKey(strategy)
-  if (key) return t(`loadBalancer.strategyConfig.strategies.${key}`)
-  const found = strategies.value.find(s => s.name === strategy)
-  return found ? found.displayName : strategy
-}
-
-const loadGlobalConfig = async () => {
+const loadGlobalConfig = async (): Promise<void> => {
+  loadingGlobal.value = true
   try {
     const response = await request.get(`${apiBaseUrl}/config/global`)
     if (response.data?.success) {
       globalConfig.value = response.data.data
     }
   } catch (error) {
-    console.error('Failed to load global config:', error)
+    console.error('加载全局配置失败:', error)
   } finally {
-    // 无论成功失败都置位：404 兜底行不该因为一次全局配置失败而反复重拉
     globalConfigLoaded.value = true
+    loadingGlobal.value = false
   }
 }
 
-const loadServiceConfigs = async () => {
-  // 404 兜底行要沿用服务端全局配置。`globalConfig` 的初值是本地默认（random/md5/150）且非空，
-  // 所以不能用 `!globalConfig.value` 判断「是否已加载」，否则兜底行会显示本地默认而不是后端真实值。
-  if (!globalConfigLoaded.value) {
-    await loadGlobalConfig()
-  }
+const toRow = (serviceType: string, config: Partial<ServiceRow>, isGlobal: boolean): ServiceRow => ({
+  serviceType,
+  type: config.type || globalConfig.value.type || 'random',
+  hashAlgorithm: config.hashAlgorithm || globalConfig.value.hashAlgorithm || 'md5',
+  virtualNodes: config.virtualNodes ?? globalConfig.value.virtualNodes ?? 150,
+  ewmaAlpha: config.ewmaAlpha,
+  isGlobal
+})
+
+const cloneRow = (row: ServiceRow): ServiceRow => ({ ...row })
+
+const loadServiceConfigs = async (): Promise<void> => {
   loadingConfigs.value = true
   try {
-    const statusResponse = await request.get(`${apiBaseUrl}/status`)
-    if (statusResponse.data?.success) {
-      const services = statusResponse.data.data
-      const configPromises = services.map(async (service: { serviceType: string }) => {
-        try {
-          const configResponse = await request.get(`${apiBaseUrl}/config/${service.serviceType}`)
-          if (configResponse.data?.success) {
-            return configResponse.data.data
-          }
-        } catch (error) {
-          // 404 = 该服务类型没有专属 LB 配置，后端语义是「按全局默认」。
-          // 不能整行丢掉（issue #575），否则图像生成/图像编辑这类服务在表里根本不出现。
-          if (getResponseStatus(error) === 404) {
-            return {
-              serviceType: service.serviceType,
-              type: globalConfig.value?.type ?? 'random',
-              hashAlgorithm: globalConfig.value?.hashAlgorithm ?? 'md5',
-              virtualNodes: globalConfig.value?.virtualNodes ?? 150,
-              ewmaAlpha: globalConfig.value?.ewmaAlpha ?? 0.2,
-              isGlobal: true
-            } as ServiceConfig
-          }
-          console.error(`Failed to load config for ${service.serviceType}:`, error)
-        }
-        return null
-      })
-      const configs = await Promise.all(configPromises)
-      serviceConfigs.value = configs.filter((c): c is ServiceConfig => c !== null)
+    if (!globalConfigLoaded.value) {
+      await loadGlobalConfig()
     }
+    const statusResponse = await request.get(`${apiBaseUrl}/status`)
+    const services: Array<{ serviceType: string }> = statusResponse.data?.data || []
+    const configs = await Promise.all(
+      services.map(async (service) => {
+        try {
+          const response = await request.get(`${apiBaseUrl}/config/${service.serviceType}`)
+          if (response.data?.success) {
+            return toRow(service.serviceType, response.data.data as Partial<ServiceRow>, response.data.data?.isGlobal === true)
+          }
+          return null
+        } catch (error) {
+          // 该服务没有服务级配置时后端返回 404：用全局默认值补一行，避免表格缺行（issue #575）。
+          if (getResponseStatus(error) === 404) {
+            return toRow(service.serviceType, globalConfig.value, true)
+          }
+          console.error(`加载服务 ${service.serviceType} 配置失败:`, error)
+          return null
+        }
+      })
+    )
+    rows.value = configs.filter((row): row is ServiceRow => row !== null)
+    baseline.value = rows.value.reduce<Record<string, ServiceRow>>((acc, row) => {
+      acc[row.serviceType] = cloneRow(row)
+      return acc
+    }, {})
   } catch (error) {
-    console.error('Failed to load service configs:', error)
+    console.error('加载服务配置失败:', error)
     ElMessage.error(t('loadBalancer.strategyConfig.messages.loadFailed'))
   } finally {
     loadingConfigs.value = false
   }
 }
 
-const showConfigDialog = async (service: ServiceConfig) => {
-  currentService.value = service
-  serviceConfig.value = {
-    type: service.type || globalConfig.value.type,
-    hashAlgorithm: service.hashAlgorithm || globalConfig.value.hashAlgorithm,
-    virtualNodes: service.virtualNodes || globalConfig.value.virtualNodes
-  }
-  configDialogVisible.value = true
+const loadAll = async (): Promise<void> => {
+  await loadStrategies()
+  await loadGlobalConfig()
+  await loadServiceConfigs()
 }
 
-const saveServiceConfig = async () => {
-  if (!currentService.value) return
+const sameRow = (left: ServiceRow, right: ServiceRow | undefined): boolean => {
+  if (!right) {
+    return false
+  }
+  return left.type === right.type
+    && left.hashAlgorithm === right.hashAlgorithm
+    && left.virtualNodes === right.virtualNodes
+    && (left.ewmaAlpha ?? null) === (right.ewmaAlpha ?? null)
+}
 
-  saving.value = true
-  try {
-    const response = await request.put(
-      `${apiBaseUrl}/config/${currentService.value.serviceType}`,
-      serviceConfig.value
-    )
-    if (response.data?.success) {
-      ElMessage.success(t('loadBalancer.strategyConfig.messages.configUpdated', { serviceType: currentService.value.serviceType }))
-      configDialogVisible.value = false
-      loadServiceConfigs()
-    } else {
-      ElMessage.error(response.data?.message || t('loadBalancer.strategyConfig.messages.saveFailed'))
+const dirtyRows = (): ServiceRow[] => rows.value.filter((row) => !sameRow(row, baseline.value[row.serviceType]))
+
+const resetRows = (): void => {
+  rows.value = Object.values(baseline.value).map(cloneRow)
+}
+
+/** PUT /config/{serviceType} 是整体替换（缺 hashAlgorithm / virtualNodes 会回落 md5 / 150），故显式带全字段。 */
+const buildRowPayload = (row: ServiceRow): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {
+    type: row.type,
+    hashAlgorithm: row.hashAlgorithm,
+    virtualNodes: row.virtualNodes
+  }
+  if (typeof row.ewmaAlpha === 'number') {
+    payload.ewmaAlpha = row.ewmaAlpha
+  }
+  return payload
+}
+
+/** 本轮提交成功的服务类型：只有它们才能把「默认」标记摘掉（未保存的行仍是全局默认）。 */
+let submittedTypes: string[] = []
+
+const { saving, savingLabel, errors, dirtyCount, save } = useConfigDraft(
+  [
+    {
+      key: 'services',
+      label: () => t('loadBalancer.strategyConfig.serviceConfigsTitle'),
+      isDirty: () => dirtyRows().length > 0,
+      save: async () => {
+        submittedTypes = []
+        for (const row of dirtyRows()) {
+          const response = await request.put(`${apiBaseUrl}/config/${row.serviceType}`, buildRowPayload(row))
+          if (response.data?.success === false) {
+            throw new Error(response.data?.message || t('loadBalancer.strategyConfig.messages.saveFailed'))
+          }
+          submittedTypes.push(row.serviceType)
+        }
+      },
+      commit: () => {
+        submittedTypes.forEach((serviceType) => {
+          const row = rows.value.find((item) => item.serviceType === serviceType)
+          if (row) {
+            row.isGlobal = false
+            baseline.value[serviceType] = cloneRow(row)
+          }
+        })
+        submittedTypes = []
+      }
     }
-  } catch (error) {
-    console.error('Failed to save service config:', error)
-    ElMessage.error(t('loadBalancer.strategyConfig.messages.saveFailed'))
-  } finally {
-    saving.value = false
+  ],
+  { fallbackError: () => t('loadBalancer.strategyConfig.messages.saveFailed') }
+)
+
+const handleSave = async (): Promise<void> => {
+  const result = await save()
+  if (!result.ok) {
+    if (result.failed) {
+      ElMessage.error(`${result.failed.message}`)
+    }
+    return
+  }
+  if (result.saved.length > 0) {
+    ElMessage.success(t('loadBalancer.strategyConfig.messages.saved'))
+    await loadServiceConfigs()
   }
 }
 
-onMounted(() => {
-  loadStrategies()
-  loadGlobalConfig()
-  loadServiceConfigs()
-})
+onMounted(loadAll)
 </script>
 
 <style scoped>
-.config-card,
-.service-config-card {
-  margin-bottom: var(--ja-space-5);
-  box-shadow: var(--ja-shadow-lg);
-  border-radius: var(--ja-radius-lg);
-}
-
-.card-header {
+.service-cell {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ja-ink);
+.muted {
+  color: var(--el-text-color-secondary);
 }
 
-.config-form {
-  padding: var(--ja-space-5);
-}
-
-.flex-table {
-  width: 100%;
-  table-layout: auto;
+.save-hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 </style>

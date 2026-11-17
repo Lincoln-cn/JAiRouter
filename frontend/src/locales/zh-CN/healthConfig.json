@@ -30,6 +30,9 @@
     "enabled": "已启用",
     "disabled": "已关闭",
     "failHealthOn": "故障即 DOWN",
-    "failHealthOff": "故障仅告警"
+    "failHealthOff": "故障仅告警",
+    "readinessConfirm": "开启后就绪探针会包含下游依赖：{impact}",
+    "immediateHint": "立即生效",
+    "readonlyTag": "只读"
   }
 }

@@ -23,13 +23,18 @@
       "action": "Actions",
       "details": "Details",
       "query": "Search",
+      "refresh": "Refresh",
       "reset": "Reset",
       "save": "Save",
       "unknownError": "Unknown error",
       "requestCount": "Requests",
       "errorMessage": "Error Message",
       "trace": "Trace",
-      "viewTrace": "View trace"
+      "viewTrace": "View trace",
+      "emptyNoDataTitle": "No data",
+      "emptyNoDataDescription": "There is no data in the current time range. Adjust the range or try again later.",
+      "emptyFilteredTitle": "No matching results",
+      "emptyFilteredDescription": "No data matches the current filters. Adjust the filters or time range and try again."
     },
     "dashboard": {
       "title": "Call History Dashboard",

@@ -23,13 +23,18 @@
       "action": "操作",
       "details": "详情",
       "query": "查询",
+      "refresh": "刷新",
       "reset": "重置",
       "save": "保存",
       "unknownError": "未知错误",
       "requestCount": "请求数",
       "errorMessage": "错误信息",
       "trace": "追踪",
-      "viewTrace": "查看链路"
+      "viewTrace": "查看链路",
+      "emptyNoDataTitle": "暂无数据",
+      "emptyNoDataDescription": "当前时间范围内还没有数据，可调整时间范围或稍后重试。",
+      "emptyFilteredTitle": "筛选无结果",
+      "emptyFilteredDescription": "当前筛选条件下没有数据，可调整筛选条件或时间范围后重试。"
     },
     "dashboard": {
       "title": "调用历史仪表盘",

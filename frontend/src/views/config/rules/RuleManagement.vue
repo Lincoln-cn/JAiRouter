@@ -68,7 +68,15 @@
           <template #default="{ row }">
             <!-- 行内操作统一为文字按钮（与 服务管理/实例管理 一致）：危险语义仍在，但不给整行加一块红 -->
             <el-button link size="small" v-permission="'config:rules:write'" @click="handleEdit(row)">{{ t('rule.edit') }}</el-button>
-            <el-button link size="small" type="danger" v-permission="'config:rules:write'" @click="handleDelete(row)">{{ t('rule.delete') }}</el-button>
+            <ConfirmAction
+              v-if="canWrite"
+              :title="t('rule.deleteConfirmMessage', { name: row.name })"
+              :confirm-text="t('rule.deleteConfirmTitle')"
+              type="danger"
+              @confirm="handleDelete(row)"
+            >
+              <el-button link size="small" type="danger">{{ t('rule.delete') }}</el-button>
+            </ConfirmAction>
           </template>
         </el-table-column>
       </el-table>
@@ -104,7 +112,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Plus, MagicStick, Rank, Refresh } from '@element-plus/icons-vue'
 import Sortable from 'sortablejs'
 import {
@@ -122,6 +130,7 @@ import RuleFormDialog from './RuleFormDialog.vue'
 import RuleTemplateDialog from './RuleTemplateDialog.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
 import { usePermission } from '@/composables/usePermission'
 
 const rules = ref<RuleDefinition[]>([])
@@ -246,16 +255,11 @@ const handleEdit = (row: RuleDefinition) => {
 
 const handleDelete = async (row: RuleDefinition) => {
   try {
-    await ElMessageBox.confirm(
-      t('rule.deleteConfirmMessage', { name: row.name }),
-      t('rule.deleteConfirmTitle'),
-      { type: 'warning' }
-    )
     await deleteRule(row.id!)
     ElMessage.success(t('rule.ruleDeleted'))
     fetchRules()
   } catch (e) {
-    // 用户取消
+    ElMessage.error(t('rule.operationFailed'))
   }
 }
 

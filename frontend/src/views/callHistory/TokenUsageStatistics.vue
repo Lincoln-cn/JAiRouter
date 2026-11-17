@@ -5,7 +5,7 @@
       <p class="page-subtitle">{{ t('callHistory.tokenUsage.pageDescription') }}</p>
     </template>
 
-    <!-- 时间范围筛选 -->
+    <!-- 工具栏顺序：时间范围 → 刷新（本页无维度筛选、无导出） -->
     <template #filters>
       <FilterBar>
         <el-form :inline="true" class="filter-form">
@@ -22,8 +22,8 @@
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
-            <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
+            <el-button type="primary" icon="Refresh" @click="loadData">{{ t('callHistory.common.refresh') }}</el-button>
+            <el-button @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
           </el-form-item>
         </el-form>
       </FilterBar>
@@ -40,8 +40,8 @@
           :title="t('callHistory.tokenUsage.chart.modelTokenTopTitle')"
           :loading="loading"
           :empty="modelEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
           :height="320"
         >
           <!-- 单类数据：环形图无意义 ⇒ 「大数字 + 说明」，且不渲染图表容器 -->
@@ -60,8 +60,8 @@
           :title="t('callHistory.tokenUsage.chart.serviceTypeTokenTitle')"
           :loading="loading"
           :empty="serviceTypeEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
           :height="320"
         >
           <div ref="serviceTypeChartRef" class="chart-container"></div>
@@ -76,8 +76,8 @@
           :title="t('callHistory.tokenUsage.chart.dailyTrendTitle')"
           :loading="loading"
           :empty="dailyEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
           :height="320"
         >
           <div ref="dailyChartRef" class="chart-container"></div>
@@ -90,8 +90,8 @@
           :title="t('callHistory.tokenUsage.chart.weeklyTrendTitle')"
           :loading="loading"
           :empty="weeklyEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
           :height="320"
         >
           <div ref="weeklyChartRef" class="chart-container"></div>
@@ -106,8 +106,8 @@
           :title="t('callHistory.tokenUsage.chart.monthlyTrendTitle')"
           :loading="loading"
           :empty="monthlyEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
           :height="320"
         >
           <div ref="monthlyChartRef" class="chart-container"></div>
@@ -120,8 +120,8 @@
           :title="t('callHistory.tokenUsage.chart.hourlyDistributionTitle')"
           :loading="loading"
           :empty="hourlyEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
           :height="320"
         >
           <div ref="hourlyChartRef" class="chart-container"></div>
@@ -134,7 +134,13 @@
       <template #header>
         <span class="chart-title">{{ t('callHistory.tokenUsage.chart.recentUsageTitle') }}</span>
       </template>
-      <el-table :data="recentUsage" border stripe :max-height="400">
+      <!-- 空态区分「无数据」与「筛选无结果」，不留 el-table 默认空文案 -->
+      <EmptyState
+        v-if="!loading && recentUsage.length === 0"
+        :title="emptyTitle"
+        :description="emptyDescription"
+      />
+      <el-table v-else :data="recentUsage" border stripe :max-height="400">
         <el-table-column :label="t('callHistory.common.time')" prop="occurredAt" width="180">
           <template #default="scope">
             <TimeText :value="scope.row.occurredAt" />
@@ -203,6 +209,7 @@ import FilterBar from '@/components/FilterBar.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import ChartCard from '@/components/ChartCard.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import TimeText from '@/components/TimeText.vue'
 
 const { t } = useI18n()
@@ -264,11 +271,20 @@ const formatNumber = (num?: number): string => {
   return formatNumberBase(num)
 }
 
+// 空态文案：区分「无数据」与「筛选无结果」——选了时间范围即视为筛选
+const hasFilter = computed(() => !!dateRange.value)
+const emptyTitle = computed(() =>
+  t(hasFilter.value ? 'callHistory.common.emptyFilteredTitle' : 'callHistory.common.emptyNoDataTitle')
+)
+const emptyDescription = computed(() =>
+  t(hasFilter.value ? 'callHistory.common.emptyFilteredDescription' : 'callHistory.common.emptyNoDataDescription')
+)
+
 /** 平均响应时间：整数毫秒，不参与千分位（长度固定，指标条不需要分隔符）。 */
 const avgResponseTimeText = computed(() => (statistics.value.avgResponseTimeMs || 0).toFixed(0))
 
-/** 成功率：两位小数百分比。 */
-const successRateText = computed(() => `${(statistics.value.successRate || 0).toFixed(2)}%`)
+/** 成功率：保留 1 位小数（与同批次其它观测页一致）。 */
+const successRateText = computed(() => `${(statistics.value.successRate || 0).toFixed(1)}%`)
 
 /**
  * 指标条数据。

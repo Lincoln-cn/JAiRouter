@@ -25,6 +25,17 @@
       "pause": "Pause",
       "eventsTitle": "Real-Time Routing Events",
       "selectServiceType": "Select Service Type",
+      "refresh": "Refresh",
+      "clearFilters": "Clear filters",
+      "sampledTotal": "Sampled Total",
+      "activeServices": "Monitored Services",
+      "pausedServices": "Paused Services",
+      "totalQps": "Total Live QPS",
+      "qps": "QPS",
+      "emptyTitle": "No routing events yet",
+      "emptyDescription": "No routing event has been collected yet; once sampling is on, events stream in over WebSocket.",
+      "emptySearchTitle": "No matching routing events",
+      "emptySearchDescription": "No event matches the current service type filter. Clear the filter or wait for new pushes.",
       "columns": {
         "time": "Time",
         "serviceType": "Service Type",
@@ -61,14 +72,22 @@
     },
     "strategyConfig": {
       "pageTitle": "Load Balancer Strategy Configuration",
+      "pageDesc": "The global default is read-only; per-service strategies are edited inline and saved from the action bar at the bottom.",
+      "tabs": {
+        "global": "Global Strategy",
+        "services": "Service Overrides"
+      },
+      "readonlyTag": "Read-only",
       "globalTitle": "Global Default Configuration",
+      "globalReadonlyHint": "The global default strategy comes from configuration (jairouter.load-balance); the console exposes no write endpoint, so change the configuration file and restart.",
       "defaultStrategy": "Default Strategy",
       "selectStrategy": "Select a Strategy",
       "hashAlgorithm": "Hash Algorithm",
       "selectHashAlgorithm": "Select a Hash Algorithm",
       "virtualNodes": "Virtual Nodes",
       "serviceConfigsTitle": "Service-Level Configuration",
-      "configureHint": "Click the configure button to change the load balancing strategy of a single service",
+      "configureHint": "Edit per-service strategies inline; saving replaces each service as a whole and rebuilds its load balancer immediately",
+      "saveHint": "Each row is replaced as a whole (PUT /loadbalancer/config/{serviceType}); omitted hash algorithm and virtual nodes fall back to md5 / 150, so all fields are sent explicitly.",
       "defaultTag": "Default",
       "configure": "Configure",
       "loadBalanceStrategy": "Load Balancing Strategy",
@@ -101,6 +120,7 @@
       "messages": {
         "loadFailed": "Failed to load service configurations",
         "configUpdated": "Load balancing config of service {serviceType} updated",
+        "saved": "Load balancing strategies saved",
         "saveFailed": "Failed to save configuration"
       }
     }

@@ -3,6 +3,11 @@
     "title": "服务管理",
     "addService": "添加服务",
     "editService": "编辑服务",
+    "createTitle": "新建服务",
+    "editTitle": "编辑服务：{type}",
+    "refresh": "刷新",
+    "emptyTitle": "暂无服务",
+    "emptyDescription": "添加第一个服务类型后，可以在这里配置适配器、负载均衡与会话粘性。",
     "allTypesAdded": "已添加所有类型服务",
     "searchPlaceholder": "搜索服务类型或适配器（回车或暂停）",
     "filters": {
@@ -53,7 +58,8 @@
       "editSuccess": "服务编辑成功",
       "addSuccess": "服务添加成功",
       "editFailed": "编辑失败",
-      "addFailed": "添加失败"
+      "addFailed": "添加失败",
+      "refreshed": "已刷新"
     },
     "form": {
       "serviceType": "服务类型",
@@ -63,6 +69,7 @@
       "selectServiceType": "请选择服务类型",
       "selectAdapter": "请选择适配器",
       "selectLoadBalance": "请选择负载均衡策略",
+      "validationFailed": "请先补全必填项：服务类型、适配器、负载均衡策略",
       "descriptionPlaceholder": "对该服务做简短说明，方便识别（例如：用于客服对话）"
     },
     "sticky": {

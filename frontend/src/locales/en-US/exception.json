@@ -121,6 +121,7 @@
       "endTime": "End Time",
       "query": "Search",
       "reset": "Reset",
+      "refresh": "Refresh",
       "totalEventsLabel": "Total Exceptions",
       "totalTypesLabel": "Exception Types",
       "topErrorTypeLabel": "Top Error Type",

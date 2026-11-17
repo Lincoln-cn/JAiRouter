@@ -1,6 +1,14 @@
 <template>
-  <el-dialog v-model="visible" :title="title" center width="680px">
-    <el-form ref="formRef" :model="model" label-width="120px" status-icon>
+  <el-drawer
+    v-model="visible"
+    :title="title"
+    direction="rtl"
+    :size="drawerSize"
+    :close-on-click-modal="false"
+    destroy-on-close
+    class="api-key-form-drawer"
+  >
+    <el-form ref="formRef" :model="model" label-width="120px" status-icon class="api-key-form">
       <el-form-item :label="t('apiKeys.form.keyId')" prop="keyId" :rules="rules">
         <el-input v-model="keyId" :disabled="isEdit" maxlength="64" :placeholder="t('apiKeys.form.keyIdPlaceholder')"
                   show-word-limit/>
@@ -82,12 +90,12 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <span class="dialog-footer">
+      <span class="drawer-footer">
         <el-button @click="visible = false">{{ t('apiKeys.actions.cancel') }}</el-button>
-        <el-button type="primary" @click="emit('save')" :loading="saving">{{ t('apiKeys.actions.save') }}</el-button>
+        <el-button type="primary" :loading="saving" :disabled="saving" @click="emit('save')">{{ t('apiKeys.actions.save') }}</el-button>
       </span>
     </template>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
@@ -100,9 +108,10 @@
  * 复制一份表单状态；校验由 `formRef` 在本组件内完成并通过 `validate()` 暴露，
  * 父组件的 `handleSave` 仍是「先后端再提示」的唯一执行者。
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FormInstance, FormItemRule } from 'element-plus'
+import { useViewport } from '@/composables/useViewport'
 import type { ApiKeyFormModel } from './types'
 
 defineProps<{
@@ -138,6 +147,10 @@ const { t } = useI18n()
 
 const formRef = ref<FormInstance>()
 
+/** 抽屉宽度：常规 640px，窄屏占满，避免 390px 视口里表单被裁 */
+const { isNarrow } = useViewport()
+const drawerSize = computed(() => (isNarrow.value ? '100%' : '640px'))
+
 /** 供父组件 handleSave 调用：与原 `if (formRef.value) await formRef.value.validate()` 等价 */
 const validate = async (): Promise<void> => {
   if (formRef.value) {
@@ -155,18 +168,27 @@ defineExpose({ validate })
   margin-top: 4px;
 }
 
-.dialog-footer {
+.api-key-form {
+  padding-bottom: var(--ja-space-2, 8px);
+}
+
+.drawer-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
-:deep(.el-dialog__header) {
-  border-bottom: 1px solid var(--ja-border-light);
+:deep(.el-drawer__header) {
+  margin-bottom: 0;
   padding-bottom: 16px;
+  border-bottom: 1px solid var(--ja-border-light);
 }
 
-:deep(.el-dialog__footer) {
+:deep(.el-drawer__body) {
+  padding-top: 16px;
+}
+
+:deep(.el-drawer__footer) {
   border-top: 1px solid var(--ja-border-light);
   padding-top: 16px;
 }

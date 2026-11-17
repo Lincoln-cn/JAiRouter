@@ -1,16 +1,23 @@
 <template>
-  <PageSkeleton :title="t('quotaConfig.pageTitle')">
-    <template #actions>
-      <el-button @click="loadConfig" :loading="loading" size="default">
-        <el-icon><Refresh /></el-icon>
-        {{ t('quotaConfig.refreshStatus') }}
-      </el-button>
-    </template>
-
+  <ConfigPageShell
+    :title="t('quotaConfig.pageTitle')"
+    :loading="loading"
+    :saving="saving"
+    :saving-label="savingLabel"
+    :dirty-count="dirtyCount"
+    :can-write="canWrite"
+    save-permission="config:quota:write"
+    @refresh="loadConfig"
+    @save="handleSave"
+    @discard="handleDiscard"
+  >
     <!-- 顶部状态指标条（P2-1：四张彩卡压成一行中性指标，语义色只落在「降级放行」为真时） -->
-    <template #stats>
-      <MetricStrip :items="summaryItems" :columns="4" />
-    </template>
+    <MetricStrip
+      :items="summaryItems"
+      :loading="loading && !config"
+      :columns="4"
+      class="summary-strip"
+    />
 
     <!-- 页头提示：区分「即时生效」与「需重启」两类配置 -->
     <template #toolbar>
@@ -31,109 +38,95 @@
       style="margin-bottom: 16px"
     />
 
-    <!-- 热编辑配置 -->
-    <el-card v-if="config" shadow="hover" style="margin-bottom: 16px">
-      <template #header>
-        <span class="card-title">{{ t('quotaConfig.runtimeConfigTitle') }}</span>
-      </template>
-
-      <div class="runtime-config-grid">
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('quotaConfig.enableQuotaLabel') }}</span>
-          <el-switch v-model="runtimeForm.enabled" />
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('quotaConfig.failOpenSwitchLabel') }}</span>
-          <el-switch v-model="runtimeForm.failOpen" />
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('quotaConfig.windowsLabel') }}</span>
-          <el-select
-            v-model="runtimeForm.windows"
-            multiple
-            :placeholder="t('quotaConfig.windowsPlaceholder')"
-            style="width: 220px"
-          >
-            <el-option
-              v-for="w in windowOptions"
-              :key="w"
-              :label="w"
-              :value="w"
+    <template v-else>
+      <!-- 热编辑配置：两个布尔开关即时生效，窗口多选走动作条草稿 -->
+      <ConfigSectionCard
+        :title="t('quotaConfig.runtimeConfigTitle')"
+        :description="t('quotaConfig.runtimeConfigHint')"
+        :error="errors.windows || switchError"
+      >
+        <div class="runtime-config-grid">
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('quotaConfig.enableQuotaLabel') }}</span>
+            <SettingsSwitch
+              :model-value="form.enabled"
+              :disabled="!canWrite"
+              :immediate-hint="t('quotaConfig.immediateHint')"
+              :submit="submitEnabled"
+              @update:model-value="form.enabled = $event"
             />
-          </el-select>
-        </div>
-      </div>
-
-      <div class="config-actions">
-        <el-button
-          v-if="canWrite"
-          :type="configChanged ? 'primary' : 'default'"
-          :loading="saving"
-          :disabled="!configChanged"
-          v-permission="'config:quota:write'" @click="handleSaveConfig"
-        >
-          <el-icon><Check /></el-icon>
-          {{ t('quotaConfig.saveRuntimeConfig') }}
-        </el-button>
-        <el-button :disabled="saving" @click="resetRuntimeForm">
-          {{ t('quotaConfig.reset') }}
-        </el-button>
-      </div>
-    </el-card>
-
-    <!-- 需重启生效（只读区）：折叠 + 降对比，避免与可编辑网格同权 -->
-    <el-card v-if="config" shadow="never" class="readonly-card">
-      <el-collapse v-model="readonlyOpen">
-        <el-collapse-item name="readonly">
-          <template #title>
-            <span class="card-title">{{ t('quotaConfig.restartRequiredTitle') }}</span>
-            <el-tag size="small" type="info" effect="plain" class="readonly-count">
-              {{ t('quotaConfig.readonlyCount', { count: readonlyFields.length }) }}
-            </el-tag>
-          </template>
-          <div class="readonly-grid">
-            <div v-for="field in readonlyFields" :key="field.path" class="readonly-item">
-              <span class="readonly-label">
-                {{ field.label }}
-                <el-tag v-if="isRestartRequired(field.path)" size="small" type="info" effect="plain">
-                  {{ t('quotaConfig.restartRequiredBadge') }}
-                </el-tag>
-              </span>
-              <span class="readonly-value">{{ field.value }}</span>
-            </div>
           </div>
-        </el-collapse-item>
-      </el-collapse>
-    </el-card>
-  </PageSkeleton>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('quotaConfig.failOpenSwitchLabel') }}</span>
+            <SettingsSwitch
+              :model-value="form.failOpen"
+              :disabled="!canWrite"
+              :immediate-hint="t('quotaConfig.immediateHint')"
+              :submit="submitFailOpen"
+              @update:model-value="form.failOpen = $event"
+            />
+          </div>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('quotaConfig.windowsLabel') }}</span>
+            <el-select
+              v-model="form.windows"
+              multiple
+              :placeholder="t('quotaConfig.windowsPlaceholder')"
+              :disabled="!canWrite"
+              style="width: 220px"
+            >
+              <el-option v-for="w in windowOptions" :key="w" :label="w" :value="w" />
+            </el-select>
+          </div>
+        </div>
+      </ConfigSectionCard>
+
+      <!-- 只读区：字段在应用启动时确定，改动需改 yaml 后重启 -->
+      <ConfigSectionCard
+        :title="t('quotaConfig.restartRequiredTitle')"
+        :restart-required="readonlyNeedsRestart"
+      >
+        <template #actions>
+          <el-tag size="small" type="info" effect="plain">
+            {{ t('quotaConfig.readonlyCount', { count: readonlyFields.length }) }}
+          </el-tag>
+        </template>
+        <div class="readonly-grid">
+          <div v-for="field in readonlyFields" :key="field.path" class="readonly-item">
+            <span class="readonly-label">{{ field.label }}</span>
+            <span class="readonly-value">{{ field.value }}</span>
+          </div>
+        </div>
+      </ConfigSectionCard>
+    </template>
+  </ConfigPageShell>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Refresh, Check, InfoFilled } from '@element-plus/icons-vue'
-import PageSkeleton from '@/components/PageSkeleton.vue'
+import { InfoFilled } from '@element-plus/icons-vue'
+import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
+import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
+import SettingsSwitch from '@/components/config/SettingsSwitch.vue'
 import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
-import { useUserStore } from '@/stores/user'
-import {
-  getQuotaConfig,
-  updateQuotaConfig,
-  type QuotaConfig,
-  type QuotaConfigPayload,
-} from '@/api/quota'
+import { usePermission } from '@/composables/usePermission'
+import { useConfigDraft } from '@/composables/useConfigDraft'
+import { getQuotaConfig, updateQuotaConfig, type QuotaConfig } from '@/api/quota'
 
 const { t } = useI18n()
-const userStore = useUserStore()
+const { hasPermission } = usePermission()
 
 // 审计 #468：本页路由只要求 `config:quota:read`（只读角色也能进），
-// 但「保存」是 `PUT /api/config/quota`，后端要求 `config:quota:write`。
-// 不做页内门控的话，只读角色会看到一个「点了必然 403」的按钮（实测：低权限 403 / ADMIN 200）。
-const canWrite = computed(() => userStore.hasPermission('config:quota:write'))
+// 但写操作是 `PUT /api/config/quota`，后端要求 `config:quota:write`。
+// 不做页内门控的话，只读角色会看到「点了必然 403」的开关与保存入口。
+const canWrite = computed(() => hasPermission('config:quota:write'))
 
 const loading = ref(false)
-const saving = ref(false)
 const config = ref<QuotaConfig | null>(null)
+/** 即时开关提交失败的分区级错误（草稿错误由 useConfigDraft 写在 errors 上） */
+const switchError = ref('')
 
 /** 顶部指标条：只呈现后端已返回的运行时状态，不新增统计口径 */
 const summaryItems = computed<MetricStripItem[]>(() => {
@@ -168,7 +161,7 @@ const summaryItems = computed<MetricStripItem[]>(() => {
 
 const windowOptions = ['MINUTE', 'HOUR', 'DAY', 'MONTH']
 
-// ── 运行时表单 ──
+// ── 草稿表单与基线 ──
 
 interface RuntimeForm {
   enabled: boolean
@@ -176,21 +169,55 @@ interface RuntimeForm {
   windows: string[]
 }
 
-const runtimeForm = ref<RuntimeForm>({
-  enabled: false,
-  failOpen: false,
-  windows: [],
-})
+const form = reactive<RuntimeForm>({ enabled: false, failOpen: false, windows: [] })
+const baseline = reactive<RuntimeForm>({ enabled: false, failOpen: false, windows: [] })
 
-const syncFormFromConfig = (c: QuotaConfig) => {
-  runtimeForm.value.enabled = c.enabled
-  runtimeForm.value.failOpen = c.failOpen
-  runtimeForm.value.windows = [...c.windows]
+const sameWindows = (a: string[], b: string[]): boolean =>
+  a.length === b.length && a.every(window => b.includes(window))
+
+/**
+ * 用后端快照刷新页面状态。
+ *
+ * `keepWindowsDraft`：即时开关提交成功后只同步开关字段，别把用户还没保存的
+ * 窗口草稿抹掉 —— 否则拨一下开关就等于丢弃草稿。
+ */
+const applySnapshot = (snapshot: QuotaConfig, keepWindowsDraft = false): void => {
+  config.value = snapshot
+  form.enabled = snapshot.enabled
+  form.failOpen = snapshot.failOpen
+  baseline.enabled = snapshot.enabled
+  baseline.failOpen = snapshot.failOpen
+  if (!keepWindowsDraft) {
+    form.windows = [...snapshot.windows]
+    baseline.windows = [...snapshot.windows]
+  }
 }
 
-const resetRuntimeForm = () => {
-  if (config.value) syncFormFromConfig(config.value)
+/** 取后端的 400 原文（AxiosError 的 message 只有 "Request failed with status code"） */
+const apiMessageOf = (error: unknown, fallback: string): string => {
+  const candidate = error as { response?: { data?: { message?: string } }; message?: string }
+  return candidate?.response?.data?.message || candidate?.message || fallback
 }
+
+// ── 即时生效的开关 ──
+
+const submitSwitch = async (patch: { enabled?: boolean; failOpen?: boolean }): Promise<void> => {
+  switchError.value = ''
+  try {
+    const updated = await updateQuotaConfig(patch)
+    applySnapshot(updated, true)
+    ElMessage.success(t('quotaConfig.configUpdatedSuccess'))
+  } catch (error) {
+    // 失败：写进分区错误（红框 + 文案），并抛给 SettingsSwitch 让开关回弹
+    const message = apiMessageOf(error, t('quotaConfig.saveFailedError'))
+    switchError.value = message
+    throw new Error(message)
+  }
+}
+
+const submitEnabled = (next: boolean): Promise<void> => submitSwitch({ enabled: next })
+
+const submitFailOpen = (next: boolean): Promise<void> => submitSwitch({ failOpen: next })
 
 // ── 只读区（需重启生效） ──
 
@@ -200,8 +227,6 @@ interface ReadonlyField {
   label: string
   value: string
 }
-
-const readonlyOpen = ref<string[]>([])
 
 /** 只读项集中声明，模板只负责渲染，避免十段重复标记 */
 const readonlyFields = computed<ReadonlyField[]>(() => {
@@ -241,7 +266,7 @@ const readonlyFields = computed<ReadonlyField[]>(() => {
   ]
 })
 
-/** 判断字段是否在重启生效列表中 */
+/** 判断字段是否在重启生效列表中（支持后端下发的 `a.b.*` 通配） */
 const isRestartRequired = (fieldPath: string): boolean => {
   if (!config.value) return false
   return config.value.restartRequiredFields.some(pattern => {
@@ -253,29 +278,40 @@ const isRestartRequired = (fieldPath: string): boolean => {
   })
 }
 
-/** 判断是否有变更 */
-const configChanged = computed(() => {
-  if (!config.value) return false
-  const c = config.value
-  if (runtimeForm.value.enabled !== c.enabled) return true
-  if (runtimeForm.value.failOpen !== c.failOpen) return true
-  if (
-    runtimeForm.value.windows.length !== c.windows.length ||
-    runtimeForm.value.windows.some(w => !c.windows.includes(w))
-  ) {
-    return true
-  }
-  return false
-})
+/** 整个只读区都需重启：用卡片级标签统一表达，不再逐项挂 tag */
+const readonlyNeedsRestart = computed(() => readonlyFields.value.some(field => isRestartRequired(field.path)))
+
+// ── 草稿保存（窗口多选） ──
+
+const { saving, savingLabel, errors, dirtyCount, save, clearError } = useConfigDraft(
+  [
+    {
+      key: 'windows',
+      label: () => t('quotaConfig.windowsLabel'),
+      isDirty: () => !sameWindows(form.windows, baseline.windows),
+      save: async () => {
+        await updateQuotaConfig({ windows: [...form.windows] })
+      },
+      commit: () => {
+        baseline.windows = [...form.windows]
+      },
+    },
+  ],
+  { fallbackError: () => t('quotaConfig.saveFailedError') }
+)
 
 // ── 数据加载 ──
 
-const loadConfig = async () => {
+const loadConfig = async (): Promise<void> => {
   loading.value = true
+  switchError.value = ''
   try {
-    const c = await getQuotaConfig()
-    config.value = c
-    if (c) syncFormFromConfig(c)
+    const snapshot = await getQuotaConfig()
+    if (snapshot) {
+      applySnapshot(snapshot)
+    } else {
+      config.value = null
+    }
   } catch {
     config.value = null
   } finally {
@@ -283,70 +319,47 @@ const loadConfig = async () => {
   }
 }
 
-// ── 保存 ──
-
-const handleSaveConfig = async () => {
+const handleSave = async (): Promise<void> => {
   if (!config.value) return
-  const c = config.value
-  const payload: QuotaConfigPayload = {}
-
-  if (runtimeForm.value.enabled !== c.enabled) {
-    payload.enabled = runtimeForm.value.enabled
-  }
-  if (runtimeForm.value.failOpen !== c.failOpen) {
-    payload.failOpen = runtimeForm.value.failOpen
-  }
-  if (
-    runtimeForm.value.windows.length !== c.windows.length ||
-    runtimeForm.value.windows.some(w => !c.windows.includes(w))
-  ) {
-    payload.windows = [...runtimeForm.value.windows]
-  }
-
-  if (Object.keys(payload).length === 0) {
-    ElMessage.warning(t('quotaConfig.noChangesWarning'))
+  const result = await save()
+  if (!result.ok) {
+    ElMessage.error(result.failed?.message ?? t('quotaConfig.saveFailedError'))
     return
   }
-
-  saving.value = true
-  try {
-    await updateQuotaConfig(payload)
-    ElMessage.success(t('quotaConfig.configUpdatedSuccess'))
-    await loadConfig()
-  } catch (err: unknown) {
-    // 提取后端 400 原文消息
-    const axiosErr = err as { response?: { data?: { message?: string } } }
-    const msg = axiosErr.response?.data?.message
-    if (msg) {
-      ElMessage.error(msg)
-    } else {
-      ElMessage.error(t('quotaConfig.saveFailedError'))
-    }
-  } finally {
-    saving.value = false
+  if (result.saved.length === 0) {
+    ElMessage.info(t('quotaConfig.noChangesWarning'))
+    return
   }
+  ElMessage.success(t('quotaConfig.configUpdatedSuccess'))
+  await loadConfig()
+}
+
+/** 「放弃修改」只回退草稿字段：开关是即时生效的，不存在可丢弃的开关状态 */
+const handleDiscard = (): void => {
+  form.windows = [...baseline.windows]
+  switchError.value = ''
+  clearError()
 }
 
 onMounted(loadConfig)
 </script>
 
 <style scoped>
-.card-title {
-  font-weight: 600;
-  font-size: 15px;
+.summary-strip {
+  margin-bottom: 16px;
 }
 
 .runtime-config-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px 32px;
-  margin-bottom: 16px;
 }
 
 .config-switch-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 8px 12px;
   border-radius: var(--ja-radius-md, 8px);
   background: var(--ja-bg-hover, var(--el-fill-color-light));
@@ -356,12 +369,6 @@ onMounted(loadConfig)
   font-size: 14px;
   color: var(--ja-text-primary);
   font-weight: 500;
-}
-
-.config-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .readonly-grid {
@@ -395,21 +402,6 @@ onMounted(loadConfig)
   word-break: break-all;
 }
 
-.readonly-count {
-  margin-left: 8px;
-}
-
-.readonly-card :deep(.el-collapse) {
-  border-top: none;
-  border-bottom: none;
-}
-
-.readonly-card :deep(.el-collapse-item__header) {
-  border-bottom: none;
-  height: auto;
-  min-height: 32px;
-}
-
 .restart-hint {
   display: flex;
   align-items: center;
@@ -417,5 +409,12 @@ onMounted(loadConfig)
   margin: 0;
   font-size: 12px;
   color: var(--ja-ink-2, var(--el-text-color-secondary));
+}
+
+@media (max-width: 767px) {
+  .runtime-config-grid,
+  .readonly-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

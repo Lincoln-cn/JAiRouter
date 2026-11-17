@@ -1,6 +1,7 @@
 {
   "recordGovernance": {
     "pageTitle": "记录治理",
+    "readonlyTag": "只读",
     "refresh": "刷新",
     "loadFailed": "加载记录治理配置失败",
     "save": "保存记录级别",

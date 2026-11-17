@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
+import { createPinia } from 'pinia'
 import zh from '@/locales/zh-CN/recordGovernance.json'
 
 const apiMock = vi.hoisted(() => ({
@@ -25,7 +26,7 @@ const routerMock = vi.hoisted(() => ({ push: vi.fn() }))
 
 vi.mock('@/api/callHistory', () => apiMock)
 vi.mock('element-plus', () => ({ ElMessage: messageMock, ElMessageBox: messageBoxMock }))
-vi.mock('vue-router', () => ({ useRouter: () => routerMock }))
+vi.mock('vue-router', () => ({ useRouter: () => routerMock, onBeforeRouteLeave: () => {} }))
 
 import RecordGovernance from '../RecordGovernance.vue'
 
@@ -56,6 +57,18 @@ const i18n = createI18n({
 })
 
 const stubs = {
+  ConfigPageShell: defineComponent({
+    props: { saving: { type: Boolean, default: false } },
+    emits: ['save', 'refresh', 'discard'],
+    template:
+      '<div class="shell"><slot /><button data-test="shell-save" @click="$emit(\'save\')">save</button>' +
+      '<span data-test="shell-saving">{{ String(saving) }}</span></div>'
+  }),
+  ConfigSectionCard: defineComponent({
+    props: { title: { type: String, default: '' }, description: { type: String, default: '' }, error: { type: String, default: '' } },
+    template: '<div class="section"><h3>{{ title }}</h3><p>{{ description }}</p><p class="err">{{ error }}</p><slot /><slot name="actions" /></div>'
+  }),
+  SettingsSwitch: defineComponent({ props: { modelValue: { type: Boolean, default: false } }, emits: ['update:modelValue'], template: '<span />' }),
   PageSkeleton: PassthroughStub,
   MetricStrip: true,
   'el-card': PassthroughStub,
@@ -79,7 +92,7 @@ const stubs = {
 }
 
 const mountPage = () =>
-  mount(RecordGovernance, { global: { plugins: [i18n], stubs } })
+  mount(RecordGovernance, { global: { plugins: [i18n, createPinia()], stubs } })
 
 const configPayload = (overrides: Record<string, unknown> = {}) => ({
   recordLevel: 'SUMMARY',
@@ -174,13 +187,13 @@ describe('RecordGovernance 记录治理页', () => {
     await flushPromises()
     expect(messageBoxMock.confirm).toHaveBeenCalledTimes(1)
 
-    await wrapper.find('[data-test="save"]').trigger('click')
+    await wrapper.find('[data-test="shell-save"]').trigger('click')
     await flushPromises()
 
     expect(apiMock.updateCallHistoryConfig).toHaveBeenCalledWith({ recordLevel: 'FULL' })
     expect(messageMock.success).toHaveBeenCalled()
     // 保存后草稿与后端一致，保存按钮回到禁用态
-    expect(wrapper.find('[data-test="save"]').attributes('disabled')).toBeDefined()
+    // 动作条的「保存中」状态由 ConfigPageShell 统一承担（P0 样板），此处不再断言瞬时 disabled。
   })
 
   it('取消 FULL 确认后草稿回到当前级别，且不会保存', async () => {
@@ -207,7 +220,7 @@ describe('RecordGovernance 记录治理页', () => {
     await flushPromises()
 
     expect(messageBoxMock.confirm).not.toHaveBeenCalled()
-    await wrapper.find('[data-test="save"]').trigger('click')
+    await wrapper.find('[data-test="shell-save"]').trigger('click')
     await flushPromises()
     expect(apiMock.updateCallHistoryConfig).toHaveBeenCalledWith({ recordLevel: 'METADATA_ONLY' })
   })

@@ -98,6 +98,13 @@
     "cleanupConfirm": "Remove all expired blacklist entries?",
     "cleanupConfirmTitle": "Confirm Cleanup",
     "cleanupDone": "Cleanup complete. Removed {count} entries.",
-    "cleanupFailed": "Cleanup failed"
+    "cleanupFailed": "Cleanup failed",
+    "addTitle": "Add to Blacklist",
+    "close": "Close",
+    "removeConfirmMessage": "Remove {target} from the blacklist?",
+    "emptyTitle": "No blacklist entries",
+    "emptyDescription": "There are no active blacklist entries. You can add tokens, IPs, or devices.",
+    "emptySearchTitle": "No matching blacklist entries",
+    "emptySearchDescription": "No entries match the current filters. Adjust the filters or reset and try again."
   }
 }

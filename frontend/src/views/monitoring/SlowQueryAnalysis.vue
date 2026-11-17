@@ -1,24 +1,21 @@
 <template>
   <PageSkeleton :title="t('slowQuery.pageTitle')">
     <template #actions>
-      <el-button @click="loadAll" :loading="loading" size="default">
-        <el-icon><Refresh /></el-icon>
-        {{ t('slowQuery.refresh') }}
-      </el-button>
-      <el-popconfirm
+      <ConfirmAction
         v-if="canResetStats"
-        :title="t('slowQuery.resetConfirmTitle')"
-        :confirm-button-text="t('slowQuery.confirm')"
-        :cancel-button-text="t('slowQuery.cancel')"
+        :title="t('slowQuery.resetStatsConfirmTitle')"
+        :width="320"
+        :confirm-text="t('slowQuery.resetStats')"
+        :cancel-text="t('slowQuery.cancel')"
+        type="danger"
+        :loading="resetting"
         @confirm="handleResetStats"
       >
-        <template #reference>
-          <el-button type="danger" plain size="default">
-            <el-icon><Delete /></el-icon>
-            {{ t('slowQuery.resetStats') }}
-          </el-button>
-        </template>
-      </el-popconfirm>
+        <el-button type="danger" plain size="default" :loading="resetting">
+          <el-icon><Delete /></el-icon>
+          {{ t('slowQuery.resetStats') }}
+        </el-button>
+      </ConfirmAction>
     </template>
 
     <!-- 汇总指标条 -->
@@ -26,46 +23,54 @@
       <MetricStrip :items="summaryItems" :loading="loading" :columns="4" />
     </template>
 
-    <!-- 筛选区域 -->
-    <el-card shadow="hover" class="section-gap">
-      <el-form :inline="true" class="filter-form">
-        <el-form-item :label="t('slowQuery.minCountLabel')">
-          <el-input-number
-            v-model="filterThreshold"
-            :min="0"
-            :max="999999"
-            :placeholder="t('slowQuery.minCountPlaceholder')"
-            controls-position="right"
-            style="width: 150px"
-          />
-        </el-form-item>
-        <el-form-item :label="t('slowQuery.operationLabel')">
-          <el-select
-            v-model="filterOperation"
-            :placeholder="t('slowQuery.allOperationsPlaceholder')"
-            clearable
-            style="width: 220px"
-          >
-            <el-option
-              v-for="op in allOperations"
-              :key="op"
-              :label="op"
-              :value="op"
+    <!-- 工具栏（P4 固定顺序）：维度筛选 → 查询/重置 → 刷新 -->
+    <template #toolbar>
+      <FilterBar :collapsible="false" class="toolbar-filter">
+        <el-form :inline="true" class="filter-form">
+          <el-form-item :label="t('slowQuery.minCountLabel')">
+            <el-input-number
+              v-model="filterThreshold"
+              :min="0"
+              :max="999999"
+              :placeholder="t('slowQuery.minCountPlaceholder')"
+              controls-position="right"
+              style="width: 150px"
             />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="applyFilter">
-            <el-icon><Search /></el-icon>
-            {{ t('slowQuery.applyFilter') }}
-          </el-button>
-          <el-button @click="resetFilter">
-            <el-icon><RefreshRight /></el-icon>
-            {{ t('slowQuery.resetFilter') }}
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          </el-form-item>
+          <el-form-item :label="t('slowQuery.operationLabel')">
+            <el-select
+              v-model="filterOperation"
+              :placeholder="t('slowQuery.allOperationsPlaceholder')"
+              clearable
+              style="width: 220px"
+            >
+              <el-option
+                v-for="op in allOperations"
+                :key="op"
+                :label="op"
+                :value="op"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="applyFilter">
+              <el-icon><Search /></el-icon>
+              {{ t('slowQuery.applyFilter') }}
+            </el-button>
+            <el-button @click="resetFilter">
+              <el-icon><RefreshRight /></el-icon>
+              {{ t('slowQuery.resetFilter') }}
+            </el-button>
+          </el-form-item>
+          <el-form-item class="toolbar-refresh">
+            <el-button @click="loadAll" :loading="loading">
+              <el-icon><Refresh /></el-icon>
+              {{ t('slowQuery.refresh') }}
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </FilterBar>
+    </template>
 
     <!-- 慢查询列表表格 -->
     <el-card shadow="hover" class="section-gap">
@@ -100,8 +105,18 @@
             {{ formatDuration(row.totalDuration) }}
           </template>
         </el-table-column>
+        <template #empty>
+          <EmptyState
+            :icon="hasActiveFilter ? 'Search' : 'Timer'"
+            :title="hasActiveFilter ? t('slowQuery.filterEmptyTitle') : t('slowQuery.noDataEmpty')"
+            :description="hasActiveFilter ? t('slowQuery.filterEmptyDescription') : t('slowQuery.noDataEmptyDescription')"
+          >
+            <template v-if="hasActiveFilter" #actions>
+              <el-button @click="resetFilter">{{ t('slowQuery.clearFilter') }}</el-button>
+            </template>
+          </EmptyState>
+        </template>
       </el-table>
-      <el-empty v-if="!loading && filteredTableData.length === 0" :description="t('slowQuery.noDataEmpty')" />
     </el-card>
 
     <!-- 性能热点 -->
@@ -141,8 +156,14 @@
         <el-table-column :label="t('slowQuery.totalDurationColumn')" width="150" align="center">
           <template #default="{ row }">{{ formatDuration(row.totalDuration) }}</template>
         </el-table-column>
+        <template #empty>
+          <EmptyState
+            icon="DataLine"
+            :title="t('slowQuery.noHotspotsEmpty')"
+            :description="t('slowQuery.noHotspotsEmptyDescription')"
+          />
+        </template>
       </el-table>
-      <el-empty v-if="!loadingHotspots && hotspots.length === 0" :description="t('slowQuery.noHotspotsEmpty')" />
     </el-card>
 
     <!-- 告警状态 -->
@@ -172,16 +193,7 @@
       </el-descriptions>
     </el-card>
 
-    <!-- 数据缺失降级 -->
-    <el-alert
-      v-if="!loading && Object.keys(stats).length === 0 && !errorOccurred"
-      :title="t('slowQuery.noDataEmpty')"
-      :description="t('slowQuery.noDataAlertDescription')"
-      type="info"
-      :closable="false"
-      show-icon
-      class="section-gap-top"
-    />
+    <!-- 数据缺失降级：空态已由表格内 EmptyState 承载，此处只保留加载失败提示 -->
     <el-alert
       v-if="errorOccurred"
       :title="t('slowQuery.loadFailedTitle')"
@@ -200,6 +212,9 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Refresh, Delete, Search, RefreshRight } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import FilterBar from '@/components/FilterBar.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
 import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 import {
@@ -251,6 +266,11 @@ const alertStatus = ref<AlertSystemStatus>({ alertServiceEnabled: false })
 const filterThreshold = ref(0)
 const filterOperation = ref('')
 const hotspotLimit = ref(10)
+/** 重置统计是写操作：确认后按钮进入 loading，避免重复提交 */
+const resetting = ref(false)
+
+/** 空态分流依据：有筛选条件时提示「筛选无结果」，否则提示「暂无数据」（P4 空态口径） */
+const hasActiveFilter = computed(() => filterThreshold.value > 0 || filterOperation.value !== '')
 
 const allOperations = computed(() => Object.keys(stats.value))
 
@@ -367,12 +387,15 @@ const loadAll = async () => {
 }
 
 const handleResetStats = async () => {
+  resetting.value = true
   try {
     await resetSlowQueryStats()
     ElMessage.success(t('slowQuery.statsResetMessage'))
     await loadAll()
   } catch {
     ElMessage.error(t('slowQuery.resetFailedMessage'))
+  } finally {
+    resetting.value = false
   }
 }
 
@@ -391,10 +414,26 @@ onMounted(loadAll)
   align-items: center;
 }
 
+/* FilterBar 自身不带面板样式，容器宽度与面板由本页补（同 AuditLogManagement 口径） */
+.toolbar-filter {
+  width: 100%;
+}
+
 .filter-form {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  width: 100%;
+  padding: 16px;
+  background-color: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius);
+}
+
+/* P4 工具栏顺序：维度筛选 → 查询/重置 → 刷新（刷新固定在行末） */
+.toolbar-refresh {
+  margin-left: auto;
+  margin-right: 0;
 }
 
 .danger-text {

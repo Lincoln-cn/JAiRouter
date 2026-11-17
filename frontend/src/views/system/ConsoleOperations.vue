@@ -1,22 +1,21 @@
 <template>
   <PageSkeleton :title="t('consoleOperations.pageTitle')">
     <template #actions>
-      <el-switch
-        v-model="onlyErrors"
-        :active-text="t('consoleOperations.onlyErrors')"
-        style="margin-right: 12px"
-      />
       <el-button @click="loadOperations" :loading="loading" size="default">
         <el-icon><Refresh /></el-icon>
         {{ t('consoleOperations.refresh') }}
       </el-button>
     </template>
 
+    <!-- 工具栏（只读集合页）：筛选 → 说明；刷新固定在 #actions -->
     <template #toolbar>
-      <p class="hint">
-        <el-icon><InfoFilled /></el-icon>
-        <span>{{ t('consoleOperations.hint') }}</span>
-      </p>
+      <FilterBar :collapsible="false" class="toolbar-filter">
+        <el-switch v-model="onlyErrors" :active-text="t('consoleOperations.onlyErrors')" />
+        <p class="hint">
+          <el-icon><InfoFilled /></el-icon>
+          <span>{{ t('consoleOperations.hint') }}</span>
+        </p>
+      </FilterBar>
     </template>
 
     <el-card shadow="hover">
@@ -31,10 +30,12 @@
         v-loading="loading"
         :data="filtered"
         size="small"
-        :empty-text="t('consoleOperations.empty')"
       >
         <el-table-column prop="timestamp" :label="t('consoleOperations.time')" width="180">
-          <template #default="{ row }">{{ formatTime(row.timestamp) }}</template>
+          <template #default="{ row }">
+            <TimeText v-if="row.timestamp" :value="row.timestamp" mode="absolute" precision="second" />
+            <span v-else>-</span>
+          </template>
         </el-table-column>
         <el-table-column prop="operator" :label="t('consoleOperations.operator')" width="140">
           <template #default="{ row }">{{ row.operator || t('consoleOperations.unknownOperator') }}</template>
@@ -61,7 +62,18 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-</el-table>
+        <template #empty>
+          <EmptyState
+            :icon="onlyErrors ? 'Search' : 'Document'"
+            :title="onlyErrors ? t('consoleOperations.filterEmptyTitle') : t('consoleOperations.empty')"
+            :description="onlyErrors ? t('consoleOperations.filterEmptyDescription') : t('consoleOperations.emptyDescription')"
+          >
+            <template v-if="onlyErrors" #actions>
+              <el-button @click="clearOnlyErrors">{{ t('consoleOperations.clearFilter') }}</el-button>
+            </template>
+          </EmptyState>
+        </template>
+      </el-table>
     </el-card>
   </PageSkeleton>
 </template>
@@ -73,6 +85,9 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { InfoFilled, Refresh } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import FilterBar from '@/components/FilterBar.vue'
+import TimeText from '@/components/TimeText.vue'
 import { getConsoleRecords, type ConsoleRecord } from '@/api/consoleOperations'
 
 const { t } = useI18n()
@@ -105,10 +120,9 @@ async function loadOperations() {
   }
 }
 
-function formatTime(value: number | null | undefined) {
-  if (!value) return '-'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString()
+/** 空态里的「清除筛选」：关掉「只看失败」，回到全量记录 */
+function clearOnlyErrors() {
+  onlyErrors.value = false
 }
 
 function formatDuration(ms: number | null | undefined) {
@@ -124,6 +138,15 @@ onMounted(loadOperations)
 </script>
 
 <style scoped>
+/* FilterBar 自身不带面板样式，面板与宽度由本页补（与观测页工具栏观感一致） */
+.toolbar-filter {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius);
+}
+
 .hint {
   display: flex;
   align-items: center;

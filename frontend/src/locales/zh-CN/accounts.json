@@ -35,6 +35,12 @@
     "disabled": "禁用",
     "confirm": "确定",
     "cancel": "取消",
+    "createTitle": "创建账户",
+    "editTitle": "编辑账户：{username}",
+    "emptyTitle": "暂无账户",
+    "emptyDescription": "当前还没有 JWT 账户，可创建第一个账户",
+    "emptySearchTitle": "没有匹配的账户",
+    "emptySearchDescription": "当前搜索条件没有匹配结果，可清空搜索后重试",
     "validation": {
       "usernameRequired": "请输入用户名",
       "usernameLength": "用户名长度 3-50 字符",

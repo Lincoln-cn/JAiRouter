@@ -26,7 +26,19 @@ export default {
   async run({ browser, check }) {
     const page = await createAuthedContext(browser)
     await gotoApp(page, '/dashboard/main')
-    await page.waitForTimeout(500)
+    // 全量跑批时（前面已跑过十几套、Chromium 更忙）首屏可能 >500ms 才挂载，
+    // 固定 sleep 会把「还在加载」判成「没有布局骨架」。这里等到骨架可见再断言，
+    // 并把 URL 打进 detail —— 否则失败信息只有「items=0」，看不出停在登录页还是空白页。
+    const shellReady = await page
+      .locator('.layout-container')
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 })
+      .then(() => true)
+      .catch(() => false)
+    if (!shellReady) {
+      check('layout-shell-ready', false, `url=${page.url()}`)
+    }
+    await page.waitForTimeout(300)
 
     // 布局骨架
     check('layout-container', await page.locator('.layout-container').first().isVisible().catch(() => false))

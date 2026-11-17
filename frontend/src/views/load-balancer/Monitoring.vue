@@ -1,22 +1,20 @@
 <template>
   <PageSkeleton :title="t('loadBalancer.monitoring.pageTitle')">
     <template #actions>
-      <!-- 页头只留一个主操作（导出），其余收进「更多」；「清空历史」保持为真实按钮，
-           因为 E2E 05-traffic-governance 用 .layout-main button + 文案定位它并断言二次确认 -->
-      <el-dropdown @command="handleExport">
-        <el-button type="primary">
-          {{ t('loadBalancer.monitoring.export') }} <el-icon class="el-icon--right"><Download /></el-icon>
+      <ConfirmAction
+        v-if="canWrite"
+        :title="t('loadBalancer.monitoring.confirmations.clearHistoryMessage')"
+        :width="300"
+        :confirm-text="t('loadBalancer.monitoring.confirmations.confirm')"
+        :cancel-text="t('loadBalancer.monitoring.confirmations.cancel')"
+        type="danger"
+        :loading="clearingHistory"
+        @confirm="clearHistory"
+      >
+        <el-button :loading="clearingHistory">
+          {{ t('loadBalancer.monitoring.clearHistory') }}
         </el-button>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="json">{{ t('loadBalancer.monitoring.exportJson') }}</el-dropdown-item>
-            <el-dropdown-item command="csv">{{ t('loadBalancer.monitoring.exportCsv') }}</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-      <el-button v-if="canWrite" @click="clearHistory" :loading="clearingHistory">
-        {{ t('loadBalancer.monitoring.clearHistory') }}
-      </el-button>
+      </ConfirmAction>
       <el-dropdown @command="handleMoreCommand">
         <el-button :loading="togglingMonitor">
           {{ t('loadBalancer.monitoring.moreActions') }}
@@ -30,6 +28,48 @@
             <el-dropdown-item command="strategy" divided>
               {{ t('loadBalancer.monitoring.actions.strategyConfig') }}
             </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </template>
+
+    <template #stats>
+      <!-- 页面级概览与其它观测页同构：一行 MetricStrip，语义色只给「已暂停服务」 -->
+      <MetricStrip :items="metricItems" :columns="4" />
+    </template>
+
+    <!-- 工具栏顺序（设计 §P4）：时间范围 → 维度筛选 → 刷新 → 导出。
+         状态 / 统计 / 历史三个接口都不接受时间区间（历史只有 limit），因此时间范围位空缺，
+         顺序为「维度筛选 → 刷新 → 导出」 -->
+    <template #toolbar>
+      <el-select
+        v-model="selectedServiceType"
+        :placeholder="t('loadBalancer.monitoring.selectServiceType')"
+        clearable
+        style="width: 200px"
+      >
+        <el-option
+          v-for="type in serviceTypes"
+          :key="type"
+          :label="type"
+          :value="type"
+        />
+      </el-select>
+      <el-button v-if="hasActiveFilter" @click="clearFilters">
+        {{ t('loadBalancer.monitoring.clearFilters') }}
+      </el-button>
+      <el-button type="primary" :loading="refreshing" @click="refreshAll">
+        {{ t('loadBalancer.monitoring.refresh') }}
+      </el-button>
+      <!-- 工具栏末位：导出（json / csv），与「刷新」同排，符合「…→ 刷新 → 导出」的顺序 -->
+      <el-dropdown @command="handleExport">
+        <el-button :loading="exporting">
+          {{ t('loadBalancer.monitoring.export') }} <el-icon class="el-icon--right"><Download /></el-icon>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="json">{{ t('loadBalancer.monitoring.exportJson') }}</el-dropdown-item>
+            <el-dropdown-item command="csv">{{ t('loadBalancer.monitoring.exportCsv') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -99,20 +139,12 @@
               </el-tag>
             </div>
             <div class="stats-content">
-              <div class="stat-row">
-                <span class="stat-label">{{ t('loadBalancer.monitoring.strategy') }}</span>
-                <span class="stat-value">{{ serviceStats.strategy || '-' }}</span>
-              </div>
-              <div class="stat-row">
-                <el-tooltip :content="t('loadBalancer.monitoring.countHint')" placement="top">
-                  <span class="stat-label">{{ t('loadBalancer.monitoring.selectionCount') }}</span>
-                </el-tooltip>
-                <span class="stat-value">{{ serviceStats.totalSelections || 0 }}</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">QPS</span>
-                <span class="stat-value">{{ serviceStats.requestsPerSecond?.toFixed(2) || '0.00' }}</span>
-              </div>
+              <!-- 服务级数字统一走 MetricStrip，列数 3 与三项一一对应 -->
+              <MetricStrip
+                :items="serviceMetricItems(serviceStats)"
+                :columns="3"
+                class="service-metric-strip"
+              />
             </div>
             <div class="instance-distribution">
               <div class="distribution-title">
@@ -185,14 +217,6 @@
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('loadBalancer.monitoring.eventsTitle') }}</span>
-          <el-select v-model="selectedServiceType" :placeholder="t('loadBalancer.monitoring.selectServiceType')" clearable style="width: 200px">
-            <el-option
-              v-for="type in serviceTypes"
-              :key="type"
-              :label="type"
-              :value="type"
-            />
-          </el-select>
         </div>
       </template>
 
@@ -205,7 +229,7 @@
       >
         <el-table-column prop="timestamp" :label="t('loadBalancer.monitoring.columns.time')" width="180">
           <template #default="{ row }">
-            {{ formatTimestamp(row.timestamp) }}
+            <TimeText :value="row.timestamp" mode="absolute" precision="second" />
           </template>
         </el-table-column>
         <el-table-column prop="serviceType" :label="t('loadBalancer.monitoring.columns.serviceType')" width="100">
@@ -236,10 +260,25 @@
         <el-table-column prop="selectionTimeMs" :label="t('loadBalancer.monitoring.columns.selectionTimeMs')" width="90">
           <template #default="{ row }">
             <span :class="{ 'slow-select': row.selectionTimeMs > 10 }">
-              {{ row.selectionTimeMs || 0 }}
+              {{ formatMilliseconds(row.selectionTimeMs) }}
             </span>
           </template>
         </el-table-column>
+
+        <!-- 空态统一走 EmptyState，区分「暂无数据」与「筛选无结果」 -->
+        <template #empty>
+          <EmptyState
+            icon="DataLine"
+            :title="hasActiveFilter ? t('loadBalancer.monitoring.emptySearchTitle') : t('loadBalancer.monitoring.emptyTitle')"
+            :description="hasActiveFilter ? t('loadBalancer.monitoring.emptySearchDescription') : t('loadBalancer.monitoring.emptyDescription')"
+          >
+            <template v-if="hasActiveFilter" #actions>
+              <el-button size="small" @click="clearFilters">
+                {{ t('loadBalancer.monitoring.clearFilters') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
       </el-table>
     </el-card>
   </PageSkeleton>
@@ -249,10 +288,15 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Download, ArrowDown, Box, InfoFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import TimeText from '@/components/TimeText.vue'
 import { usePermission } from '@/composables/usePermission'
 
 interface MonitorStatus {
@@ -312,6 +356,8 @@ const togglingMonitor = ref(false)
 const updatingConfig = ref(false)
 const clearingHistory = ref(false)
 const loadingEvents = ref(false)
+const refreshing = ref(false)
+const exporting = ref(false)
 let ws: WebSocket | null = null
 let reconnectTimer: number | null = null
 // 主动断开标志：disconnectWebSocket 置 true，避免 close 事件再排重连
@@ -333,15 +379,71 @@ const filteredEvents = computed(() => {
     .slice(0, 50)
 })
 
+/** 工具栏是否处于筛选态：决定空态文案取「暂无数据」还是「筛选无结果」 */
+const hasActiveFilter = computed(() => Boolean(selectedServiceType.value))
+
+const clearFilters = () => {
+  selectedServiceType.value = ''
+}
+
+/**
+ * 页面级概览：与其它观测页同口径（中性容器 + 语义色只给异常项）。
+ * 数字全部来自既有 status / stats 响应，不额外发请求。
+ */
+const metricItems = computed<MetricStripItem[]>(() => {
+  const serviceList = Object.values(routingStats.value)
+  const totalQps = serviceList.reduce((sum, item) => sum + (item.requestsPerSecond || 0), 0)
+  const pausedCount = monitorStatus.value.pausedServices?.length || 0
+  return [
+    {
+      key: 'sampledTotal',
+      label: t('loadBalancer.monitoring.sampledTotal'),
+      value: monitorStatus.value.totalSampledCount || 0
+    },
+    {
+      key: 'activeServices',
+      label: t('loadBalancer.monitoring.activeServices'),
+      value: serviceList.length
+    },
+    {
+      key: 'pausedServices',
+      label: t('loadBalancer.monitoring.pausedServices'),
+      value: pausedCount,
+      tone: pausedCount > 0 ? 'warning' : 'default'
+    },
+    {
+      key: 'totalQps',
+      label: t('loadBalancer.monitoring.totalQps'),
+      value: totalQps.toFixed(2)
+    }
+  ]
+})
+
+/** 单个服务的三个数字（策略 / 采样数 / QPS），走同一个 MetricStrip 组件 */
+const serviceMetricItems = (serviceStats: ServiceRoutingStats): MetricStripItem[] => [
+  {
+    key: 'strategy',
+    label: t('loadBalancer.monitoring.strategy'),
+    value: serviceStats.strategy || '-'
+  },
+  {
+    key: 'selectionCount',
+    label: t('loadBalancer.monitoring.selectionCount'),
+    value: serviceStats.totalSelections || 0
+  },
+  {
+    key: 'qps',
+    label: t('loadBalancer.monitoring.qps'),
+    value: (serviceStats.requestsPerSecond || 0).toFixed(2)
+  }
+]
+
 const formatSampleRate = (val: number) => `${val}%`
 
-const formatTimestamp = (timestamp: string) => {
-  const date = new Date(timestamp)
-  return `${date.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })  }.${  String(date.getMilliseconds()).padStart(3, '0')}`
+/** 毫秒统一取整（同页数字口径） */
+const formatMilliseconds = (value: number | null | undefined): number => {
+  const num = Number(value)
+  return Number.isFinite(num) ? Math.round(num) : 0
 }
 
 const getInstanceShortName = (instanceId: string) => {
@@ -535,35 +637,35 @@ const updateHistorySize = async (value: number) => {
   }
 }
 
-// 清空路由监控历史不可恢复 ⇒ 必须二次确认。
-// 审计 #460：原实现点一下就直接 DELETE，且**整个文件没有任何确认语句**。
-// 守卫见 frontend/e2e/specs/05-traffic-governance.mjs 的 lb-clear-history:* 三条断言
-// （弹层出现 / 取消不发写请求 / 取消后关闭）——其中「取消不发写请求」做过 A/B 反证。
-const clearHistory = () => {
-  ElMessageBox.confirm(
-    t('loadBalancer.monitoring.confirmations.clearHistoryMessage'),
-    t('loadBalancer.monitoring.confirmations.clearHistoryTitle'),
-    {
-      confirmButtonText: t('loadBalancer.monitoring.confirmations.confirm'),
-      cancelButtonText: t('loadBalancer.monitoring.confirmations.cancel'),
-      type: 'warning'
-    }
-  ).then(async () => {
-    clearingHistory.value = true
-    try {
-      await request.delete(`${apiBaseUrl}/history`)
-      events.value = []
-      monitorStatus.value.totalSampledCount = 0
-      ElMessage.success(t('loadBalancer.monitoring.messages.historyCleared'))
-    } catch (error) {
-      ElMessage.error(t('loadBalancer.monitoring.messages.clearHistoryFailed'))
-    } finally {
-      clearingHistory.value = false
-    }
-  })
+// 清空路由监控历史不可恢复 ⇒ 二次确认由模板里的 ConfirmAction（type=danger）承担，
+// 这里只做「确认之后」的执行。守卫见 frontend/e2e/specs/05-traffic-governance.mjs 的
+// lb-clear-history:* 三条断言（其中「取消不发写请求」做过 A/B 反证）。
+const clearHistory = async () => {
+  clearingHistory.value = true
+  try {
+    await request.delete(`${apiBaseUrl}/history`)
+    events.value = []
+    monitorStatus.value.totalSampledCount = 0
+    ElMessage.success(t('loadBalancer.monitoring.messages.historyCleared'))
+  } catch (error) {
+    ElMessage.error(t('loadBalancer.monitoring.messages.clearHistoryFailed'))
+  } finally {
+    clearingHistory.value = false
+  }
+}
+
+/** 工具栏刷新：三个只读接口重取一次（WebSocket 连接不动） */
+const refreshAll = async () => {
+  refreshing.value = true
+  try {
+    await Promise.all([loadStatus(), loadStats(), loadHistory()])
+  } finally {
+    refreshing.value = false
+  }
 }
 
 const handleExport = async (command: string) => {
+  exporting.value = true
   try {
     const response = await request.get(`${apiBaseUrl}/export/${command}`, {
       params: { limit: 5000 },
@@ -583,6 +685,8 @@ const handleExport = async (command: string) => {
     ElMessage.success(t('loadBalancer.monitoring.messages.exportSuccess', { format: command.toUpperCase() }))
   } catch (error) {
     ElMessage.error(t('loadBalancer.monitoring.messages.exportFailed'))
+  } finally {
+    exporting.value = false
   }
 }
 
@@ -668,26 +772,24 @@ onUnmounted(() => {
   margin-bottom: var(--ja-space-3);
 }
 
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 1px dashed var(--ja-border-light);
+/* 服务级 MetricStrip：卡片内空间小，收敛内边距与数值字号，避免与页面级指标条抢视觉 */
+.service-metric-strip {
+  padding: 0;
+  border: none;
+  background: transparent;
+  row-gap: var(--ja-space-2);
 }
 
-.stat-row:last-child {
-  border-bottom: none;
+.service-metric-strip :deep(.metric) {
+  padding-left: var(--ja-space-3);
 }
 
-.stat-label {
-  font-size: 13px;
-  color: var(--ja-ink-3);
+.service-metric-strip :deep(.metric__value) {
+  font-size: 14px;
 }
 
-.stat-value {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ja-ink);
+.service-metric-strip :deep(.metric__label) {
+  font-size: 11px;
 }
 
 .instance-distribution {

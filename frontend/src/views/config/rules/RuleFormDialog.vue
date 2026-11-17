@@ -1,5 +1,13 @@
 <template>
-  <el-dialog v-model="visible" :title="isEdit ? t('rule.editRule') : t('rule.addRule')" width="720px" destroy-on-close>
+  <el-drawer
+    v-model="visible"
+    class="rule-form-drawer"
+    direction="rtl"
+    :size="drawerSize"
+    :title="drawerTitle"
+    :close-on-click-modal="false"
+    destroy-on-close
+  >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="90px">
       <el-form-item :label="t('rule.name')" prop="name">
         <el-input v-model="form.name" :placeholder="t('rule.form.namePlaceholder')" />
@@ -182,72 +190,84 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button type="success" plain :icon="MagicStick" @click="openTestPanel">{{ t('rule.form.simulateButton') }}</el-button>
+        <el-button type="success" plain :icon="MagicStick" @click="toggleTestPanel">{{ t('rule.form.simulateButton') }}</el-button>
         <span class="form-tip">{{ t('rule.form.simulateTip') }}</span>
       </el-form-item>
     </el-form>
 
-    <template #footer>
-      <el-button @click="visible = false">{{ t('rule.cancel') }}</el-button>
-      <el-button type="primary" :loading="saving" @click="handleSave">{{ t('rule.save') }}</el-button>
-    </template>
+    <!-- 规则模拟测试：抽屉内的折叠区块（不再弹第二个窗，避免叠层与关闭顺序问题） -->
+    <section ref="testPanelRef" class="test-panel">
+      <div class="test-panel__head">
+        <span class="test-panel__title">{{ t('rule.test.title') }}</span>
+        <el-button link type="primary" :icon="testPanelOpen ? ArrowUp : ArrowDown" @click="toggleTestPanel">
+          {{ testPanelOpen ? t('rule.form.collapseTest') : t('rule.form.expandTest') }}
+        </el-button>
+      </div>
 
-    <!-- 模拟测试面板 -->
-    <el-dialog v-model="testVisible" :title="t('rule.test.title')" width="560px" append-to-body>
-      <el-form label-width="90px">
-        <el-form-item :label="t('rule.test.serviceType')">
-          <el-select v-model="testForm.serviceType" style="width: 200px">
-            <el-option v-for="s in SERVICE_TYPES" :key="s" :label="s" :value="s" />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('rule.test.modelName')">
-          <el-input v-model="testForm.modelName" :placeholder="t('rule.test.modelNamePlaceholder')" />
-        </el-form-item>
-        <el-form-item :label="t('rule.test.clientIp')">
-          <el-input v-model="testForm.clientIp" :placeholder="t('rule.test.clientIpPlaceholder')" />
-        </el-form-item>
-        <el-form-item :label="t('rule.test.headers')">
-          <div class="test-header-list">
-            <div v-for="(h, idx) in testForm.headers" :key="idx" class="test-header-row">
-              <el-input v-model="h.key" :placeholder="t('rule.form.headerNamePlaceholder')" style="width: 160px" />
-              <el-input v-model="h.value" :placeholder="t('rule.form.valuePlaceholder')" style="width: 160px; margin-left: 8px" />
-              <el-button type="danger" :icon="Delete" circle size="small" style="margin-left: 8px"
-                @click="removeTestHeader(idx)" />
+      <div v-show="testPanelOpen" class="test-panel__body">
+        <el-form label-width="90px">
+          <el-form-item :label="t('rule.test.serviceType')">
+            <el-select v-model="testForm.serviceType" style="width: 200px">
+              <el-option v-for="s in SERVICE_TYPES" :key="s" :label="s" :value="s" />
+            </el-select>
+          </el-form-item>
+          <el-form-item :label="t('rule.test.modelName')">
+            <el-input v-model="testForm.modelName" :placeholder="t('rule.test.modelNamePlaceholder')" />
+          </el-form-item>
+          <el-form-item :label="t('rule.test.clientIp')">
+            <el-input v-model="testForm.clientIp" :placeholder="t('rule.test.clientIpPlaceholder')" />
+          </el-form-item>
+          <el-form-item :label="t('rule.test.headers')">
+            <div class="test-header-list">
+              <div v-for="(h, idx) in testForm.headers" :key="idx" class="test-header-row">
+                <el-input v-model="h.key" :placeholder="t('rule.form.headerNamePlaceholder')" style="width: 160px" />
+                <el-input v-model="h.value" :placeholder="t('rule.form.valuePlaceholder')" style="width: 160px; margin-left: 8px" />
+                <el-button type="danger" :icon="Delete" circle size="small" style="margin-left: 8px"
+                  @click="removeTestHeader(idx)" />
+              </div>
+              <el-button type="primary" plain size="small" :icon="Plus" @click="addTestHeader">{{ t('rule.test.addHeader') }}</el-button>
             </div>
-            <el-button type="primary" plain size="small" :icon="Plus" @click="addTestHeader">{{ t('rule.test.addHeader') }}</el-button>
-          </div>
-        </el-form-item>
-      </el-form>
+          </el-form-item>
+        </el-form>
 
-      <el-alert
-        v-if="testResult"
-        :type="testResult.matched ? 'success' : 'info'"
-        :title="testResult.message"
-        :closable="false"
-        style="margin-top: 8px"
-      >
-        <template v-if="testResult.matched && testResult.action" #default>
-          <div style="margin-top: 6px">
-            {{ t('rule.test.hitRule') }} <b>{{ testResult.ruleName }}</b> {{ t('rule.test.hitPriority', { priority: testResult.priority }) }}<br />
-            {{ t('rule.test.actionLabel') }} {{ testResult.action.type }}
-            <template v-if="testResult.action.target"> → {{ testResult.action.target }}</template>
-          </div>
-        </template>
-      </el-alert>
+        <el-alert
+          v-if="testResult"
+          :type="testResult.matched ? 'success' : 'info'"
+          :title="testResult.message"
+          :closable="false"
+          style="margin-top: 8px"
+        >
+          <template v-if="testResult.matched && testResult.action" #default>
+            <div style="margin-top: 6px">
+              {{ t('rule.test.hitRule') }} <b>{{ testResult.ruleName }}</b> {{ t('rule.test.hitPriority', { priority: testResult.priority }) }}<br />
+              {{ t('rule.test.actionLabel') }} {{ testResult.action.type }}
+              <template v-if="testResult.action.target"> → {{ testResult.action.target }}</template>
+            </div>
+          </template>
+        </el-alert>
 
-      <template #footer>
-        <el-button @click="testVisible = false">{{ t('rule.close') }}</el-button>
-        <el-button type="primary" :loading="testLoading" @click="runTest">{{ t('rule.runTest') }}</el-button>
-      </template>
-    </el-dialog>
-  </el-dialog>
+        <div class="test-panel__actions">
+          <el-button type="primary" :loading="testLoading" :disabled="testLoading" @click="runTest">
+            {{ t('rule.runTest') }}
+          </el-button>
+        </div>
+      </div>
+    </section>
+
+    <template #footer>
+      <div class="drawer-footer">
+        <el-button @click="visible = false">{{ t('rule.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" :disabled="saving" @click="handleSave">{{ t('rule.save') }}</el-button>
+      </div>
+    </template>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Delete, Plus, MagicStick } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowUp, Delete, Plus, MagicStick } from '@element-plus/icons-vue'
 import {
   createRule,
   updateRule,
@@ -259,6 +279,7 @@ import {
 import { getAdapterList, type AdapterInfo } from '@/api/adapter'
 import { getServiceInstances, type InstanceConfig } from '@/api/instance'
 import { getModelsByServiceType } from '@/api/models'
+import { useViewport } from '@/composables/useViewport'
 
 const props = defineProps<{
   rule: RuleDefinition | null
@@ -268,14 +289,29 @@ const emit = defineEmits<{
   saved: []
 }>()
 
+/**
+ * 新建 / 编辑共用一个抽屉实例（规范 §P3「一个页面只允许存在一个编辑抽屉实例」）：
+ * `mode` 由 `rule.id` 推导，父页面只切换 `editingRule` 与 `v-model`。
+ */
 const visible = defineModel<boolean>({ required: true })
 
 const { t } = useI18n()
+const { isNarrow } = useViewport()
 
 const formRef = ref<FormInstance>()
 const saving = ref(false)
 
 const isEdit = computed(() => !!props.rule?.id)
+const mode = computed<'create' | 'edit'>(() => (isEdit.value ? 'edit' : 'create'))
+
+/** 字段多（条件 / 动作 / 限流 / 标签 多分支）⇒ 720；窄屏占满 */
+const drawerSize = computed(() => (isNarrow.value ? '100%' : '720px'))
+
+const drawerTitle = computed(() => {
+  if (mode.value === 'create') return t('rule.createTitle')
+  const name = props.rule?.name
+  return name ? t('rule.editTitle', { name }) : t('rule.editRule')
+})
 
 // ==================== 下拉数据源 ====================
 const adapterNames = ref<string[]>([])
@@ -305,7 +341,7 @@ const loadOptions = async () => {
     if (modelRes.status === 'fulfilled' && Array.isArray(modelRes.value)) {
       modelNames.value = modelRes.value
     }
-  } catch (e) {
+  } catch {
     // 下拉加载失败不阻塞表单(保留手动输入兜底)
   }
 }
@@ -317,7 +353,7 @@ const loadModelsForService = async (serviceType: string) => {
     if (Array.isArray(models)) {
       modelNames.value = models
     }
-  } catch (e) {
+  } catch {
     // 失败保留现有选项
   } finally {
     loadingModels.value = false
@@ -332,7 +368,7 @@ const loadInstancesForService = async (serviceType: string) => {
         .map((i: InstanceConfig) => i.name || i.instanceId)
         .filter((n): n is string => Boolean(n))
     }
-  } catch (e) {
+  } catch {
     // 失败保留现有选项
   }
 }
@@ -391,7 +427,9 @@ watch(currentServiceType, val => {
 })
 
 // ==================== 模拟测试(dry-run) ====================
-const testVisible = ref(false)
+/** 测试区在抽屉内折叠，不再弹第二个窗（规范 §P3 自查：页面内 el-dialog 计数 0） */
+const testPanelOpen = ref(false)
+const testPanelRef = ref<HTMLElement | null>(null)
 const testForm = reactive<{
   serviceType: string
   modelName: string
@@ -416,7 +454,19 @@ const openTestPanel = () => {
     ? headerConds.map(c => ({ key: c.field || '', value: c.value || '' }))
     : [{ key: '', value: '' }]
   testResult.value = null
-  testVisible.value = true
+  testPanelOpen.value = true
+  // 展开后把抽屉滚动到测试区（区块在表单下方，抽屉 body 独立滚动）
+  nextTick(() => {
+    testPanelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+
+const toggleTestPanel = () => {
+  if (testPanelOpen.value) {
+    testPanelOpen.value = false
+    return
+  }
+  openTestPanel()
 }
 
 const addTestHeader = () => {
@@ -446,7 +496,7 @@ const runTest = async () => {
       headers
     })
     testResult.value = res.data?.data || null
-  } catch (e) {
+  } catch {
     ElMessage.error(t('rule.test.runFailed'))
   } finally {
     testLoading.value = false
@@ -580,11 +630,18 @@ const loadRule = (rule: RuleDefinition | null) => {
 watch(visible, val => {
   if (val) {
     loadRule(props.rule)
+    // 每次打开都收起测试区，避免上一次的测试输入/结果串到新表单
+    testPanelOpen.value = false
+    testResult.value = null
   }
 })
 
 const handleSave = async () => {
-  await formRef.value?.validate()
+  // validate() 校验失败是 reject：捕获后直接返回，不要冒泡成未处理的 Promise 拒绝
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) {
+    return
+  }
   if (form.actionType === 'RATE_LIMIT' && (form.rateLimit.capacity <= 0 || form.rateLimit.rate <= 0)) {
     ElMessage.error(t('rule.rateLimit.positiveRequired'))
     return
@@ -620,7 +677,7 @@ const handleSave = async () => {
     }
     visible.value = false
     emit('saved')
-  } catch (e) {
+  } catch {
     ElMessage.error(t('rule.saveFailed'))
   } finally {
     saving.value = false
@@ -653,5 +710,43 @@ const handleSave = async () => {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
+}
+
+/* 模拟测试折叠区：抽屉内的独立区块，视觉上与表单分开 */
+.test-panel {
+  margin-top: 8px;
+  border: 1px solid var(--ja-border-lighter);
+  border-radius: 8px;
+  background: var(--ja-primary-light-9, #fbfdff);
+  padding: 8px 12px 12px;
+}
+
+.test-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.test-panel__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ja-text-primary);
+}
+
+.test-panel__body {
+  margin-top: 10px;
+}
+
+.test-panel__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 </style>

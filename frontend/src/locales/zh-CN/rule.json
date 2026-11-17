@@ -8,6 +8,8 @@
     "emptyDescription": "从模板快速创建一条规则，或手动新增一条自定义规则。",
     "dragToSort": "拖拽调整优先级（YAML 规则不参与排序）",
     "editRule": "编辑规则",
+    "createTitle": "新建规则",
+    "editTitle": "编辑规则「{name}」",
     "name": "名称",
     "sort": "排序",
     "priority": "优先级",
@@ -80,6 +82,8 @@
       "tagsTip": "实例须同时包含全部标签(AND),如 gpu_type=a100",
       "simulateButton": "模拟测试",
       "simulateTip": "用示例请求验证规则是否命中,无需保存",
+      "expandTest": "展开模拟测试",
+      "collapseTest": "收起模拟测试",
       "actionOptions": {
         "TARGET_MODEL": "重写模型名",
         "TARGET_INSTANCE": "锁定实例",

@@ -337,7 +337,9 @@ const handleFinish = async () => {
   }
 }
 
+// 提交中不允许关闭（取消按钮与 header 关闭都走这里），避免请求还在飞就丢了上下文
 const handleClose = () => {
+  if (saving.value) return
   visible.value = false
 }
 

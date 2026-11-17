@@ -8,6 +8,8 @@
     "emptyDescription": "Start from a template to create one quickly, or add a custom rule manually.",
     "dragToSort": "Drag to change priority (YAML rules are not sortable)",
     "editRule": "Edit Rule",
+    "createTitle": "New Rule",
+    "editTitle": "Edit Rule \"{name}\"",
     "name": "Name",
     "sort": "Sort",
     "priority": "Priority",
@@ -80,6 +82,8 @@
       "tagsTip": "The instance must contain all the tags (AND), e.g. gpu_type=a100",
       "simulateButton": "Simulate Test",
       "simulateTip": "Verify whether the rule matches with a sample request; no need to save",
+      "expandTest": "Show Simulation Test",
+      "collapseTest": "Hide Simulation Test",
       "actionOptions": {
         "TARGET_MODEL": "Rewrite Model Name",
         "TARGET_INSTANCE": "Lock Instance",

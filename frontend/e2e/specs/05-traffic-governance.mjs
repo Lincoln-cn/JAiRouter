@@ -1,7 +1,15 @@
 /**
  * 流量治理：负载均衡 / 熔断 / 限流
  */
-import { createAuthedContext, gotoApp, api, waitTableSettled } from '../harness.mjs'
+import {
+  createAuthedContext,
+  gotoApp,
+  api,
+  waitTableSettled,
+  waitConfirmLayer,
+  clickConfirmInLayer,
+  countVisibleConfirmLayers
+} from '../harness.mjs'
 
 const PAGES = [
   {
@@ -73,6 +81,18 @@ export default {
     // 于是 imggen / imgedit 这类没单独配置过的服务在表里根本不出现。
     // 这里用 /status 返回的服务类型清单做交叉核对，不写死行数（各环境服务类型不同）。
     await gotoApp(page, '/load-balancers/strategy-config', { waitMs: 700 })
+    // P2 批次把本页拆成「全局策略 / 服务配置」两个 tab，默认停在「全局策略」；
+    // 服务级行只在「服务配置」tab 内渲染 —— 不切 tab 会读到另一个表格，误报「缺行」。
+    const servicesTab = page
+      .locator('.el-tabs__item')
+      .filter({ hasText: /服务配置|Service Config/i })
+      .first()
+    if ((await servicesTab.count()) > 0) {
+      await servicesTab.click({ timeout: 8000 }).catch(() => {})
+      await page.waitForTimeout(600)
+    } else {
+      check('traffic:lb-strategy:services-tab', false, 'skip: services tab not found')
+    }
     const statusRes = await api(page, '/api/loadbalancer/status')
     const statusTypes = Array.isArray(statusRes.body?.data)
       ? statusRes.body.data.map((s) => s?.serviceType).filter(Boolean)
@@ -82,7 +102,9 @@ export default {
         .locator('.el-table__row td:first-child')
         .allInnerTexts()
         .catch(() => [])
-      const missing = statusTypes.filter((t) => !rowTypes.some((cell) => cell.trim() === t))
+      // 首列现在可能带第二个标签（`全局默认`，表示该行值取自全局配置），
+      // 精确等值比较会因为多出这个标签而误判缺行 ⇒ 用包含匹配。
+      const missing = statusTypes.filter((t) => !rowTypes.some((cell) => cell.includes(t)))
       check(
         'traffic:lb-strategy:no-missing-rows',
         missing.length === 0,
@@ -151,20 +173,20 @@ export default {
       page.on('request', onReq)
 
       await btn.click()
-      const box = page.locator('.el-message-box').first()
-      const appeared = await box
-        .waitFor({ state: 'visible', timeout: 5000 })
-        .then(() => true)
-        .catch(() => false)
-      check(`traffic:${c.tag}:confirm-dialog`, appeared, appeared ? '.el-message-box visible' : 'no dialog appeared')
+      // 确认层有两种形态：`ElMessageBox`（`.el-message-box`）与 `ConfirmAction`
+      // 用的 `el-popconfirm`。P4 批次把清空历史/重置类操作统一换成后者，
+      // 所以这里必须两边都等——只认 message-box 会把「换了个更轻的气泡」判成失败。
+      const layer = await waitConfirmLayer(page)
+      const appeared = Boolean(layer.kind)
+      check(`traffic:${c.tag}:confirm-dialog`, appeared, appeared ? `${layer.kind} visible` : 'no dialog appeared')
 
       if (appeared) {
-        const cancel = box.locator('button').filter({ hasText: /取消|Cancel/i }).first()
+        const cancel = layer.locator.locator('button').filter({ hasText: /取消|Cancel/i }).first()
         if ((await cancel.count()) > 0) {
           await cancel.click()
         } else {
           // 兜底：没有文案可辨时按「非主按钮」点（避免误点确认反而触发写请求）
-          await box.locator('button').first().click()
+          await layer.locator.locator('button').first().click()
         }
         await page.waitForTimeout(700)
       }
@@ -174,7 +196,7 @@ export default {
       check(`traffic:${c.tag}:cancel-sends-nothing`, sent.length === 0, `write requests=${sent.length}`)
 
       if (appeared) {
-        const closed = (await page.locator('.el-message-box').count()) === 0
+        const closed = (await countVisibleConfirmLayers(page)) === 0
         check(`traffic:${c.tag}:dialog-closed`, closed)
       }
 
@@ -297,11 +319,11 @@ export default {
     const resetBtn = openRow.locator('button').filter({ hasText: /^重置$|^Reset$/ }).first()
     if ((await resetBtn.count()) > 0) {
       await resetBtn.click()
-      const box = page.locator('.el-message-box').first()
-      const appeared = await box.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)
-      check('traffic:cb-instances:reset-confirm', appeared)
+      const layer = await waitConfirmLayer(page)
+      const appeared = Boolean(layer.kind)
+      check('traffic:cb-instances:reset-confirm', appeared, appeared ? `${layer.kind} visible` : 'no dialog appeared')
       if (appeared) {
-        await box.locator('button').filter({ hasText: /确定重置|Reset|确定/ }).first().click()
+        await clickConfirmInLayer(page, layer, /确定重置|Reset|确定|Confirm/i)
         await page.waitForTimeout(900)
       }
       const single = cbRequests.find(r => r.path.endsWith('/reset') && !r.path.endsWith('/instances/reset'))
@@ -324,10 +346,10 @@ export default {
       .first()
     if ((await resetFilteredBtn.count()) > 0) {
       await resetFilteredBtn.click()
-      const box = page.locator('.el-message-box').first()
-      const appeared = await box.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)
+      const layer = await waitConfirmLayer(page)
+      const appeared = Boolean(layer.kind)
       if (appeared) {
-        await box.locator('button').filter({ hasText: /确定重置|Reset|确定/ }).first().click()
+        await clickConfirmInLayer(page, layer, /确定重置|Reset|确定|Confirm/i)
         await page.waitForTimeout(900)
       }
       const batch = cbRequests.find(r => r.path.endsWith('/instances/reset'))
@@ -335,7 +357,7 @@ export default {
       check(
         'traffic:cb-instances:batch-reset-confirm-required',
         appeared,
-        appeared ? '.el-message-box visible' : 'no dialog appeared'
+        appeared ? `${layer.kind} visible` : 'no dialog appeared'
       )
     } else {
       check('traffic:cb-instances:batch-reset-endpoint', false, 'skip: batch reset button not found')

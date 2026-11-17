@@ -66,6 +66,12 @@
     "save": "保存",
     "reset": "重置",
     "saved": "已保存，后续配置变更将同步到其它副本",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "immediateHint": "立即生效",
+    "readonlyTag": "只读",
+    "fieldsHint": "当前对运行时生效的配置路径。标有「需重启」的项需要重启进程才能改变。",
+    "collapse": "收起",
+    "expand": "展开",
+    "invalidPollInterval": "拉取间隔必须 ≥ 1000 毫秒"
   }
 }

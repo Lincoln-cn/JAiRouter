@@ -5,6 +5,10 @@
         <el-icon><Plus /></el-icon>
         {{ t('adapter.newAdapter') }}
       </el-button>
+      <!-- 工具栏口径：主操作在前、刷新在最后 -->
+      <el-button class="refresh-button" :loading="loading" @click="fetchAdapters">
+        <el-icon><Refresh /></el-icon>&nbsp;{{ t('adapter.refresh') }}
+      </el-button>
     </template>
 
     <template #stats>
@@ -58,15 +62,26 @@
           >
             {{ t('adapter.testAction') }}
           </el-button>
-          <el-button
+          <!-- 删除二次确认统一走 ConfirmAction，文案带对象名 -->
+          <ConfirmAction
             v-if="row.source !== 'builtin'"
+            :title="t('adapter.deleteConfirmMessage', { name: row.name })"
             type="danger"
-            link
-            size="small"
-            v-permission="'config:adapters:write'" @click="handleDelete(row)"
+            :confirm-text="t('adapter.delete')"
+            :cancel-text="t('adapter.cancel')"
+            :loading="deletingName === row.name"
+            :disabled="deletingName === row.name"
+            @confirm="handleDelete(row)"
           >
-            {{ t('adapter.delete') }}
-          </el-button>
+            <el-button
+              type="danger"
+              link
+              size="small"
+              v-permission="'config:adapters:write'"
+            >
+              {{ t('adapter.delete') }}
+            </el-button>
+          </ConfirmAction>
           <el-button
             v-if="row.source === 'builtin'"
             link
@@ -77,6 +92,21 @@
           </el-button>
         </template>
       </el-table-column>
+      <template #empty>
+        <EmptyState :title="t('adapter.emptyTitle')" :description="t('adapter.emptyDescription')">
+          <template #actions>
+            <el-button
+              type="primary"
+              size="medium"
+              v-permission="'config:adapters:write'"
+              @click="handleCreate"
+            >
+              <el-icon><Plus /></el-icon>
+              {{ t('adapter.newAdapter') }}
+            </el-button>
+          </template>
+        </EmptyState>
+      </template>
     </el-table>
   </PageSkeleton>
 
@@ -93,13 +123,33 @@
     <!-- 新增向导 -->
     <AdapterWizard v-model="wizardVisible" @created="fetchAdapters" />
 
-    <!-- 创建/编辑弹窗 -->
-    <el-dialog
+    <!-- 创建/编辑抽屉（单实例，mode 区分新建/编辑） -->
+    <el-drawer
       v-model="dialogVisible"
-      :title="isEditing ? t('adapter.editAdapter') : t('adapter.newAdapter')"
-      width="600px"
+      :title="drawerTitle"
+      :size="drawerSize"
+      direction="rtl"
       :close-on-click-modal="false"
+      destroy-on-close
+      class="adapter-drawer"
     >
+      <!-- 提交失败的错误留在抽屉内展示，已填内容不清空 -->
+      <el-alert
+        v-if="submitError"
+        :title="submitError"
+        type="error"
+        show-icon
+        closable
+        class="drawer-error"
+        @close="submitError = ''"
+      />
+
+      <!-- 新建时保留「从模板创建」入口：模板选择属于选择类流程，仍在 AdapterWizard 里完成 -->
+      <div v-if="drawerMode === 'create'" class="template-entry">
+        <span class="template-entry__text">{{ t('adapter.templateEntryHint') }}</span>
+        <el-button link type="primary" @click="handleOpenWizard">{{ t('adapter.createFromTemplate') }}</el-button>
+      </div>
+
       <el-form
         ref="formRef"
         :model="form"
@@ -109,7 +159,7 @@
         <el-form-item :label="t('adapter.name')" prop="name">
           <el-input
             v-model="form.name"
-            :disabled="isEditing"
+            :disabled="drawerMode === 'edit'"
             :placeholder="t('adapter.namePlaceholder')"
           />
         </el-form-item>
@@ -166,10 +216,19 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">{{ t('adapter.cancel') }}</el-button>
-        <el-button type="primary" v-permission="'config:adapters:write'" @click="handleSubmit" :loading="submitting">{{ t('adapter.save') }}</el-button>
+        <div class="drawer-footer">
+          <el-button size="large" :disabled="submitting" @click="closeDrawer">{{ t('adapter.cancel') }}</el-button>
+          <el-button
+            type="primary"
+            size="large"
+            v-permission="'config:adapters:write'"
+            :loading="submitting"
+            :disabled="submitting"
+            @click="handleSubmit"
+          >{{ t('adapter.save') }}</el-button>
+        </div>
       </template>
-    </el-dialog>
+    </el-drawer>
 
     <!-- 查看详情弹窗 -->
     <el-dialog
@@ -190,11 +249,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 import {
   getAdapterList,
   getParentAdapterList,
@@ -208,6 +267,9 @@ import AdapterWizard from './adapter/AdapterWizard.vue'
 import AdapterTestPanel from './adapter/AdapterTestPanel.vue'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { useViewport } from '@/composables/useViewport'
 
 const { t } = useI18n()
 
@@ -217,7 +279,10 @@ const adapterList = ref<AdapterInfo[]>([])
 const parentAdapters = ref<ParentAdapterInfo[]>([])
 const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
-const isEditing = ref(false)
+// 单实例抽屉：create / edit 两态，标题由 drawerTitle 派生
+const drawerMode = ref<'create' | 'edit'>('create')
+const submitError = ref('')
+const deletingName = ref('')
 const editingName = ref('')
 const formRef = ref<FormInstance>()
 const viewData = ref<AdapterInfo>({
@@ -240,6 +305,15 @@ const viewData = ref<AdapterInfo>({
 const wizardVisible = ref(false)
 const testDialogVisible = ref(false)
 const testingName = ref('')
+
+// 抽屉尺寸：普通表单 520（字段不多），窄屏铺满；编辑标题带对象名
+const { isNarrow } = useViewport()
+const drawerSize = computed(() => (isNarrow.value ? '100%' : '520px'))
+const drawerTitle = computed(() =>
+  drawerMode.value === 'create'
+    ? t('adapter.newAdapter')
+    : t('adapter.editTitle', { name: editingName.value })
+)
 
 const defaultForm = () => ({
   name: '',
@@ -317,8 +391,24 @@ const fetchAdapters = async () => {
 }
 
 const handleCreate = () => {
-  // 打开新增向导（支持模板选择 + 分步配置 + 测试）
+  // 新建走抽屉（单页表单）；需要模板时用抽屉里的「从模板创建」入口进向导
+  drawerMode.value = 'create'
+  submitError.value = ''
+  Object.assign(form, defaultForm())
+  dialogVisible.value = true
+  nextTick(() => formRef.value?.clearValidate())
+}
+
+// 抽屉与向导不同时叠两层弹层：先关抽屉再打开向导
+const handleOpenWizard = () => {
+  dialogVisible.value = false
   wizardVisible.value = true
+}
+
+const closeDrawer = () => {
+  if (submitting.value) return
+  dialogVisible.value = false
+  formRef.value?.clearValidate()
 }
 
 const handleTest = (row: AdapterInfo) => {
@@ -327,12 +417,14 @@ const handleTest = (row: AdapterInfo) => {
 }
 
 const handleEdit = (row: AdapterInfo) => {
-  isEditing.value = true
+  drawerMode.value = 'edit'
+  submitError.value = ''
   editingName.value = row.name
   form.name = row.name
   form.type = row.type || 'openai-compatible'
   form.capabilities = { ...row.capabilities }
   dialogVisible.value = true
+  nextTick(() => formRef.value?.clearValidate())
 }
 
 const handleView = (row: AdapterInfo) => {
@@ -340,13 +432,10 @@ const handleView = (row: AdapterInfo) => {
   viewDialogVisible.value = true
 }
 
+// 删除（二次确认由 ConfirmAction 承担，此处只做「确认后」的提交）
 const handleDelete = async (row: AdapterInfo) => {
+  deletingName.value = row.name
   try {
-    await ElMessageBox.confirm(
-      t('adapter.deleteConfirmMessage', { name: row.name }),
-      t('adapter.deleteConfirmTitle'),
-      { type: 'warning' }
-    )
     const res = await deleteAdapter(row.name)
     if (res.data?.success) {
       ElMessage.success(t('adapter.deleteSuccess'))
@@ -355,15 +444,21 @@ const handleDelete = async (row: AdapterInfo) => {
       ElMessage.error(res.data?.message || t('adapter.deleteFailed'))
     }
   } catch (e) {
-    if (e !== 'cancel') {
-      ElMessage.error(t('adapter.deleteFailedDetail', { error: getErrorMessage(e) || '' }))
-    }
+    ElMessage.error(t('adapter.deleteFailedDetail', { error: getErrorMessage(e) || '' }))
+  } finally {
+    deletingName.value = ''
   }
 }
 
 const handleSubmit = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate()
+  if (!formRef.value || submitting.value) return
+  submitError.value = ''
+  try {
+    await formRef.value.validate()
+  } catch {
+    // 校验不通过由表单项内联提示；抽屉里的已填内容不动
+    return
+  }
 
   submitting.value = true
   try {
@@ -375,21 +470,23 @@ const handleSubmit = async () => {
     }
 
     let res
-    if (isEditing.value) {
+    if (drawerMode.value === 'edit') {
       res = await updateAdapter(editingName.value, data)
     } else {
       res = await createAdapter(data)
     }
 
     if (res.data?.success) {
-      ElMessage.success(isEditing.value ? t('adapter.updateSuccess') : t('adapter.createSuccess'))
+      ElMessage.success(drawerMode.value === 'edit' ? t('adapter.updateSuccess') : t('adapter.createSuccess'))
       dialogVisible.value = false
       fetchAdapters()
     } else {
-      ElMessage.error(res.data?.message || t('adapter.operationFailed'))
+      submitError.value = res.data?.message || t('adapter.operationFailed')
+      ElMessage.error(submitError.value)
     }
   } catch (e) {
-    ElMessage.error(t('adapter.operationFailedDetail', { error: getErrorMessage(e) || '' }))
+    submitError.value = t('adapter.operationFailedDetail', { error: getErrorMessage(e) || '' })
+    ElMessage.error(submitError.value)
   } finally {
     submitting.value = false
   }
@@ -430,5 +527,46 @@ onMounted(() => {
   color: var(--ja-ink-3);
   margin-top: var(--ja-space-1);
   line-height: 1.4;
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  padding: 10px 20px;
+}
+
+.drawer-error {
+  margin-bottom: 16px;
+}
+
+/* 新建时的「从模板创建」次级入口：主路径是单页表单，模板/分步/测试仍在向导里 */
+.template-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ja-space-3);
+  padding: var(--ja-space-2) var(--ja-space-3);
+  margin-bottom: var(--ja-space-4);
+  background: var(--ja-main-bg);
+  border: 1px dashed var(--ja-border-light);
+  border-radius: var(--ja-radius);
+}
+
+.template-entry__text {
+  font-size: 13px;
+  color: var(--ja-ink-3);
+  line-height: 1.4;
+}
+
+.adapter-drawer :deep(.el-drawer__header) {
+  margin-bottom: 0;
+  background-color: var(--ja-main-bg);
+  border-bottom: 1px solid var(--ja-border-light);
+  padding: 14px 20px;
+}
+
+.adapter-drawer :deep(.el-drawer__body) {
+  padding: 20px;
 }
 </style>

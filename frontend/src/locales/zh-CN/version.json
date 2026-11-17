@@ -29,6 +29,8 @@
     "close": "关闭",
     "none": "无",
     "unknownOperation": "未知操作",
+    "emptyTitle": "暂无版本记录",
+    "emptyDescription": "配置发生变更后会自动生成版本记录，可在此查看历史版本并应用。",
     "operationNames": {
       "systemInit": "系统初始化",
       "instanceChange": "实例变更",
@@ -50,6 +52,11 @@
     "validateResultLoading": "验证应用结果...",
     "refreshConfigLoading": "刷新配置状态...",
     "applySuccess": "版本 {version} 应用成功！配置已更新并生效。",
+    "confirmApplyTitle": "应用版本 {version}？当前配置将被替换为该版本的配置，之后可再应用其它版本回退。",
+    "confirmApply": "确定应用",
+    "confirmDeleteTitle": "删除版本 {version}？该版本的配置数据将被永久移除，且不可恢复。",
+    "confirmDelete": "确定删除",
+    "confirmCancel": "取消",
     "applyDialog": {
       "title": "应用配置版本",
       "heading": "版本应用确认",
@@ -106,7 +113,8 @@
     "messages": {
       "invalidResponse": "API响应格式错误",
       "parseFailed": "解析响应数据失败",
-      "fetchFailed": "获取版本列表失败: {message}"
+      "fetchFailed": "获取版本列表失败: {message}",
+      "deleteFailed": "删除版本失败: {message}"
     }
   }
 }

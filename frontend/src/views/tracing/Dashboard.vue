@@ -8,21 +8,6 @@
     </template>
 
     <template #actions>
-      <el-date-picker
-        v-model="timeRange"
-        type="datetimerange"
-        :range-separator="t('tracing.dashboard.timeRangeTo')"
-        :start-placeholder="t('tracing.dashboard.startTimePlaceholder')"
-        :end-placeholder="t('tracing.dashboard.endTimePlaceholder')"
-        format="YYYY-MM-DD HH:mm:ss"
-        value-format="YYYY-MM-DD HH:mm:ss"
-        :shortcuts="timeShortcuts"
-        @change="handleTimeRangeChange"
-      />
-      <el-button type="primary" @click="handleRefresh" :loading="refreshing">
-        <el-icon><Refresh /></el-icon>
-        {{ t('tracing.dashboard.refresh') }}
-      </el-button>
       <el-button @click="goToSearch">
         <el-icon><Search /></el-icon>
         {{ t('tracing.dashboard.searchTraces') }}
@@ -37,6 +22,33 @@
       <!-- 关键指标：4 张彩色渐变图标卡 → 一条中性 MetricStrip；
            只有「错误链路数 > 0」是真语义，其余保持 default -->
       <MetricStrip :items="kpiItems" :loading="loading" />
+    </template>
+
+    <!-- 工具栏顺序固定：时间范围 → 维度筛选（本页无页级筛选，错误维度筛选在「错误分析」页签内）→ 刷新 -->
+    <template #toolbar>
+      <FilterBar :collapsible="false">
+        <el-form :inline="true" class="toolbar-form">
+          <el-form-item :label="t('tracing.dashboard.timeRange')">
+            <el-date-picker
+              v-model="timeRange"
+              type="datetimerange"
+              :range-separator="t('tracing.dashboard.timeRangeTo')"
+              :start-placeholder="t('tracing.dashboard.startTimePlaceholder')"
+              :end-placeholder="t('tracing.dashboard.endTimePlaceholder')"
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              :shortcuts="timeShortcuts"
+              @change="handleTimeRangeChange"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleRefresh" :loading="refreshing">
+              <el-icon><Refresh /></el-icon>
+              {{ t('tracing.dashboard.refresh') }}
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </FilterBar>
     </template>
 
     <!-- Tab 区域 -->
@@ -88,6 +100,12 @@
               :row-class-name="getRowClassName"
               @row-click="handleServiceRowClick"
             >
+              <template #empty>
+                <EmptyState
+                  :title="t('common.chartEmpty')"
+                  :description="t('common.chartEmptyHint')"
+                />
+              </template>
               <el-table-column prop="name" :label="t('tracing.dashboard.columns.serviceName')" min-width="150">
                 <template #default="{ row }">
                   <div class="service-name">
@@ -103,17 +121,17 @@
               </el-table-column>
               <el-table-column prop="avgDuration" :label="t('tracing.dashboard.avgLatency')" width="120" sortable>
                 <template #default="{ row }">
-                  <span :class="getLatencyClass(row.avgDuration)">{{ row.avgDuration }}ms</span>
+                  <span :class="getLatencyClass(row.avgDuration)">{{ formatMs(row.avgDuration) }}</span>
                 </template>
               </el-table-column>
               <el-table-column prop="p95Duration" :label="t('tracing.dashboard.columns.p95Latency')" width="120" sortable>
                 <template #default="{ row }">
-                  <span :class="getLatencyClass(row.p95Duration)">{{ row.p95Duration }}ms</span>
+                  <span :class="getLatencyClass(row.p95Duration)">{{ formatMs(row.p95Duration) }}</span>
                 </template>
               </el-table-column>
               <el-table-column prop="errors" :label="t('tracing.dashboard.columns.errors')" width="100" sortable>
                 <template #default="{ row }">
-                  <span :class="{ 'text-danger': row.errors > 0 }">{{ row.errors }}</span>
+                  <span :class="{ 'text-danger': row.errors > 0 }">{{ formatNumber(row.errors) }}</span>
                 </template>
               </el-table-column>
               <el-table-column prop="errorRate" :label="t('tracing.dashboard.columns.errorRate')" width="100" sortable>
@@ -125,7 +143,7 @@
                     :show-text="false"
                   />
                   <span class="error-rate-text" :class="{ 'text-danger': row.errorRate > 5 }">
-                    {{ row.errorRate }}%
+                    {{ formatPercent(row.errorRate) }}
                   </span>
                 </template>
               </el-table-column>
@@ -162,10 +180,16 @@
                   <el-button text type="primary" @click="goToSearch">{{ t('tracing.dashboard.viewAll') }}</el-button>
                 </div>
                 <el-table :data="slowTraces" style="width: 100%" size="small" max-height="300">
+                  <template #empty>
+                    <EmptyState
+                      :title="t('common.chartEmpty')"
+                      :description="t('common.chartEmptyHint')"
+                    />
+                  </template>
                   <el-table-column prop="operationName" :label="t('tracing.dashboard.columns.operation')" show-overflow-tooltip />
                   <el-table-column prop="duration" :label="t('tracing.dashboard.columns.duration')" width="100">
                     <template #default="{ row }">
-                      <span class="text-danger">{{ Math.round(row.duration) }}ms</span>
+                      <span class="text-danger">{{ formatMs(row.duration) }}</span>
                     </template>
                   </el-table-column>
                   <el-table-column :label="t('tracing.dashboard.columns.action')" width="80">
@@ -254,15 +278,23 @@
                   <h4>{{ t('tracing.dashboard.errorRank.byOperation') }}</h4>
                 </div>
                 <el-table :data="errorAggregated?.byOperation || []" style="width: 100%" size="small" max-height="260">
+                  <template #empty>
+                    <EmptyState
+                      :title="t('common.chartEmpty')"
+                      :description="t('common.chartEmptyHint')"
+                    />
+                  </template>
                   <el-table-column prop="name" :label="t('tracing.dashboard.errorRank.name')" show-overflow-tooltip />
-                  <el-table-column prop="totalCount" :label="t('tracing.dashboard.errorRank.total')" width="80" />
+                  <el-table-column prop="totalCount" :label="t('tracing.dashboard.errorRank.total')" width="80">
+                    <template #default="{ row }">{{ formatNumber(row.totalCount) }}</template>
+                  </el-table-column>
                   <el-table-column prop="errorCount" :label="t('tracing.dashboard.errorRank.errors')" width="80">
                     <template #default="{ row }">
-                      <span class="text-danger">{{ row.errorCount }}</span>
+                      <span class="text-danger">{{ formatNumber(row.errorCount) }}</span>
                     </template>
                   </el-table-column>
                   <el-table-column :label="t('tracing.dashboard.errorRank.rate')" width="90">
-                    <template #default="{ row }">{{ (row.errorRate * 100).toFixed(1) }}%</template>
+                    <template #default="{ row }">{{ formatPercent((row.errorRate ?? 0) * 100) }}</template>
                   </el-table-column>
                 </el-table>
               </div>
@@ -275,10 +307,18 @@
                   <h4>{{ t('tracing.dashboard.errorRank.byInstance') }}</h4>
                 </div>
                 <el-table :data="errorAggregated?.byInstance || []" style="width: 100%" size="small" max-height="260">
+                  <template #empty>
+                    <EmptyState
+                      :title="t('common.chartEmpty')"
+                      :description="t('common.chartEmptyHint')"
+                    />
+                  </template>
                   <el-table-column prop="name" :label="t('tracing.dashboard.errorRank.name')" show-overflow-tooltip />
-                  <el-table-column prop="errorCount" :label="t('tracing.dashboard.errorRank.errors')" width="80" />
+                  <el-table-column prop="errorCount" :label="t('tracing.dashboard.errorRank.errors')" width="80">
+                    <template #default="{ row }">{{ formatNumber(row.errorCount) }}</template>
+                  </el-table-column>
                   <el-table-column :label="t('tracing.dashboard.errorRank.rate')" width="90">
-                    <template #default="{ row }">{{ (row.errorRate * 100).toFixed(1) }}%</template>
+                    <template #default="{ row }">{{ formatPercent((row.errorRate ?? 0) * 100) }}</template>
                   </el-table-column>
                 </el-table>
               </div>
@@ -289,10 +329,18 @@
                   <h4>{{ t('tracing.dashboard.errorRank.byClient') }}</h4>
                 </div>
                 <el-table :data="errorAggregated?.byClient || []" style="width: 100%" size="small" max-height="260">
+                  <template #empty>
+                    <EmptyState
+                      :title="t('common.chartEmpty')"
+                      :description="t('common.chartEmptyHint')"
+                    />
+                  </template>
                   <el-table-column prop="name" :label="t('tracing.dashboard.errorRank.name')" show-overflow-tooltip />
-                  <el-table-column prop="errorCount" :label="t('tracing.dashboard.errorRank.errors')" width="80" />
+                  <el-table-column prop="errorCount" :label="t('tracing.dashboard.errorRank.errors')" width="80">
+                    <template #default="{ row }">{{ formatNumber(row.errorCount) }}</template>
+                  </el-table-column>
                   <el-table-column :label="t('tracing.dashboard.errorRank.rate')" width="90">
-                    <template #default="{ row }">{{ (row.errorRate * 100).toFixed(1) }}%</template>
+                    <template #default="{ row }">{{ formatPercent((row.errorRate ?? 0) * 100) }}</template>
                   </el-table-column>
                 </el-table>
               </div>
@@ -374,6 +422,8 @@ import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import ChartCard from '@/components/ChartCard.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import FilterBar from '@/components/FilterBar.vue'
 import { useChartSkin } from '@/composables/useChartSkin'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import { formatNumber as formatNumberBase } from '@/utils/format'
@@ -446,7 +496,7 @@ const throughputTrendEmpty = computed(() => (throughputAnalysis.value?.qpsTrend 
 /** 环比提示文案（有变化才显示，避免每格都挂一条 0%）。 */
 const formatTrendHint = (value: number): string | undefined => {
   if (!value) return undefined
-  return `${value > 0 ? '+' : ''}${value}% ${t('tracing.dashboard.vsPreviousPeriod')}`
+  return `${value > 0 ? '+' : ''}${formatNumberBase(value, 1)}% ${t('tracing.dashboard.vsPreviousPeriod')}`
 }
 
 /** 指标条：成功率/用量类数字一律中性，只有错误链路数是真语义。 */
@@ -467,13 +517,13 @@ const kpiItems = computed<MetricStripItem[]>(() => [
   {
     key: 'avgDuration',
     label: t('tracing.dashboard.avgLatency'),
-    value: `${stats.value.avgDuration} ms`,
+    value: `${Math.round(Number(stats.value.avgDuration ?? 0))} ms`,
     hint: formatTrendHint(trendData.value.avgDurationTrend)
   },
   {
     key: 'samplingRate',
     label: t('tracing.dashboard.samplingRate'),
-    value: `${stats.value.samplingRate}%`
+    value: formatPercent(stats.value.samplingRate)
   }
 ])
 
@@ -840,6 +890,18 @@ const formatNumber = (num: number) => {
   return formatNumberBase(num)
 }
 
+/** 毫秒一律取整（与全站观测页一致），缺失值留占位而不是 0 */
+const formatMs = (value?: number | null): string => {
+  const num = Number(value)
+  return Number.isFinite(num) ? `${Math.round(num)}ms` : '-'
+}
+
+/** 百分比一律保留 1 位 —— 同页内成功/错误率共用这一种写法 */
+const formatPercent = (value?: number | null): string => {
+  const num = Number(value)
+  return Number.isFinite(num) ? `${num.toFixed(1)}%` : '-'
+}
+
 // 只有「慢到 1s 以上」才标红；原来 500ms 的 warning 档会带出第 4 个色相
 const getLatencyClass = (duration: number) => {
   if (duration > 1000) return 'text-danger'
@@ -965,6 +1027,18 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* 工具栏内联表单：与其它观测页同一套行内节奏 */
+.toolbar-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ja-space-2);
+}
+
+.toolbar-form :deep(.el-form-item) {
+  margin: 0;
+}
+
 .tab-card {
   margin-bottom: var(--ja-space-4);
 }

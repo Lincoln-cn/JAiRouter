@@ -1,6 +1,7 @@
 {
   "recordGovernance": {
     "pageTitle": "Record Governance",
+    "readonlyTag": "Read-only",
     "refresh": "Refresh",
     "loadFailed": "Failed to load record governance settings",
     "save": "Save record level",

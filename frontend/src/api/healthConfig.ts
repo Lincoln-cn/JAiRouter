@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import type { RouterResponse } from '@/types'
 
 /**
  * 健康探针设置 API 封装
@@ -43,12 +44,21 @@ export interface HealthConfigPayload {
   jwtRedisFailHealth?: boolean
 }
 
-/** 获取健康探针设置快照 */
-export function getHealthConfig(): Promise<HealthConfig> {
-  return request.get('/config/health')
+/**
+ * 获取健康探针设置快照.
+ *
+ * <p>必须解出 `RouterResponse.data`：`request` 是 axios 实例，拦截器返回的是完整
+ * `AxiosResponse`，直接 `return request.get(...)` 会让调用方拿到 `{ data: {...} }`
+ * 而不是配置对象 —— 页面读 `config.readiness` 就会 `Cannot read properties of undefined`。
+ * 这类错误 `vue-tsc` 抓不到（axios 的 get 返回 `any`），只能靠运行时或单测守。</p>
+ */
+export async function getHealthConfig(): Promise<HealthConfig | null> {
+  const response = await request.get<RouterResponse<HealthConfig>>('/config/health')
+  return response.data.data ?? null
 }
 
-/** 更新健康探针设置（部分更新） */
-export function updateHealthConfig(payload: HealthConfigPayload): Promise<HealthConfig> {
-  return request.put('/config/health', payload)
+/** 更新健康探针设置（部分更新，返回更新后的快照） */
+export async function updateHealthConfig(payload: HealthConfigPayload): Promise<HealthConfig | null> {
+  const response = await request.put<RouterResponse<HealthConfig>>('/config/health', payload)
+  return response.data.data ?? null
 }

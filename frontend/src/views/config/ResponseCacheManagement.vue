@@ -1,18 +1,23 @@
 <template>
-  <PageSkeleton :title="t('responseCache.pageTitle')">
-    <template #actions>
-      <el-button @click="loadStatus" :loading="loading" size="default">
-        <el-icon><Refresh /></el-icon>
-        {{ t('responseCache.refreshStatus') }}
-      </el-button>
-    </template>
+  <ConfigPageShell
+    :title="t('responseCache.pageTitle')"
+    :loading="loading"
+    :saving="saving"
+    :saving-label="savingLabel"
+    :dirty-count="dirtyCount"
+    :can-write="canWrite"
+    save-permission="config:cache:write"
+    @refresh="loadAll"
+    @save="handleSave"
+    @discard="handleDiscard"
+  >
+    <MetricStrip
+      class="summary-strip"
+      :items="metricItems"
+      :loading="loading && !status"
+      :columns="4"
+    />
 
-    <!-- 顶部核心指标条：把散落的命中率/次数/条目数汇总成一行 -->
-    <template #stats>
-      <MetricStrip :items="metricItems" :loading="loading && !status" />
-    </template>
-
-    <!-- 状态未就绪提示 -->
     <el-alert
       v-if="!status"
       :title="t('responseCache.notReadyTitle')"
@@ -23,545 +28,618 @@
       style="margin-bottom: 16px"
     />
 
-    <!-- 运行时配置面板 -->
-    <el-card v-if="status" shadow="hover" style="margin-bottom: 16px">
-      <template #header>
-        <span class="card-title">{{ t('responseCache.runtimeConfigTitle') }}</span>
-      </template>
-
-      <div class="runtime-config-grid">
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('responseCache.enableCacheLabel') }}</span>
-          <el-switch v-model="runtimeForm.enabled" />
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('responseCache.skipStreamingLabel') }}</span>
-          <el-switch v-model="runtimeForm.skipStreaming" />
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('responseCache.onlyDeterministicLabel') }}</span>
-          <el-switch v-model="runtimeForm.onlyDeterministic" />
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('responseCache.ttlSecondsLabel') }}</span>
-          <el-input-number
-            v-model="runtimeForm.ttlSeconds"
-            :min="1"
-            :max="604800"
-            :step="60"
-            controls-position="right"
-            :placeholder="t('responseCache.ttlPlaceholder')"
-            style="width: 180px"
-          />
-        </div>
-      </div>
-
-      <div class="config-actions">
-        <el-button
-          v-permission="'config:cache:write'"
-          :type="configChanged ? 'primary' : 'default'"
-          :loading="savingConfig"
-          :disabled="!configChanged"
-          @click="handleSaveConfig"
-        >
-          <el-icon><Check /></el-icon>
-          {{ t('responseCache.saveRuntimeConfig') }}
-        </el-button>
-        <el-button
-          :disabled="savingConfig"
-          @click="resetRuntimeForm"
-        >
-          {{ t('responseCache.reset') }}
-        </el-button>
-      </div>
-
-      <div class="config-hint">
-        <el-icon><InfoFilled /></el-icon>
-        <span>{{ t('responseCache.runtimeHintBefore') }} <code>jairouter.response-cache.*</code></span>
-      </div>
-      <div class="config-hint">
-        <el-icon><InfoFilled /></el-icon>
-        <span><code>maxSize</code> {{ t('responseCache.maxSizeHintAfter') }}</span>
-      </div>
-    </el-card>
-
-    <!-- 操作区：缓存失效 -->
-    <el-card shadow="hover">
-      <template #header>
-        <span class="card-title">{{ t('responseCache.invalidationTitle') }}</span>
-      </template>
-
-      <!-- 按服务类型失效 -->
-      <div class="action-section">
-        <div class="action-label">{{ t('responseCache.invalidateByServiceTypeLabel') }}</div>
-        <div class="action-row">
-          <el-select
-            v-model="selectedServiceType"
-            :placeholder="t('responseCache.selectServiceTypePlaceholder')"
-            style="width: 200px"
-            clearable
-          >
-            <el-option
-              v-for="st in serviceTypes"
-              :key="st"
-              :label="st"
-              :value="st"
+    <template v-else>
+      <!-- 运行时配置：三个开关即时生效，TTL 走动作条草稿 -->
+      <ConfigSectionCard
+        :title="t('responseCache.runtimeConfigTitle')"
+        :error="errors.runtime || switchError"
+      >
+        <div class="runtime-config-grid">
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('responseCache.enableCacheLabel') }}</span>
+            <SettingsSwitch
+              :model-value="form.enabled"
+              :disabled="!canWrite"
+              :immediate-hint="t('responseCache.immediateHint')"
+              :submit="submitEnabled"
+              @update:model-value="form.enabled = $event"
             />
-          </el-select>
-          <el-button
-            v-permission="'config:cache:write'"
+          </div>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('responseCache.skipStreamingLabel') }}</span>
+            <SettingsSwitch
+              :model-value="form.skipStreaming"
+              :disabled="!canWrite"
+              :submit="submitSkipStreaming"
+              @update:model-value="form.skipStreaming = $event"
+            />
+          </div>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('responseCache.onlyDeterministicLabel') }}</span>
+            <SettingsSwitch
+              :model-value="form.onlyDeterministic"
+              :disabled="!canWrite"
+              :submit="submitOnlyDeterministic"
+              @update:model-value="form.onlyDeterministic = $event"
+            />
+          </div>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('responseCache.ttlSecondsLabel') }}</span>
+            <el-input-number
+              v-model="form.ttlSeconds"
+              :min="1"
+              :max="604800"
+              :step="60"
+              :disabled="!canWrite"
+              controls-position="right"
+              style="width: 180px"
+            />
+            <span class="unit">{{ t('responseCache.ttlUnit') }}</span>
+          </div>
+        </div>
+
+        <p class="config-hint">
+          {{ t('responseCache.runtimeHintBefore') }}
+          <code>jairouter.response-cache.*</code>
+        </p>
+        <p class="config-hint">
+          <code>maxSize</code>
+          {{ t('responseCache.maxSizeHintAfter') }}
+        </p>
+      </ConfigSectionCard>
+
+      <!-- 缓存失效（危险操作）：不进动作条，逐个二次确认 -->
+      <ConfigSectionCard
+        :title="t('responseCache.invalidationTitle')"
+        :error="invalidateError"
+      >
+        <div class="invalidate-row">
+          <div class="invalidate-row__text">
+            <span class="action-label">{{ t('responseCache.invalidateByServiceTypeLabel') }}</span>
+            <el-select
+              v-model="selectedServiceType"
+              clearable
+              :placeholder="t('responseCache.selectServiceTypePlaceholder')"
+              :disabled="!canWrite"
+              style="width: 200px"
+            >
+              <el-option v-for="type in serviceTypes" :key="type" :label="type" :value="type" />
+            </el-select>
+          </div>
+          <ConfirmAction
+            :title="serviceTypeConfirmTitle"
+            :confirm-text="t('responseCache.invalidateByService')"
+            :cancel-text="t('responseCache.cancel')"
             type="warning"
+            :disabled="!canWrite || !selectedServiceType || !status?.enabled"
             :loading="invalidating"
-            :disabled="!selectedServiceType || !status?.enabled"
-            @click="handleInvalidateByServiceType"
+            @confirm="handleInvalidateByServiceType"
           >
-            <el-icon><Delete /></el-icon>
-            {{ t('responseCache.invalidateByService') }}
-          </el-button>
+            <el-button
+              v-permission="'config:cache:write'"
+              type="warning"
+              plain
+              :icon="Delete"
+              :disabled="!selectedServiceType || !status?.enabled"
+              :loading="invalidating"
+            >
+              {{ t('responseCache.invalidateByService') }}
+            </el-button>
+          </ConfirmAction>
         </div>
-      </div>
 
-      <el-divider />
+        <el-divider />
 
-      <!-- 按模型失效 -->
-      <div class="action-section">
-        <div class="action-label">{{ t('responseCache.invalidateByModelLabel') }}</div>
-        <div class="action-row">
-          <el-input
-            v-model="modelName"
-            :placeholder="t('responseCache.inputModelPlaceholder')"
-            style="width: 300px"
-            clearable
-          />
-          <el-button
-            v-permission="'config:cache:write'"
+        <div class="invalidate-row">
+          <div class="invalidate-row__text">
+            <span class="action-label">{{ t('responseCache.invalidateByModelLabel') }}</span>
+            <el-input
+              v-model="modelName"
+              clearable
+              :placeholder="t('responseCache.inputModelPlaceholder')"
+              :disabled="!canWrite"
+              style="width: 300px"
+            />
+          </div>
+          <ConfirmAction
+            :title="modelConfirmTitle"
+            :confirm-text="t('responseCache.invalidateByModel')"
+            :cancel-text="t('responseCache.cancel')"
             type="warning"
+            :disabled="!canWrite || !modelName.trim() || !status?.enabled"
             :loading="invalidating"
-            :disabled="!modelName.trim() || !status?.enabled"
-            @click="handleInvalidateByModel"
+            @confirm="handleInvalidateByModel"
           >
-            <el-icon><Delete /></el-icon>
-            {{ t('responseCache.invalidateByModel') }}
-          </el-button>
+            <el-button
+              v-permission="'config:cache:write'"
+              type="warning"
+              plain
+              :icon="Delete"
+              :disabled="!modelName.trim() || !status?.enabled"
+              :loading="invalidating"
+            >
+              {{ t('responseCache.invalidateByModel') }}
+            </el-button>
+          </ConfirmAction>
         </div>
-      </div>
 
-      <el-divider />
+        <el-divider />
 
-      <!-- 危险区：清空全部缓存（破坏性操作降级为描边按钮，与页面主操作区分权级） -->
-      <div class="danger-zone">
-        <div class="danger-zone__text">
-          <div class="action-label">{{ t('responseCache.clearAllCache') }}</div>
-          <p class="danger-zone__hint">{{ t('responseCache.clearAllCacheHint') }}</p>
-        </div>
-        <el-popconfirm
-          :title="t('responseCache.clearAllConfirmTitle')"
-          :confirm-button-text="t('responseCache.confirm')"
-          :cancel-button-text="t('responseCache.cancel')"
-          @confirm="handleInvalidateAll"
-        >
-          <template #reference>
-            <el-button v-permission="'config:cache:write'" type="danger" plain :loading="invalidating" :disabled="!status?.enabled">
-              <el-icon><Delete /></el-icon>
+        <div class="invalidate-row danger-zone">
+          <div class="invalidate-row__text">
+            <span class="action-label action-label--danger">{{ t('responseCache.clearAllCache') }}</span>
+            <p class="invalidate-row__hint">{{ t('responseCache.clearAllCacheHint') }}</p>
+          </div>
+          <ConfirmAction
+            :title="t('responseCache.clearAllConfirmTitle')"
+            :confirm-text="t('responseCache.confirm')"
+            :cancel-text="t('responseCache.cancel')"
+            type="danger"
+            :disabled="!canWrite || !status?.enabled"
+            :loading="invalidating"
+            @confirm="handleInvalidateAll"
+          >
+            <el-button
+              v-permission="'config:cache:write'"
+              type="danger"
+              plain
+              :icon="Delete"
+              :disabled="!status?.enabled"
+              :loading="invalidating"
+            >
               {{ t('responseCache.clearAllCache') }}
             </el-button>
-          </template>
-        </el-popconfirm>
-      </div>
-    </el-card>
+          </ConfirmAction>
+        </div>
+      </ConfigSectionCard>
 
-    <!-- 语义缓存（只读） -->
-    <el-card shadow="hover" style="margin-top: 16px">
-      <template #header>
-        <span class="card-title">{{ t('responseCache.semanticTitle') }}</span>
-      </template>
+      <!-- 语义缓存：准入参数改了要重启，只读 -->
+      <ConfigSectionCard :title="t('responseCache.semanticTitle')">
+        <template #actions>
+          <el-tag size="small" type="info" effect="plain">
+            {{ semanticStatus?.enabled ? t('responseCache.enabled') : t('responseCache.disabled') }}
+          </el-tag>
+        </template>
+
+        <el-alert
+          v-if="semanticStatus"
+          :title="t('responseCache.semanticHint')"
+          type="info"
+          :closable="false"
+          show-icon
+        />
+        <el-descriptions v-if="semanticStatus" :column="3" border class="semantic-grid">
+          <el-descriptions-item :label="t('responseCache.semanticEnabled')">
+            {{ semanticStatus.enabled ? t('responseCache.enabled') : t('responseCache.disabled') }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('responseCache.semanticTenantScope')">
+            {{ semanticStatus.tenantScopeEnabled ? t('responseCache.enabled') : t('responseCache.disabled') }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('responseCache.semanticPublicScope')">
+            {{ semanticStatus.publicScopeEnabled ? t('responseCache.enabled') : t('responseCache.disabled') }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('responseCache.semanticEntries')">
+            {{ semanticStatus.size }} / {{ semanticStatus.globalMaxEntries }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('responseCache.semanticTtl')">
+            {{ semanticStatus.ttlSeconds }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('responseCache.semanticMaxChars')">
+            {{ semanticStatus.maxPublicChars }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('responseCache.semanticDistance')">
+            {{ semanticStatus.maxHammingDistance }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </ConfigSectionCard>
+
       <el-alert
-        v-if="semanticStatus"
-        :title="t('responseCache.semanticHint')"
+        :title="t('responseCache.tipTitle')"
         type="info"
         :closable="false"
         show-icon
-        style="margin-bottom: 12px"
-      />
-      <el-descriptions v-if="semanticStatus" :column="3" border>
-        <el-descriptions-item :label="t('responseCache.semanticEnabled')">
-          {{ semanticStatus.enabled ? 'on' : 'off' }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('responseCache.semanticTenantScope')">
-          {{ semanticStatus.tenantScopeEnabled ? 'on' : 'off' }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('responseCache.semanticPublicScope')">
-          {{ semanticStatus.publicScopeEnabled ? 'on' : 'off' }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('responseCache.semanticEntries')">
-          {{ semanticStatus.size }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('responseCache.semanticTtl')">
-          {{ semanticStatus.ttlSeconds }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('responseCache.semanticDistance')">
-          {{ semanticStatus.maxHammingDistance }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('responseCache.semanticMaxChars')">
-          {{ semanticStatus.maxPublicChars }}
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
-
-    <!-- 提示 -->
-    <el-alert
-      :title="t('responseCache.tipTitle')"
-      type="info"
-      :closable="false"
-      show-icon
-      style="margin-top: 16px"
-    >
-      <template #default>
-        <p style="margin: 0">{{ t('responseCache.tipBefore') }}<code>jairouter.response-cache.*</code>{{ t('responseCache.tipAfter') }}</p>
-      </template>
-    </el-alert>
-  </PageSkeleton>
+        class="cache-tip"
+      >
+        <p class="tip-text">
+          {{ t('responseCache.tipBefore') }}
+          <code>jairouter.response-cache.*</code>
+          {{ t('responseCache.tipAfter') }}
+        </p>
+      </el-alert>
+    </template>
+  </ConfigPageShell>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import {
-  Refresh,
-  Delete,
-  InfoFilled,
-  Check,
-} from '@element-plus/icons-vue'
-import PageSkeleton from '@/components/PageSkeleton.vue'
+import { ElMessage } from 'element-plus'
+import { Delete } from '@element-plus/icons-vue'
+import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
+import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
+import SettingsSwitch from '@/components/config/SettingsSwitch.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
 import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
+import { usePermission } from '@/composables/usePermission'
+import { useConfigDraft } from '@/composables/useConfigDraft'
 import {
   getCacheStatus,
+  getSemanticCacheStatus,
   invalidateCache,
   updateCacheConfig,
-  type CacheStatus,
   type CacheConfigPayload,
-  getSemanticCacheStatus,
-  type SemanticCacheStatus
+  type CacheStatus,
+  type SemanticCacheStatus,
 } from '@/api/responseCache'
 
 const { t } = useI18n()
+const { hasPermission } = usePermission()
+
+const canWrite = computed(() => hasPermission('config:cache:write'))
 
 const loading = ref(false)
 const invalidating = ref(false)
-const savingConfig = ref(false)
 const status = ref<CacheStatus | null>(null)
 const semanticStatus = ref<SemanticCacheStatus | null>(null)
 const selectedServiceType = ref('')
 const modelName = ref('')
 
-/** 后端 ServiceType 枚举值 */
-const serviceTypes = ['chat', 'embedding', 'rerank', 'tts', 'stt', 'imgGen', 'imgEdit']
+/** 即时开关失败信息（草稿错误由 useConfigDraft 写在 errors.runtime 上） */
+const switchError = ref('')
+/** 失效操作失败信息 */
+const invalidateError = ref('')
 
-// ── 运行时配置表单 ──
+const serviceTypes = ['chat', 'embedding', 'rerank', 'tts', 'stt', 'imgGen', 'imgEdit']
 
 interface RuntimeForm {
   enabled: boolean
   skipStreaming: boolean
   onlyDeterministic: boolean
-  /** undefined = 未修改（不传），number = 用户修改后的值 */
-  ttlSeconds: number | undefined
+  ttlSeconds: number
 }
 
-const runtimeForm = ref<RuntimeForm>({
+const form = reactive<RuntimeForm>({
   enabled: false,
-  skipStreaming: false,
-  onlyDeterministic: false,
-  ttlSeconds: undefined,
+  skipStreaming: true,
+  onlyDeterministic: true,
+  ttlSeconds: 300,
 })
 
-/** 用当前 snapshot 填充运行时表单（同步基准值，不重新赋 ttlSeconds = undefined） */
-const syncFormFromStatus = (s: CacheStatus) => {
-  runtimeForm.value.enabled = s.enabled
-  runtimeForm.value.skipStreaming = s.skipStreaming
-  runtimeForm.value.onlyDeterministic = s.onlyDeterministic
-  runtimeForm.value.ttlSeconds = undefined
+const baseline = reactive<RuntimeForm>({ ...form })
+
+/**
+ * 用后端快照刷新页面。
+ *
+ * `keepTtlDraft`：失效操作后只刷新统计与开关，保留用户尚未保存的 TTL 草稿。
+ */
+const applyStatus = (snapshot: CacheStatus, keepTtlDraft = false): void => {
+  status.value = snapshot
+  form.enabled = snapshot.enabled
+  form.skipStreaming = snapshot.skipStreaming
+  form.onlyDeterministic = snapshot.onlyDeterministic
+  baseline.enabled = snapshot.enabled
+  baseline.skipStreaming = snapshot.skipStreaming
+  baseline.onlyDeterministic = snapshot.onlyDeterministic
+  if (!keepTtlDraft) {
+    form.ttlSeconds = snapshot.ttlSeconds
+    baseline.ttlSeconds = snapshot.ttlSeconds
+  }
 }
 
-/** 重置表单到 snapshot 原值 */
-const resetRuntimeForm = () => {
-  if (status.value) syncFormFromStatus(status.value)
+/** 取后端 400 原文，AXIOS 的默认 message 只有状态码 */
+const apiMessageOf = (error: unknown, fallback: string): string => {
+  const candidate = error as { response?: { data?: { message?: string } }; message?: string }
+  return candidate?.response?.data?.message || candidate?.message || fallback
 }
 
-/** 命中率显示：无统计数据时用「—」占位（指标条里的值是 20px 数字位，写「暂无数据」会像个大标题） */
+// ── 指标条 ──
+
 const hitRatioDisplay = computed(() => {
-  const ratio = status.value?.hitRatio ?? null
-  if (ratio === null) return '—'
+  const ratio = status.value?.hitRatio
+  if (ratio == null) return '—'
   return `${(ratio * 100).toFixed(1)}%`
 })
 
-/** 顶部指标条：只聚合已有数据，不新增统计口径 */
 const metricItems = computed<MetricStripItem[]>(() => {
-  const s = status.value
+  const snapshot = status.value
   return [
-    {
-      key: 'hitRatio',
-      label: t('responseCache.hitRateLabel'),
-      value: hitRatioDisplay.value,
-      hint: `${t('responseCache.missesLabel')} ${s?.misses ?? '—'}`,
-    },
-    {
-      key: 'hits',
-      label: t('responseCache.hitsLabel'),
-      value: s?.hits ?? '—',
-    },
+    { key: 'hitRatio', label: t('responseCache.hitRateLabel'), value: hitRatioDisplay.value },
+    { key: 'hits', label: t('responseCache.hitsLabel'), value: `${snapshot?.hits ?? 0}` },
     {
       key: 'entries',
       label: t('responseCache.currentEntriesLabel'),
-      value: s?.size ?? '—',
-      hint: `${t('responseCache.maxEntriesLabel')} ${s?.maxSize ?? '—'}`,
+      value: `${snapshot?.size ?? '—'} / ${snapshot?.maxSize ?? '—'}`,
     },
     {
       key: 'ttl',
       label: t('responseCache.ttlLabel'),
-      value: s?.ttlSeconds != null ? `${s.ttlSeconds} ${t('responseCache.ttlUnit')}` : '—',
+      value: `${snapshot?.ttlSeconds ?? '—'}`,
     },
   ]
 })
 
-/**
- * 判断表单是否有变更，决定「保存」按钮是否可点。
- * 仅发送与 snapshot 不同的字段；未动字段不传。
- */
-const configChanged = computed(() => {
-  if (!status.value) return false
-  const s = status.value
-  if (runtimeForm.value.enabled !== s.enabled) return true
-  if (runtimeForm.value.skipStreaming !== s.skipStreaming) return true
-  if (runtimeForm.value.onlyDeterministic !== s.onlyDeterministic) return true
-  if (runtimeForm.value.ttlSeconds !== undefined && runtimeForm.value.ttlSeconds !== s.ttlSeconds) return true
-  return false
-})
+// ── 即时生效的开关 ──
+
+const submitSwitch = async (payload: CacheConfigPayload): Promise<void> => {
+  switchError.value = ''
+  try {
+    const updated = await updateCacheConfig(payload)
+    applyStatus(updated, true)
+    ElMessage.success(t('responseCache.configUpdatedSuccess'))
+  } catch (error) {
+    const message = apiMessageOf(error, t('responseCache.saveFailedError'))
+    switchError.value = message
+    throw new Error(message)
+  }
+}
+
+const submitEnabled = (next: boolean): Promise<void> => submitSwitch({ enabled: next })
+const submitSkipStreaming = (next: boolean): Promise<void> => submitSwitch({ skipStreaming: next })
+const submitOnlyDeterministic = (next: boolean): Promise<void> =>
+  submitSwitch({ onlyDeterministic: next })
+
+// ── 草稿保存（TTL） ──
+
+const { saving, savingLabel, errors, dirtyCount, save, clearError } = useConfigDraft(
+  [
+    {
+      key: 'runtime',
+      label: () => t('responseCache.runtimeConfigTitle'),
+      isDirty: () => form.ttlSeconds !== baseline.ttlSeconds,
+      validate: () => {
+        const ttl = Number(form.ttlSeconds)
+        if (!Number.isFinite(ttl) || ttl < 1) {
+          return t('responseCache.ttlInvalid')
+        }
+        return null
+      },
+      save: async () => {
+        const payload: CacheConfigPayload = {}
+        if (form.ttlSeconds !== baseline.ttlSeconds) {
+          payload.ttlSeconds = form.ttlSeconds
+        }
+        try {
+          const updated = await updateCacheConfig(payload)
+          applyStatus(updated, true)
+        } catch (error) {
+          throw new Error(apiMessageOf(error, t('responseCache.saveFailedError')))
+        }
+      },
+      commit: () => {
+        baseline.ttlSeconds = form.ttlSeconds
+      },
+    },
+  ],
+  { fallbackError: () => t('responseCache.saveFailedError') }
+)
 
 // ── 数据加载 ──
 
-const loadStatus = async () => {
+const loadStatus = async (): Promise<void> => {
+  const snapshot = await getCacheStatus()
+  if (snapshot) {
+    applyStatus(snapshot, true)
+  }
+}
+
+const loadAll = async (): Promise<void> => {
   loading.value = true
+  switchError.value = ''
+  invalidateError.value = ''
   try {
-    const s = await getCacheStatus()
-    status.value = s
-    if (s) syncFormFromStatus(s)
-  } catch {
-    status.value = null
+    const semantic = await getSemanticCacheStatus().catch(() => null)
+    semanticStatus.value = semantic
+    const snapshot = await getCacheStatus()
+    if (snapshot) {
+      applyStatus(snapshot)
+    } else {
+      status.value = null
+    }
   } finally {
     loading.value = false
   }
 }
 
-// ── 保存运行时配置（diff → payload） ──
-
-const handleSaveConfig = async () => {
+const handleSave = async (): Promise<void> => {
   if (!status.value) return
-  const s = status.value
-  const payload: CacheConfigPayload = {}
-
-  if (runtimeForm.value.enabled !== s.enabled) {
-    payload.enabled = runtimeForm.value.enabled
-  }
-  if (runtimeForm.value.skipStreaming !== s.skipStreaming) {
-    payload.skipStreaming = runtimeForm.value.skipStreaming
-  }
-  if (runtimeForm.value.onlyDeterministic !== s.onlyDeterministic) {
-    payload.onlyDeterministic = runtimeForm.value.onlyDeterministic
-  }
-  if (runtimeForm.value.ttlSeconds !== undefined && runtimeForm.value.ttlSeconds !== s.ttlSeconds) {
-    payload.ttlSeconds = runtimeForm.value.ttlSeconds
-  }
-
-  // 后端：全空 payload → 400
-  if (Object.keys(payload).length === 0) {
-    ElMessage.warning(t('responseCache.noChangesWarning'))
+  const result = await save()
+  if (!result.ok) {
+    ElMessage.error(result.failed?.message ?? t('responseCache.saveFailedError'))
     return
   }
-
-  savingConfig.value = true
-  try {
-    await updateCacheConfig(payload)
-    ElMessage.success(t('responseCache.configUpdatedSuccess'))
-    await loadStatus()
-  } catch {
-    ElMessage.error(t('responseCache.saveFailedError'))
-  } finally {
-    savingConfig.value = false
+  if (result.saved.length === 0) {
+    ElMessage.info(t('responseCache.noChangesWarning'))
+    return
   }
+  ElMessage.success(t('responseCache.configUpdatedSuccess'))
 }
 
-// ── 缓存失效操作 ──
+/** 「放弃修改」只回退 TTL：三个开关是即时生效的，没有可丢弃的开关状态 */
+const handleDiscard = (): void => {
+  form.ttlSeconds = baseline.ttlSeconds
+  switchError.value = ''
+  invalidateError.value = ''
+  clearError()
+}
 
-const handleInvalidateAll = async () => {
+// ── 缓存失效（危险操作） ──
+
+const afterInvalidate = async (executed: boolean, successMessage: string): Promise<void> => {
+  if (!executed) {
+    ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
+  } else {
+    ElMessage.success(successMessage)
+  }
+  await loadStatus()
+}
+
+const handleInvalidateAll = async (): Promise<void> => {
   invalidating.value = true
+  invalidateError.value = ''
   try {
     const result = await invalidateCache()
-    if (result.executed) {
-      ElMessage.success(t('responseCache.cacheClearedSuccess'))
-    } else {
-      ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
-    }
-    await loadStatus()
-  } catch {
-    ElMessage.error(t('responseCache.operationFailedError'))
+    await afterInvalidate(result.executed, t('responseCache.cacheClearedSuccess'))
+  } catch (error) {
+    const message = apiMessageOf(error, t('responseCache.operationFailedError'))
+    invalidateError.value = message
+    ElMessage.error(message)
   } finally {
     invalidating.value = false
   }
 }
 
-// 按服务类型批量失效缓存会影响该服务下所有条目 ⇒ 必须二次确认。
-// 审计 #460 / #466：本页此前**没有任何 E2E 覆盖**，因此这两处未确认的批量失效一直没人发现；
-// 守卫见 14-response-cache.mjs（需以 --jairouter.response-cache.enabled=true 起服务才点得到按钮）。
-const handleInvalidateByServiceType = () => {
+const handleInvalidateByServiceType = async (): Promise<void> => {
   if (!selectedServiceType.value) return
-  const serviceType = selectedServiceType.value
-  ElMessageBox.confirm(
-    t('responseCache.invalidateByServiceConfirmMessage', { serviceType }),
-    t('responseCache.invalidateByServiceConfirmTitle'),
-    {
-      confirmButtonText: t('responseCache.confirm'),
-      cancelButtonText: t('responseCache.cancel'),
-      type: 'warning'
-    }
-  ).then(async () => {
-    invalidating.value = true
-    try {
-      const result = await invalidateCache({ serviceType })
-      if (result.executed) {
-        ElMessage.success(t('responseCache.invalidatedByServiceType', { serviceType }))
-      } else {
-        ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
-      }
-      await loadStatus()
-    } catch {
-      ElMessage.error(t('responseCache.operationFailedError'))
-    } finally {
-      invalidating.value = false
-    }
-  })
+  invalidating.value = true
+  invalidateError.value = ''
+  try {
+    const serviceType = selectedServiceType.value
+    const result = await invalidateCache({ serviceType })
+    await afterInvalidate(
+      result.executed,
+      t('responseCache.invalidatedByServiceType', { serviceType })
+    )
+  } catch (error) {
+    const message = apiMessageOf(error, t('responseCache.operationFailedError'))
+    invalidateError.value = message
+    ElMessage.error(message)
+  } finally {
+    invalidating.value = false
+  }
 }
 
-// 按模型批量失效缓存 ⇒ 同上。
-const handleInvalidateByModel = () => {
+const handleInvalidateByModel = async (): Promise<void> => {
   const model = modelName.value.trim()
   if (!model) return
-  ElMessageBox.confirm(
-    t('responseCache.invalidateByModelConfirmMessage', { model }),
-    t('responseCache.invalidateByModelConfirmTitle'),
-    {
-      confirmButtonText: t('responseCache.confirm'),
-      cancelButtonText: t('responseCache.cancel'),
-      type: 'warning'
-    }
-  ).then(async () => {
-    invalidating.value = true
-    try {
-      const result = await invalidateCache({ model })
-      if (result.executed) {
-        ElMessage.success(t('responseCache.invalidatedByModel', { model }))
-      } else {
-        ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
-      }
-      await loadStatus()
-    } catch {
-      ElMessage.error(t('responseCache.operationFailedError'))
-    } finally {
-      invalidating.value = false
-    }
-  })
+  invalidating.value = true
+  invalidateError.value = ''
+  try {
+    const result = await invalidateCache({ model })
+    await afterInvalidate(result.executed, t('responseCache.invalidatedByModel', { model }))
+  } catch (error) {
+    const message = apiMessageOf(error, t('responseCache.operationFailedError'))
+    invalidateError.value = message
+    ElMessage.error(message)
+  } finally {
+    invalidating.value = false
+  }
 }
 
-onMounted(async () => {
-  semanticStatus.value = await getSemanticCacheStatus().catch(() => null)
-})
+// ── 二次确认文案 ──
 
-onMounted(loadStatus)
+const serviceTypeConfirmTitle = computed(() =>
+  t('responseCache.invalidateByServiceConfirmMessage', { serviceType: selectedServiceType.value })
+)
+
+const modelConfirmTitle = computed(() =>
+  t('responseCache.invalidateByModelConfirmMessage', { model: modelName.value.trim() })
+)
+
+onMounted(loadAll)
 </script>
 
 <style scoped>
-.card-title {
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.action-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.action-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ja-text-primary);
-}
-
-.action-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.config-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  font-size: 12px;
-  color: var(--ja-text-secondary, var(--el-text-color-secondary));
+.summary-strip {
+  margin-bottom: 16px;
 }
 
 .runtime-config-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px 32px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
 }
 
 .config-switch-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-radius: var(--ja-radius-md, 8px);
-  background: var(--ja-bg-hover, var(--el-fill-color-light));
+  gap: 12px;
 }
 
 .config-switch-label {
-  font-size: 14px;
-  color: var(--ja-text-primary);
-  font-weight: 500;
+  min-width: 140px;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
 }
 
-.config-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 4px;
+.unit {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
-/* 危险区：破坏性操作单独分区、描边按钮，避免与页面主操作同权 */
-.danger-zone {
+.config-hint {
+  margin: 12px 0 0;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.config-hint code {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--el-fill-color-light);
+  font-family: var(--el-font-family-mono, monospace);
+}
+
+.invalidate-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 12px 16px;
-  border: 1px solid var(--ja-border, var(--el-border-color));
-  border-radius: var(--ja-radius-md, 8px);
-  background: var(--ja-surface-2, var(--el-fill-color-light));
 }
 
-.danger-zone__text {
-  min-width: 220px;
+.invalidate-row__text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.danger-zone__hint {
+.invalidate-row__hint {
   margin: 4px 0 0;
+  color: var(--el-text-color-secondary);
   font-size: 12px;
-  line-height: 1.5;
-  color: var(--ja-text-secondary, var(--el-text-color-secondary));
+  line-height: 1.6;
+}
+
+.action-label {
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+}
+
+.action-label--danger {
+  color: var(--el-color-danger);
+}
+
+.danger-zone {
+  padding: 12px;
+  border: 1px solid var(--el-color-danger-light-5);
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-color-danger-light-9);
+}
+
+.danger-zone .invalidate-row__text {
+  display: block;
+}
+
+.semantic-grid {
+  margin-top: 12px;
+}
+
+.cache-tip {
+  margin-top: 16px;
+}
+
+.tip-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.tip-text code {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--el-fill-color-light);
+  font-family: var(--el-font-family-mono, monospace);
 }
 </style>

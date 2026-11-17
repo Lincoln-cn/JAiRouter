@@ -1,15 +1,17 @@
 <template>
-  <PageSkeleton :title="t('recordGovernance.pageTitle')">
-    <template #actions>
-      <el-button data-test="refresh" @click="load" :loading="loading" size="default">
-        <el-icon><Refresh /></el-icon>
-        {{ t('recordGovernance.refresh') }}
-      </el-button>
-    </template>
-
-    <template #stats>
-      <MetricStrip :items="metricItems" :loading="loading" :columns="3" />
-    </template>
+  <ConfigPageShell
+    :title="t('recordGovernance.pageTitle')"
+    :loading="loading"
+    :saving="saving"
+    :saving-label="savingLabel"
+    :dirty-count="dirtyCount"
+    :can-write="canWrite"
+    save-permission="config:callhistory:write"
+    @refresh="load"
+    @save="handleSave"
+    @discard="resetDraft"
+  >
+    <MetricStrip :items="metricItems" :loading="loading" :columns="3" class="overview-strip" />
 
     <el-alert
       v-if="fallbackDetected"
@@ -19,13 +21,13 @@
       show-icon
       :title="t('recordGovernance.fallbackTitle')"
       :description="t('recordGovernance.fallbackDesc')"
-      style="margin-bottom: var(--ja-space-4)"
+      class="fallback-alert"
     />
 
-    <el-card shadow="hover" style="margin-bottom: var(--ja-space-4)">
-      <template #header>
-        <span class="card-title">{{ t('recordGovernance.levelSection') }}</span>
-      </template>
+    <ConfigSectionCard
+      :title="t('recordGovernance.levelSection')"
+      :error="errors.level"
+    >
       <el-radio-group
         v-model="levelDraft"
         data-test="level-group"
@@ -37,32 +39,18 @@
         </el-radio-button>
       </el-radio-group>
       <p class="level-desc" data-test="level-desc">{{ levelDescription }}</p>
-      <div class="config-actions">
-        <el-button
-          v-permission="'config:callhistory:write'"
-          type="primary"
-          data-test="save"
-          :loading="saving"
-          :disabled="!loaded || !dirty"
-          @click="handleSave"
-        >
-          <el-icon><Check /></el-icon>
-          {{ t('recordGovernance.save') }}
-        </el-button>
-        <el-button data-test="reset" :disabled="saving || !dirty" @click="resetDraft">
-          {{ t('recordGovernance.reset') }}
-        </el-button>
-      </div>
-    </el-card>
+    </ConfigSectionCard>
 
-    <el-card shadow="hover" style="margin-bottom: var(--ja-space-4)">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('recordGovernance.encryptionSection') }}</span>
-          <el-tag v-if="config" size="small" effect="plain" :type="encrypted ? 'success' : 'info'">
-            {{ encrypted ? t('recordGovernance.encryptedTag') : t('recordGovernance.plaintextTag') }}
-          </el-tag>
-        </div>
+    <!-- 加密与存储全部是服务端回显：算法/密钥来源/指纹/env key 是否可用都不可在页面改 -->
+    <ConfigSectionCard
+      :title="t('recordGovernance.encryptionSection')"
+      :description="t('recordGovernance.storageHint')"
+    >
+      <template #actions>
+        <el-tag v-if="config" size="small" effect="plain" :type="encrypted ? 'success' : 'info'">
+          {{ encrypted ? t('recordGovernance.encryptedTag') : t('recordGovernance.plaintextTag') }}
+        </el-tag>
+        <el-tag size="small" effect="plain" type="info">{{ t('recordGovernance.readonlyTag') }}</el-tag>
       </template>
       <el-descriptions :column="2" border size="small">
         <el-descriptions-item :label="t('recordGovernance.algorithmLabel')">
@@ -92,30 +80,30 @@
           {{ config?.maxRecords != null ? String(config.maxRecords) : '—' }}
         </el-descriptions-item>
       </el-descriptions>
-      <p class="hint">{{ t('recordGovernance.storageHint') }}</p>
-    </el-card>
+    </ConfigSectionCard>
 
-    <el-card shadow="hover">
-      <template #header>
-        <span class="card-title">{{ t('recordGovernance.auditSection') }}</span>
-      </template>
-      <p class="hint">{{ t('recordGovernance.auditDesc') }}</p>
+    <ConfigSectionCard
+      :title="t('recordGovernance.auditSection')"
+      :description="t('recordGovernance.auditDesc')"
+    >
       <el-button data-test="open-audit" @click="openAuditLogs">
         {{ t('recordGovernance.openAuditLogs') }}
       </el-button>
-    </el-card>
-  </PageSkeleton>
+    </ConfigSectionCard>
+  </ConfigPageShell>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Check } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
+import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import { usePermission } from '@/composables/usePermission'
+import { useConfigDraft } from '@/composables/useConfigDraft'
 import { getErrorMessage } from '@/utils/error'
 import {
   getCallHistoryConfig,
@@ -125,17 +113,19 @@ import {
 
 const { t } = useI18n()
 const router = useRouter()
+const { hasPermission } = usePermission()
+
+/** 写操作统一走 config:callhistory:write（原有页内保存按钮挂的就是这个码）。 */
+const canWrite = computed(() => hasPermission('config:callhistory:write'))
 
 const LEVELS = ['METADATA_ONLY', 'SUMMARY', 'FULL'] as const
 type RecordLevel = (typeof LEVELS)[number]
 
 const loading = ref(false)
-const saving = ref(false)
 const config = ref<CallHistoryConfig | null>(null)
 const levelDraft = ref<RecordLevel>('METADATA_ONLY')
 
 const loaded = computed(() => config.value !== null)
-const dirty = computed(() => loaded.value && config.value?.recordLevel !== levelDraft.value)
 const encrypted = computed(() => config.value?.contentStoredEncrypted === true)
 const effectiveSource = computed(
   () => config.value?.encryptionKeySourceEffective
@@ -200,22 +190,6 @@ const syncDraft = () => {
     : 'METADATA_ONLY'
 }
 
-const load = async () => {
-  loading.value = true
-  try {
-    config.value = await getCallHistoryConfig()
-    syncDraft()
-  } catch (e) {
-    ElMessage.error(getErrorMessage(e) || t('recordGovernance.loadFailed'))
-  } finally {
-    loading.value = false
-  }
-}
-
-const resetDraft = () => {
-  syncDraft()
-}
-
 /**
  * 切到 FULL 需要二次确认：FULL 会把完整请求/响应体加密落库，
  * 查看详情时服务端解密并写 FULL_CONTENT_ACCESS 审计。
@@ -238,17 +212,55 @@ const handleLevelChange = async (next: string | number | boolean | undefined) =>
   }
 }
 
-const handleSave = async () => {
-  if (!dirty.value) return
-  saving.value = true
+/**
+ * 记录级别是这一页唯一的可写配置（后端 PUT 也只接受 recordLevel），
+ * 所以整页只有一个草稿分区，保存入口由页脚动作条统一提供。
+ */
+const { saving, savingLabel, errors, dirtyCount, save, clearError } = useConfigDraft(
+  [
+    {
+      key: 'level',
+      label: () => t('recordGovernance.levelSection'),
+      isDirty: () => loaded.value && levelDraft.value !== config.value?.recordLevel,
+      save: async () => {
+        config.value = await updateCallHistoryConfig({ recordLevel: levelDraft.value })
+      },
+      commit: () => {
+        // 提交成功后 config 已换成服务端快照，dirty 判定直接对 config 比较，无需另存基线
+      }
+    }
+  ],
+  { fallbackError: () => t('recordGovernance.saveFailed') }
+)
+
+const load = async () => {
+  loading.value = true
   try {
-    config.value = await updateCallHistoryConfig({ recordLevel: levelDraft.value })
+    config.value = await getCallHistoryConfig()
     syncDraft()
-    ElMessage.success(t('recordGovernance.saveSuccess'))
+    clearError()
   } catch (e) {
-    ElMessage.error(getErrorMessage(e) || t('recordGovernance.saveFailed'))
+    ElMessage.error(getErrorMessage(e) || t('recordGovernance.loadFailed'))
   } finally {
-    saving.value = false
+    loading.value = false
+  }
+}
+
+const resetDraft = () => {
+  syncDraft()
+  clearError()
+}
+
+const handleSave = async (): Promise<void> => {
+  const result = await save()
+  if (!result.ok) {
+    if (result.failed) {
+      ElMessage.error(result.failed.message)
+    }
+    return
+  }
+  if (result.saved.length > 0) {
+    ElMessage.success(t('recordGovernance.saveSuccess'))
   }
 }
 
@@ -260,32 +272,22 @@ onMounted(load)
 </script>
 
 <style scoped>
-.card-title {
-  font-weight: 600;
+.overview-strip {
+  margin-bottom: var(--ja-space-4);
 }
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: var(--ja-space-2);
+
+.fallback-alert {
+  margin-bottom: var(--ja-space-4);
 }
-.config-actions {
-  display: flex;
-  gap: var(--ja-space-2);
-  margin-top: var(--ja-space-3);
-}
+
 .level-desc {
   margin: var(--ja-space-3) 0 0;
   color: var(--ja-ink-3);
   font-size: 13px;
   line-height: 1.6;
 }
-.hint {
-  margin: var(--ja-space-3) 0;
-  color: var(--ja-ink-3);
-  font-size: 12px;
-  line-height: 1.6;
-}
+
 .mono {
-  font-family: var(--ja-font-mono);
+  font-family: var(--el-font-family-mono, monospace);
 }
 </style>

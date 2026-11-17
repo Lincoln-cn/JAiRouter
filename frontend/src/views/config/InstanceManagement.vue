@@ -34,8 +34,10 @@
         <el-option :label="t('instance.disabled')" value="inactive"></el-option>
       </el-select>
 
+      <!-- 工具栏口径：筛选在前、刷新在后 -->
       <el-button type="text" class="refresh-button" @click="refreshCurrent">
         <el-icon><Refresh /></el-icon>
+        {{ t('instance.refresh') }}
       </el-button>
     </template>
 
@@ -127,16 +129,39 @@
                         {{ t('instance.circuitBreakerAction') }}
                       </el-button>
 
-                      <el-button link size="small" v-permission="'config:instances:write'" @click="handleDelete(scope.row)">
-                        {{ t('common.delete') }}
-                      </el-button>
+                      <!-- 删除二次确认统一走 ConfirmAction（不再弹消息框），文案带对象名 -->
+                      <ConfirmAction
+                        :title="t('instance.deleteInstanceConfirm', { name: scope.row.name })"
+                        :width="280"
+                        type="danger"
+                        :confirm-text="t('instance.confirm')"
+                        :cancel-text="t('instance.cancel')"
+                        :loading="deletingId === scope.row.id"
+                        :disabled="deletingId === scope.row.id"
+                        @confirm="handleDelete(scope.row)"
+                      >
+                        <el-button link size="small" v-permission="'config:instances:write'">
+                          {{ t('common.delete') }}
+                        </el-button>
+                      </ConfirmAction>
                     </template>
                   </el-table-column>
                 </el-table>
 
-                <div v-if="filtered.length === 0" class="empty-wrap">
-                  <el-empty :description="t('instance.emptyText')"></el-empty>
-                </div>
+                <!-- 空态统一走 EmptyState（口径：集合页空态不得直写 el-empty） -->
+                <EmptyState
+                  v-if="filtered.length === 0"
+                  icon="Files"
+                  :title="t('instance.emptyText')"
+                  :description="t('instance.emptyDescription')"
+                >
+                  <template #actions>
+                    <el-button type="primary" size="medium" v-permission="'config:instances:write'" @click="handleAddInstance">
+                      <el-icon><Plus /></el-icon>
+                      {{ t('instance.addInstance') }}
+                    </el-button>
+                  </template>
+                </EmptyState>
 
                 <div class="table-footer" v-if="filtered.length > 0">
                   <div class="footer-info">
@@ -172,10 +197,14 @@
     @save="handleCircuitBreakerSave"
   />
 
-  <!-- 添加/编辑实例对话框 -->
-  <el-dialog v-model="dialogVisible" :title="dialogTitle" width="820px" :before-close="handleDialogClose"
-    class="instance-dialog">
-      <el-form :model="form" label-width="120px" ref="formRef">
+  <!-- 新建/编辑实例抽屉：单实例，mode 区分 create / edit（字段多含两段动态列表 ⇒ 640） -->
+  <el-drawer v-model="dialogVisible" :title="drawerTitle" :size="drawerSize" direction="rtl"
+    :close-on-click-modal="false" destroy-on-close class="instance-drawer">
+      <!-- 提交失败的错误留在抽屉内展示，已填内容不清空 -->
+      <el-alert v-if="submitError" :title="submitError" type="error" show-icon closable class="drawer-error"
+        @close="submitError = ''" />
+
+      <el-form :model="form" label-width="120px" ref="formRef" :rules="rules">
         <el-divider content-position="left">{{ t('instance.basicInfo') }}</el-divider>
 
         <el-row :gutter="20">
@@ -363,21 +392,22 @@
       </el-form>
 
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="handleDialogClose">{{ t('instance.cancel') }}</el-button>
-          <el-button type="primary" v-permission="'config:instances:write'" @click="handleSave" :loading="saveLoading">{{ t('instance.save') }}</el-button>
-        </span>
+        <div class="drawer-footer">
+          <el-button :disabled="submitting" @click="closeDrawer">{{ t('instance.cancel') }}</el-button>
+          <el-button type="primary" v-permission="'config:instances:write'" @click="handleSave" :loading="submitting"
+            :disabled="submitting">{{ t('instance.save') }}</el-button>
+        </div>
       </template>
-    </el-dialog>
+    </el-drawer>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { FormInstance } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import type { AdapterInfo } from '@/api/adapter'
 import type { ServiceConfigPayload } from '@/types/common'
 import type { RateLimitConfigPayload, RateLimitFormData } from '@/components/RateLimitConfig.vue'
@@ -401,6 +431,9 @@ import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { useViewport } from '@/composables/useViewport'
 import { uid } from '@/utils/uid'
 
 const route = useRoute()
@@ -465,11 +498,26 @@ const instances = ref<Record<string, ServiceInstance[]>>({})
 
 // 加载与状态
 const loading = ref(false)
-const saveLoading = ref(false)
+// 抽屉提交 loading：提交期间保留已填内容并禁用关闭/重复提交
+const submitting = ref(false)
+// 限流/熔断两个独立弹层的保存状态（与编辑抽屉无关，故分开）
+const configSaving = ref(false)
 const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const isEdit = ref(false)
+// 单实例抽屉：create / edit 两态，标题由 drawerTitle 派生
+const drawerMode = ref<'create' | 'edit'>('create')
+const submitError = ref('')
+const deletingId = ref<string | number | null>(null)
+const isEdit = computed(() => drawerMode.value === 'edit')
 const formRef = ref<FormInstance>()
+
+// 抽屉尺寸：字段多（基本信息 + 请求头 + 标签两段动态列表）⇒ 640，窄屏 100%
+const { isNarrow } = useViewport()
+const drawerSize = computed(() => (isNarrow.value ? '100%' : '640px'))
+const drawerTitle = computed(() =>
+  drawerMode.value === 'create'
+    ? t('instance.createTitle')
+    : t('instance.editTitle', { name: form.name || form.instanceId })
+)
 
 // 搜索/过滤/分页
 const searchQuery = ref('')
@@ -531,6 +579,13 @@ const form = reactive<ServiceInstance>({
     successThreshold: 2
   }
 })
+
+// 表单校验：仅 REQUIRED 三项（服务类型 / 名称 / 基础 URL），通过才提交
+const rules = computed<FormRules<ServiceInstance>>(() => ({
+  serviceType: [{ required: true, message: t('instance.selectServiceType'), trigger: 'change' }],
+  name: [{ required: true, message: t('instance.inputName'), trigger: 'blur' }],
+  baseUrl: [{ required: true, message: t('instance.inputBaseUrl'), trigger: 'blur' }]
+}))
 
 // 请求头管理
 interface HeaderItem {
@@ -827,10 +882,10 @@ const refreshCurrent = () => {
   ElMessage.success(t('instance.messages.refreshing'))
 }
 
-// 添加实例
+// 打开抽屉：新建
 const handleAddInstance = () => {
-  dialogTitle.value = t('instance.addInstance')
-  isEdit.value = false
+  drawerMode.value = 'create'
+  submitError.value = ''
   Object.assign(form, {
     id: 0,
     serviceType: activeServiceType.value, // 确保使用当前选项卡的服务类型
@@ -865,8 +920,8 @@ const handleAddInstance = () => {
 
 // 编辑实例
 const handleEdit = (row: ServiceInstance) => {
-  dialogTitle.value = t('instance.editInstance')
-  isEdit.value = true
+  drawerMode.value = 'edit'
+  submitError.value = ''
   // issue #1009：实例标识统一为 UUID（instanceId 字段）；历史数据回退数据库主键
   const instanceUuid = row.instanceId || String(row.id)
   Object.assign(form, {
@@ -901,47 +956,51 @@ const handleEdit = (row: ServiceInstance) => {
   dialogVisible.value = true
 }
 
-// 删除实例
-const handleDelete = (row: ServiceInstance) => {
-  ElMessageBox.confirm(t('instance.deleteConfirmMessage'), t('instance.confirmTitle'), {
-    confirmButtonText: t('instance.confirm'),
-    cancelButtonText: t('instance.cancel'),
-    type: 'warning'
-  }).then(async () => {
-    try {
-      // 确保使用当前激活的页签对应的服务类型
-      const serviceType = activeServiceType.value;
-      // issue #1009：实例标识统一为 UUID；历史数据回退数据库主键（后端双轨接受）
-      const instanceUuid = row.instanceId || String(row.id)
-      const response = await deleteServiceInstance(serviceType, instanceUuid)
-      if (response.data?.success) {
-        instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== row.id)
-        instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
-        // 同时清除试验场的缓存，让试验场下拉列表刷新
-        clearCache(serviceType)
-        ElMessage.success(t('instance.messages.deleteSuccess'))
-      } else {
-        ElMessage.error(response.data?.message || t('instance.messages.deleteFailed'))
-      }
-    } catch (error) {
-      console.error('删除实例失败:', error)
-      ElMessage.error(t('instance.messages.deleteInstanceFailed'))
+// 删除实例（二次确认由 ConfirmAction 承担，此处只做「确认后」的提交）
+const handleDelete = async (row: ServiceInstance) => {
+  deletingId.value = row.id
+  try {
+    // 确保使用当前激活的页签对应的服务类型
+    const serviceType = activeServiceType.value;
+    // issue #1009：实例标识统一为 UUID；历史数据回退数据库主键（后端双轨接受）
+    const instanceUuid = row.instanceId || String(row.id)
+    const response = await deleteServiceInstance(serviceType, instanceUuid)
+    if (response.data?.success) {
+      instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== row.id)
+      instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
+      // 同时清除试验场的缓存，让试验场下拉列表刷新
+      clearCache(serviceType)
+      ElMessage.success(t('instance.messages.deleteSuccess'))
+    } else {
+      ElMessage.error(response.data?.message || t('instance.messages.deleteFailed'))
     }
-  }).catch(() => {
-    ElMessage.info(t('instance.messages.deleteCancelled'))
-  })
+  } catch (error) {
+    console.error('删除实例失败:', error)
+    ElMessage.error(t('instance.messages.deleteInstanceFailed'))
+  } finally {
+    deletingId.value = null
+  }
 }
 
-// 关闭对话框
-const handleDialogClose = () => {
+// 关闭抽屉：提交中不允许关闭，避免请求还在飞就丢了上下文
+const closeDrawer = () => {
+  if (submitting.value) return
   dialogVisible.value = false
-  if (formRef.value) formRef.value.resetFields()
+  if (formRef.value) formRef.value.clearValidate()
 }
 
 // 保存实例（新增/编辑）- 仅保存基础属性，限流器和熔断器通过独立接口配置
 const handleSave = async () => {
-  if (!formRef.value) return
-  saveLoading.value = true
+  if (!formRef.value || submitting.value) return
+  submitError.value = ''
+  // 校验通过才提交；校验失败只在抽屉内提示，不清空已填内容
+  try {
+    await formRef.value.validate()
+  } catch {
+    submitError.value = t('instance.validationFailed')
+    return
+  }
+  submitting.value = true
   try {
     // 确保使用当前选项卡的服务类型
     const serviceType = activeServiceType.value;
@@ -969,8 +1028,8 @@ const handleSave = async () => {
         fetchServiceInstances(serviceType)
         ElMessage.success(t('instance.messages.editSuccess'))
       } else {
-        ElMessage.error(response.data?.message || t('instance.messages.editFailed'))
-        saveLoading.value = false
+        // 失败信息展示在抽屉内，抽屉与已填内容保持不变
+        submitError.value = response.data?.message || t('instance.messages.editFailed')
         return
       }
     } else {
@@ -984,8 +1043,7 @@ const handleSave = async () => {
         fetchServiceInstances(serviceType)
         ElMessage.success(t('instance.messages.addSuccess'))
       } else {
-        ElMessage.error(response.data?.message || t('instance.messages.addFailed'))
-        saveLoading.value = false
+        submitError.value = response.data?.message || t('instance.messages.addFailed')
         return
       }
     }
@@ -993,9 +1051,9 @@ const handleSave = async () => {
     dialogVisible.value = false
   } catch (error) {
     console.error('保存实例失败:', error)
-    ElMessage.error(t('instance.messages.saveFailed'))
+    submitError.value = t('instance.messages.saveFailed')
   } finally {
-    saveLoading.value = false
+    submitting.value = false
   }
 }
 
@@ -1052,7 +1110,7 @@ const openCircuitBreakerConfig = (row: ServiceInstance) => {
 const handleRateLimitSave = async (configData: RateLimitConfigPayload) => {
   if (!currentEditInstanceId.value) return
 
-  saveLoading.value = true
+  configSaving.value = true
   try {
     const serviceType = currentEditServiceType.value
     const instanceId = currentEditInstanceId.value
@@ -1085,7 +1143,7 @@ const handleRateLimitSave = async (configData: RateLimitConfigPayload) => {
     console.error('保存限流器配置失败:', error)
     ElMessage.error(t('instance.messages.rateLimitSaveFailed'))
   } finally {
-    saveLoading.value = false
+    configSaving.value = false
   }
 }
 
@@ -1093,7 +1151,7 @@ const handleRateLimitSave = async (configData: RateLimitConfigPayload) => {
 const handleCircuitBreakerSave = async (configData: CircuitBreakerConfigPayload) => {
   if (!currentEditInstanceId.value) return
 
-  saveLoading.value = true
+  configSaving.value = true
   try {
     const serviceType = currentEditServiceType.value
     const instanceId = currentEditInstanceId.value
@@ -1123,7 +1181,7 @@ const handleCircuitBreakerSave = async (configData: CircuitBreakerConfigPayload)
     console.error('保存熔断器配置失败:', error)
     ElMessage.error(t('instance.messages.cbSaveFailed'))
   } finally {
-    saveLoading.value = false
+    configSaving.value = false
   }
 }
 
@@ -1152,6 +1210,9 @@ onMounted(() => {
 
 .refresh-button {
   color: var(--ja-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* tabs & table area */
@@ -1243,14 +1304,7 @@ onMounted(() => {
   text-overflow: ellipsis;
 }
 
-/* empty and footer */
-.empty-wrap {
-  padding: 30px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
+/* 底栏 */
 .table-footer {
   display: flex;
   justify-content: space-between;
@@ -1265,34 +1319,39 @@ onMounted(() => {
   font-size: 13px;
 }
 
-/* dialog */
-.instance-dialog :deep(.el-dialog__header) {
+/* 抽屉（新建/编辑实例） */
+.instance-drawer :deep(.el-drawer__header) {
+  margin-bottom: 0;
   background-color: var(--el-fill-color-light);
   border-bottom: 1px solid var(--ja-border-lighter);
   padding: 14px 20px;
 }
 
-.instance-dialog :deep(.el-dialog__title) {
+.instance-drawer :deep(.el-drawer__title) {
   font-weight: 700;
   color: var(--ja-text-primary);
   font-size: 18px;
 }
 
-.instance-dialog :deep(.el-dialog__body) {
+.instance-drawer :deep(.el-drawer__body) {
   padding: 20px;
 }
 
-.instance-dialog :deep(.el-form-item__label) {
+.instance-drawer :deep(.el-form-item__label) {
   font-weight: 600;
   font-size: 14px;
   color: var(--ja-text-primary);
 }
 
-.dialog-footer {
+.drawer-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   padding: 10px 20px;
+}
+
+.drawer-error {
+  margin-bottom: 16px;
 }
 
 /* 适配器相关样式 */

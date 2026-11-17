@@ -1,19 +1,17 @@
 <template>
-  <PageSkeleton :title="t('clusterConfig.pageTitle')">
-    <template #actions>
-      <el-button @click="loadConfig" :loading="loading" size="default">
-        <el-icon><Refresh /></el-icon>
-        {{ t('clusterConfig.reload') }}
-      </el-button>
-    </template>
-
-    <template #toolbar>
-      <p class="restart-hint">
-        <el-icon><InfoFilled /></el-icon>
-        <span>{{ t('clusterConfig.restartHint') }}</span>
-      </p>
-    </template>
-
+  <ConfigPageShell
+    :title="t('clusterConfig.pageTitle')"
+    :description="t('clusterConfig.restartHint')"
+    :loading="loading"
+    :saving="saving"
+    :saving-label="savingLabel"
+    :dirty-count="dirtyCount"
+    :can-write="canWrite"
+    save-permission="config:cluster:write"
+    @refresh="loadConfig"
+    @save="handleSave"
+    @discard="resetForm"
+  >
     <el-alert
       v-if="!config"
       :title="t('clusterConfig.pageTitle')"
@@ -24,159 +22,139 @@
       style="margin-bottom: 16px"
     />
 
-    <!-- 部署形态 -->
-    <el-card v-if="config" shadow="hover" style="margin-bottom: 16px">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('clusterConfig.modeTitle') }}</span>
+    <template v-else>
+      <ConfigSectionCard
+        :title="t('clusterConfig.modeTitle')"
+        :description="config.mode === 'cluster' ? t('clusterConfig.modeDescCluster') : t('clusterConfig.modeDescStandalone')"
+      >
+        <template #actions>
           <el-tag size="small" :type="config.mode === 'cluster' ? 'success' : 'info'" effect="plain">
             {{ config.mode === 'cluster' ? t('clusterConfig.modeCluster') : t('clusterConfig.modeStandalone') }}
           </el-tag>
-        </div>
-      </template>
-
-      <p class="card-desc">
-        {{ config.mode === 'cluster' ? t('clusterConfig.modeDescCluster') : t('clusterConfig.modeDescStandalone') }}
-      </p>
-
-      <div class="readonly-grid">
-        <div class="readonly-item">
-          <span class="readonly-label">{{ t('clusterConfig.replicasLabel') }}</span>
-          <span class="readonly-value">{{ config.replicas }}</span>
-        </div>
-        <div class="readonly-item">
-          <span class="readonly-label">{{ t('clusterConfig.eventsEnabledLabel') }}</span>
-          <span class="readonly-value">
-            {{ config.clusterEventsEnabled ? t('clusterConfig.on') : t('clusterConfig.off') }}
-          </span>
-        </div>
-      </div>
-    </el-card>
-
-    <!-- 集群成员 -->
-    <el-card v-if="config && clusterStatus" shadow="hover" style="margin-bottom: 16px">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('clusterConfig.membersTitle') }}</span>
-          <el-tag size="small" type="info" effect="plain">
-            {{ t('clusterConfig.memberCount', { total: clusterStatus.summary.total }) }}
-          </el-tag>
-        </div>
-      </template>
-
-      <el-empty
-        v-if="clusterStatus.members.length === 0"
-        :description="t('clusterConfig.membersEmpty')"
-        :image-size="72"
-      />
-
-      <el-table v-else :data="clusterStatus.members" size="small">
-        <el-table-column :label="t('clusterConfig.colReplica')" min-width="160">
-          <template #default="{ row }">
-            {{ row.displayName }}
-            <el-tag
-              v-if="row.instanceId === clusterStatus.self.instanceId"
-              size="small"
-              type="success"
-              effect="plain"
-              style="margin-left: 6px"
-            >
-              {{ t('clusterConfig.selfTag') }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('clusterConfig.colStatus')" width="110">
-          <template #default="{ row }">
-            <span class="status-dot" :class="statusClass(row)"></span>
-            {{ statusText(row) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('clusterConfig.colUptime')" width="120">
-          <template #default="{ row }">{{ uptimeText(row.startedAt) }}</template>
-        </el-table-column>
-        <el-table-column :label="t('clusterConfig.colConfigVersion')" width="130">
-          <template #default="{ row }">
-            <span :class="{ 'stale-version': row.configVersion < clusterStatus.clusterConfigVersion }">
-              v{{ row.configVersion }}
+          <el-tag size="small" type="info" effect="plain">{{ t('clusterConfig.readonlyTag') }}</el-tag>
+        </template>
+        <div class="readonly-grid">
+          <div class="readonly-item">
+            <span class="readonly-label">{{ t('clusterConfig.replicasLabel') }}</span>
+            <span class="readonly-value">{{ config.replicas }}</span>
+          </div>
+          <div class="readonly-item">
+            <span class="readonly-label">{{ t('clusterConfig.eventsEnabledLabel') }}</span>
+            <span class="readonly-value">
+              {{ config.clusterEventsEnabled ? t('clusterConfig.on') : t('clusterConfig.off') }}
             </span>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('clusterConfig.colInstances')" width="140">
-          <template #default="{ row }">
-            {{ t('clusterConfig.instancesValue', { healthy: row.healthyInstances, total: row.instanceCount }) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('clusterConfig.colLastSeen')" width="120">
-          <template #default="{ row }">{{ lastSeenText(row.lastSeen) }}</template>
-        </el-table-column>
-      </el-table>
-    </el-card>
-
-    <!-- 配置同步 -->
-    <el-card v-if="config" shadow="hover" style="margin-bottom: 16px">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('clusterConfig.syncTitle') }}</span>
-          <el-tag size="small" type="info" effect="plain">
-            {{ t('clusterConfig.appliedVersion', { config: versionText(config.configSync.appliedConfigVersion), apiKey: versionText(config.configSync.appliedApiKeyVersion) }) }}
-          </el-tag>
+          </div>
         </div>
-      </template>
+      </ConfigSectionCard>
 
-      <p class="card-desc">{{ t('clusterConfig.syncDesc') }}</p>
+      <ConfigSectionCard
+        v-if="clusterStatus"
+        :title="t('clusterConfig.membersTitle')"
+        :description="t('clusterConfig.memberCount', { total: clusterStatus.summary.total })"
+      >
+        <template #actions>
+          <el-tag size="small" type="info" effect="plain">{{ t('clusterConfig.readonlyTag') }}</el-tag>
+        </template>
 
-      <div class="runtime-config-grid">
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('clusterConfig.syncEnabledLabel') }}</span>
-          <el-switch v-model="form.enabled" />
+        <el-empty
+          v-if="clusterStatus.members.length === 0"
+          :description="t('clusterConfig.membersEmpty')"
+          :image-size="72"
+        />
+
+        <el-table v-else :data="clusterStatus.members" size="small">
+          <el-table-column :label="t('clusterConfig.colReplica')" min-width="160">
+            <template #default="{ row }">
+              {{ row.displayName }}
+              <el-tag
+                v-if="row.instanceId === clusterStatus.self.instanceId"
+                size="small"
+                type="success"
+                effect="plain"
+                style="margin-left: 6px"
+              >
+                {{ t('clusterConfig.selfTag') }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('clusterConfig.colStatus')" width="110">
+            <template #default="{ row }">
+              <span class="status-dot" :class="statusClass(row)"></span>
+              {{ statusText(row) }}
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('clusterConfig.colUptime')" width="120">
+            <template #default="{ row }">{{ uptimeText(row.startedAt) }}</template>
+          </el-table-column>
+          <el-table-column :label="t('clusterConfig.colConfigVersion')" width="130">
+            <template #default="{ row }">
+              <span :class="{ 'stale-version': row.configVersion < clusterStatus.clusterConfigVersion }">
+                v{{ row.configVersion }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('clusterConfig.colInstances')" width="140">
+            <template #default="{ row }">
+              {{ t('clusterConfig.instancesValue', { healthy: row.healthyInstances, total: row.instanceCount }) }}
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('clusterConfig.colLastSeen')" width="120">
+            <template #default="{ row }">{{ lastSeenText(row.lastSeen) }}</template>
+          </el-table-column>
+        </el-table>
+      </ConfigSectionCard>
+
+      <ConfigSectionCard
+        :title="t('clusterConfig.syncTitle')"
+        :description="t('clusterConfig.syncDesc')"
+        :error="errors.sync"
+      >
+        <div class="runtime-config-grid">
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('clusterConfig.syncEnabledLabel') }}</span>
+            <SettingsSwitch
+              :model-value="form.enabled"
+              :disabled="!canWrite"
+              :immediate-hint="t('clusterConfig.immediateHint')"
+              :submit="submitSyncEnabled"
+              @update:model-value="form.enabled = $event"
+            />
+          </div>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('clusterConfig.pollIntervalLabel') }}</span>
+            <el-input-number
+              v-model="form.pollIntervalMs"
+              :min="1000"
+              :max="600000"
+              :step="1000"
+              :disabled="!form.enabled || !canWrite"
+              controls-position="right"
+              style="width: 180px"
+            />
+            <span class="unit">{{ t('clusterConfig.pollIntervalUnit') }}</span>
+          </div>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('clusterConfig.eventBusLabel') }}</span>
+            <SettingsSwitch
+              :model-value="form.eventBusEnabled"
+              :disabled="!form.enabled || !canWrite"
+              :immediate-hint="t('clusterConfig.immediateHint')"
+              :submit="submitEventBusEnabled"
+              @update:model-value="form.eventBusEnabled = $event"
+            />
+          </div>
         </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('clusterConfig.pollIntervalLabel') }}</span>
-          <el-input-number
-            v-model="form.pollIntervalMs"
-            :min="1000"
-            :max="600000"
-            :step="1000"
-            :disabled="!form.enabled"
-            controls-position="right"
-            style="width: 180px"
-          />
-          <span class="unit">{{ t('clusterConfig.pollIntervalUnit') }}</span>
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('clusterConfig.eventBusLabel') }}</span>
-          <el-switch v-model="form.eventBusEnabled" :disabled="!form.enabled" />
-        </div>
-      </div>
 
-      <p class="card-desc hint">{{ t('clusterConfig.eventBusHint') }}</p>
+        <p class="card-desc hint">{{ t('clusterConfig.eventBusHint') }}</p>
+        <p v-if="!form.enabled" class="mode-hint">{{ t('clusterConfig.syncDisabledHint') }}</p>
+      </ConfigSectionCard>
 
-      <p v-if="!form.enabled" class="mode-hint">
-        {{ t('clusterConfig.syncDisabledHint') }}
-      </p>
-
-      <div class="config-actions">
-        <el-button
-          v-permission="'config:cluster:write'"
-          :type="configChanged ? 'primary' : 'default'"
-          :loading="saving"
-          :disabled="!configChanged"
-          @click="handleSave"
-        >
-          <el-icon><Check /></el-icon>
-          {{ t('clusterConfig.save') }}
-        </el-button>
-        <el-button :disabled="saving" @click="resetForm">
-          {{ t('clusterConfig.reset') }}
-        </el-button>
-      </div>
-    </el-card>
-
-    <!-- 上游健康共享 -->
-    <el-card v-if="config" shadow="hover" style="margin-bottom: 16px">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('clusterConfig.healthTitle') }}</span>
+      <ConfigSectionCard
+        :title="t('clusterConfig.healthTitle')"
+        :description="t('clusterConfig.healthDesc')"
+        :error="errors.health"
+      >
+        <template #actions>
           <el-tag
             size="small"
             :type="config.healthSharing.active ? 'success' : 'info'"
@@ -184,120 +162,106 @@
           >
             {{ config.healthSharing.active ? t('clusterConfig.healthActive') : t('clusterConfig.healthInactive') }}
           </el-tag>
-        </div>
-      </template>
+        </template>
 
-      <p class="card-desc">{{ t('clusterConfig.healthDesc') }}</p>
-
-      <div class="runtime-config-grid">
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('clusterConfig.healthEnabledLabel') }}</span>
-          <el-switch v-model="form.healthEnabled" />
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('clusterConfig.healthModeLabel') }}</span>
-          <el-select
-            v-model="form.healthMode"
-            :disabled="!form.healthEnabled"
-            style="width: 200px"
-          >
-            <el-option :label="t('clusterConfig.healthModeLocal')" value="local" />
-            <el-option :label="t('clusterConfig.healthModeShared')" value="shared" />
-            <el-option :label="t('clusterConfig.healthModeQuorum')" value="quorum" />
-          </el-select>
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('clusterConfig.healthToleranceLabel') }}</span>
-          <el-input-number
-            v-model="form.healthToleranceCount"
-            :min="1"
-            :max="64"
-            :disabled="!form.healthEnabled || form.healthMode !== 'quorum'"
-            controls-position="right"
-            style="width: 120px"
-          />
-        </div>
-        <div class="config-switch-item">
-          <span class="config-switch-label">{{ t('clusterConfig.healthGraceLabel') }}</span>
-          <el-input-number
-            v-model="form.healthGraceSeconds"
-            :min="0"
-            :max="3600"
-            :disabled="!form.healthEnabled"
-            controls-position="right"
-            style="width: 120px"
-          />
-          <span class="unit">{{ t('clusterConfig.healthGraceUnit') }}</span>
-        </div>
-      </div>
-
-      <p class="card-desc hint">{{ t('clusterConfig.healthModeHint') }}</p>
-
-      <div class="runtime-kv-grid">
-        <div class="runtime-kv">
-          <span class="runtime-kv-label">{{ t('clusterConfig.healthTrackedLabel') }}</span>
-          <span class="runtime-kv-value">{{ config.healthSharing.trackedInstances }}</span>
-        </div>
-        <div class="runtime-kv">
-          <span class="runtime-kv-label">{{ t('clusterConfig.healthLastRefreshLabel') }}</span>
-          <span class="runtime-kv-value">{{ timeText(config.healthSharing.lastRefreshAt) }}</span>
-        </div>
-      </div>
-
-      <p v-if="config.mode === 'standalone'" class="mode-hint">
-        {{ t('clusterConfig.healthStandaloneHint') }}
-      </p>
-
-      <div class="config-actions">
-        <el-button
-          v-permission="'config:cluster:write'"
-          :type="configChanged ? 'primary' : 'default'"
-          :loading="saving"
-          :disabled="!configChanged"
-          @click="handleSave"
-        >
-          <el-icon><Check /></el-icon>
-          {{ t('clusterConfig.save') }}
-        </el-button>
-        <el-button :disabled="saving" @click="resetForm">
-          {{ t('clusterConfig.reset') }}
-        </el-button>
-      </div>
-    </el-card>
-
-    <!-- 字段清单 -->
-    <el-card v-if="config" shadow="never" class="readonly-card">
-      <el-collapse v-model="readonlyOpen">
-        <el-collapse-item name="readonly">
-          <template #title>
-            <span class="card-title">{{ t('clusterConfig.fieldsTitle') }}</span>
-            <el-tag size="small" type="info" effect="plain" class="readonly-count">
-              {{ t('clusterConfig.fieldsCount', { count: readonlyFields.length }) }}
-            </el-tag>
-          </template>
-          <div class="readonly-grid">
-            <div v-for="field in readonlyFields" :key="field.path" class="readonly-item">
-              <span class="readonly-label">
-                {{ field.label }}
-                <el-tag v-if="field.restart" size="small" type="info" effect="plain">
-                  {{ t('clusterConfig.restartRequiredBadge') }}
-                </el-tag>
-              </span>
-              <span class="readonly-value">{{ field.path }}</span>
-            </div>
+        <div class="runtime-config-grid">
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('clusterConfig.healthEnabledLabel') }}</span>
+            <SettingsSwitch
+              :model-value="form.healthEnabled"
+              :disabled="!canWrite"
+              :immediate-hint="t('clusterConfig.immediateHint')"
+              :submit="submitHealthEnabled"
+              @update:model-value="form.healthEnabled = $event"
+            />
           </div>
-        </el-collapse-item>
-      </el-collapse>
-    </el-card>
-  </PageSkeleton>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('clusterConfig.healthModeLabel') }}</span>
+            <el-select
+              v-model="form.healthMode"
+              :disabled="!form.healthEnabled || !canWrite"
+              style="width: 200px"
+            >
+              <el-option :label="t('clusterConfig.healthModeLocal')" value="local" />
+              <el-option :label="t('clusterConfig.healthModeShared')" value="shared" />
+              <el-option :label="t('clusterConfig.healthModeQuorum')" value="quorum" />
+            </el-select>
+          </div>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('clusterConfig.healthToleranceLabel') }}</span>
+            <el-input-number
+              v-model="form.healthToleranceCount"
+              :min="1"
+              :max="64"
+              :disabled="!form.healthEnabled || form.healthMode !== 'quorum' || !canWrite"
+              controls-position="right"
+              style="width: 120px"
+            />
+          </div>
+          <div class="config-switch-item">
+            <span class="config-switch-label">{{ t('clusterConfig.healthGraceLabel') }}</span>
+            <el-input-number
+              v-model="form.healthGraceSeconds"
+              :min="0"
+              :max="3600"
+              :disabled="!form.healthEnabled || !canWrite"
+              controls-position="right"
+              style="width: 120px"
+            />
+            <span class="unit">{{ t('clusterConfig.healthGraceUnit') }}</span>
+          </div>
+        </div>
+
+        <p class="card-desc hint">{{ t('clusterConfig.healthModeHint') }}</p>
+        <p v-if="config.mode === 'standalone'" class="mode-hint">{{ t('clusterConfig.healthStandaloneHint') }}</p>
+
+        <div class="runtime-kv-grid">
+          <div class="runtime-kv">
+            <span class="runtime-kv-label">{{ t('clusterConfig.healthTrackedLabel') }}</span>
+            <span class="runtime-kv-value">{{ config.healthSharing.trackedInstances }}</span>
+          </div>
+          <div class="runtime-kv">
+            <span class="runtime-kv-label">{{ t('clusterConfig.healthLastRefreshLabel') }}</span>
+            <span class="runtime-kv-value">{{ timeText(config.healthSharing.lastRefreshAt) }}</span>
+          </div>
+        </div>
+      </ConfigSectionCard>
+
+      <ConfigSectionCard
+        :title="t('clusterConfig.fieldsTitle')"
+        :description="t('clusterConfig.fieldsHint')"
+      >
+        <template #actions>
+          <el-tag size="small" type="info" effect="plain">{{ t('clusterConfig.readonlyTag') }}</el-tag>
+          <el-button link type="primary" @click="toggleReadonly">
+            {{ readonlyOpen ? t('clusterConfig.collapse') : t('clusterConfig.expand') }}
+          </el-button>
+        </template>
+        <div v-if="readonlyOpen" class="readonly-grid">
+          <div v-for="field in readonlyFields" :key="field.path" class="readonly-item">
+            <span class="readonly-label">
+              {{ field.label }}
+              <el-tag v-if="field.restart" size="small" type="info" effect="plain">
+                {{ t('clusterConfig.restartRequiredBadge') }}
+              </el-tag>
+            </span>
+            <span class="readonly-value">{{ field.path }}</span>
+          </div>
+        </div>
+      </ConfigSectionCard>
+    </template>
+  </ConfigPageShell>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Refresh, Check, InfoFilled } from '@element-plus/icons-vue'
-import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
+import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
+import SettingsSwitch from '@/components/config/SettingsSwitch.vue'
+import { usePermission } from '@/composables/usePermission'
+import { useConfigDraft } from '@/composables/useConfigDraft'
 import {
   getClusterConfig,
   getClusterStatus,
@@ -309,12 +273,14 @@ import {
 } from '@/api/clusterConfig'
 
 const { t } = useI18n()
+const { hasPermission } = usePermission()
+
+const canWrite = computed(() => hasPermission('config:cluster:write'))
 
 const loading = ref(false)
-const saving = ref(false)
 const config = ref<ClusterConfig | null>(null)
 const clusterStatus = ref<ClusterStatus | null>(null)
-const readonlyOpen = ref<string[]>([])
+const readonlyOpen = ref(false)
 
 interface ClusterForm {
   enabled: boolean
@@ -326,11 +292,25 @@ interface ClusterForm {
   healthGraceSeconds: number
 }
 
-const form = ref<ClusterForm>(defaultForm(null))
+const form = reactive<ClusterForm>({
+  enabled: true,
+  pollIntervalMs: 5000,
+  eventBusEnabled: true,
+  healthEnabled: false,
+  healthMode: 'quorum',
+  healthToleranceCount: 1,
+  healthGraceSeconds: 30
+})
 
-/**
- * 从快照生成表单初值.
- */
+/** 基线 = 服务端快照；即时开关提交时以它为底，避免把未保存的草稿一起写进去。 */
+const baseline = reactive<ClusterForm>({ ...form })
+
+function syncFromSnapshot(source: ClusterConfig): void {
+  const next = defaultForm(source)
+  Object.assign(form, next)
+  Object.assign(baseline, next)
+}
+
 function defaultForm(source: ClusterConfig | null): ClusterForm {
   return {
     enabled: source?.configSync.enabled ?? true,
@@ -343,9 +323,20 @@ function defaultForm(source: ClusterConfig | null): ClusterForm {
   }
 }
 
-/**
- * 时间戳的可读文本：0 表示尚未拉取.
- */
+/** 用基线值 + 改动字段组装全量 payload（后端 update 是整体替换语义）。 */
+function payloadOf(overrides: Partial<ClusterForm>): ClusterConfigPayload {
+  const merged = { ...baseline, ...overrides }
+  return {
+    configSyncEnabled: merged.enabled,
+    configSyncPollIntervalMs: merged.pollIntervalMs,
+    configSyncEventBusEnabled: merged.eventBusEnabled,
+    healthSharingEnabled: merged.healthEnabled,
+    healthSharingMode: merged.healthMode,
+    healthSharingToleranceCount: merged.healthToleranceCount,
+    healthSharingGraceSeconds: merged.healthGraceSeconds
+  }
+}
+
 function timeText(timestamp: number): string {
   if (!timestamp) {
     return t('clusterConfig.neverRefreshed')
@@ -353,31 +344,20 @@ function timeText(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString()
 }
 
-/**
- * 已应用版本的可读文本：-1 表示尚未建立基线.
- */
-function versionText(version: number): string {
-  return version < 0 ? t('clusterConfig.notInitialized') : String(version)
-}
-
-/**
- * 加载集群设置快照与成员状态.
- */
 async function loadConfig(): Promise<void> {
   loading.value = true
   try {
     const [snapshot, status] = await Promise.all([getClusterConfig(), getClusterStatus()])
     config.value = snapshot
     clusterStatus.value = status
-    form.value = defaultForm(snapshot)
+    if (snapshot) {
+      syncFromSnapshot(snapshot)
+    }
   } finally {
     loading.value = false
   }
 }
 
-/**
- * 成员状态样式：最近心跳超过 10 秒（2 个默认心跳周期）视为「疑似离线」.
- */
 function statusClass(member: ClusterMember): string {
   return member.lastSeen < Date.now() - 10000 ? 'suspect' : 'online'
 }
@@ -388,9 +368,6 @@ function statusText(member: ClusterMember): string {
     : t('clusterConfig.statusOnline')
 }
 
-/**
- * 运行时长（天/小时/分钟）.
- */
 function uptimeText(startedAt: number): string {
   const minutes = Math.max(0, Math.floor((Date.now() - startedAt) / 60000))
   if (minutes < 60) {
@@ -403,9 +380,6 @@ function uptimeText(startedAt: number): string {
   return t('clusterConfig.uptimeDays', { days: Math.floor(hours / 24), hours: hours % 24 })
 }
 
-/**
- * 最近心跳的相对时间.
- */
 function lastSeenText(lastSeen: number): string {
   const seconds = Math.max(0, Math.floor((Date.now() - lastSeen) / 1000))
   if (seconds < 5) {
@@ -414,28 +388,6 @@ function lastSeenText(lastSeen: number): string {
   return t('clusterConfig.secondsAgo', { seconds })
 }
 
-/**
- * 表单是否有未保存的改动.
- */
-const configChanged = computed(() => {
-  if (!config.value) {
-    return false
-  }
-  const base = defaultForm(config.value)
-  return (
-    base.enabled !== form.value.enabled ||
-    base.pollIntervalMs !== form.value.pollIntervalMs ||
-    base.eventBusEnabled !== form.value.eventBusEnabled ||
-    base.healthEnabled !== form.value.healthEnabled ||
-    base.healthMode !== form.value.healthMode ||
-    base.healthToleranceCount !== form.value.healthToleranceCount ||
-    base.healthGraceSeconds !== form.value.healthGraceSeconds
-  )
-})
-
-/**
- * 只读字段清单：可热改与需重启的路径.
- */
 const readonlyFields = computed(() => {
   if (!config.value) {
     return []
@@ -446,66 +398,93 @@ const readonlyFields = computed(() => {
   ]
 })
 
-/**
- * 保存热改字段并回填最新快照.
- */
-async function handleSave(): Promise<void> {
-  saving.value = true
-  try {
-    const payload: ClusterConfigPayload = {
-      configSyncEnabled: form.value.enabled,
-      configSyncPollIntervalMs: form.value.pollIntervalMs,
-      configSyncEventBusEnabled: form.value.eventBusEnabled,
-      healthSharingEnabled: form.value.healthEnabled,
-      healthSharingMode: form.value.healthMode,
-      healthSharingToleranceCount: form.value.healthToleranceCount,
-      healthSharingGraceSeconds: form.value.healthGraceSeconds
+const toggleReadonly = (): void => {
+  readonlyOpen.value = !readonlyOpen.value
+}
+
+const applySnapshot = (snapshot: ClusterConfig): void => {
+  config.value = snapshot
+  syncFromSnapshot(snapshot)
+}
+
+/** 即时开关：只提交该字段，其余取基线，草稿保持不动。 */
+async function submitSyncEnabled(next: boolean): Promise<void> {
+  const snapshot = await updateClusterConfig(payloadOf({ enabled: next }))
+  applySnapshot(snapshot)
+  ElMessage.success(t('clusterConfig.saved'))
+}
+
+async function submitEventBusEnabled(next: boolean): Promise<void> {
+  const snapshot = await updateClusterConfig(payloadOf({ eventBusEnabled: next }))
+  applySnapshot(snapshot)
+  ElMessage.success(t('clusterConfig.saved'))
+}
+
+async function submitHealthEnabled(next: boolean): Promise<void> {
+  const snapshot = await updateClusterConfig(payloadOf({ healthEnabled: next }))
+  applySnapshot(snapshot)
+  ElMessage.success(t('clusterConfig.saved'))
+}
+
+const { saving, savingLabel, errors, dirtyCount, save } = useConfigDraft(
+  [
+    {
+      key: 'sync',
+      label: () => t('clusterConfig.syncTitle'),
+      isDirty: () => form.pollIntervalMs !== baseline.pollIntervalMs,
+      validate: () => (form.pollIntervalMs < 1000 ? t('clusterConfig.invalidPollInterval') : null),
+      save: async () => {
+        await updateClusterConfig(payloadOf({ pollIntervalMs: form.pollIntervalMs }))
+      },
+      commit: () => {
+        baseline.pollIntervalMs = form.pollIntervalMs
+      }
+    },
+    {
+      key: 'health',
+      label: () => t('clusterConfig.healthTitle'),
+      isDirty: () => form.healthMode !== baseline.healthMode
+        || form.healthToleranceCount !== baseline.healthToleranceCount
+        || form.healthGraceSeconds !== baseline.healthGraceSeconds,
+      save: async () => {
+        await updateClusterConfig(payloadOf({
+          healthMode: form.healthMode,
+          healthToleranceCount: form.healthToleranceCount,
+          healthGraceSeconds: form.healthGraceSeconds
+        }))
+      },
+      commit: () => {
+        baseline.healthMode = form.healthMode
+        baseline.healthToleranceCount = form.healthToleranceCount
+        baseline.healthGraceSeconds = form.healthGraceSeconds
+      }
     }
-    const snapshot = await updateClusterConfig(payload)
-    config.value = snapshot
-    form.value = defaultForm(snapshot)
+  ],
+  { fallbackError: () => t('clusterConfig.saveFailed') }
+)
+
+async function handleSave(): Promise<void> {
+  const result = await save()
+  if (!result.ok) {
+    if (result.failed) {
+      ElMessage.error(result.failed.message)
+    }
+    return
+  }
+  if (result.saved.length > 0) {
     ElMessage.success(t('clusterConfig.saved'))
-  } catch (error) {
-    const message =
-      (error as { response?: { data?: { message?: string } } }).response?.data?.message ??
-      t('clusterConfig.saveFailed')
-    ElMessage.error(message)
-  } finally {
-    saving.value = false
+    await loadConfig()
   }
 }
 
-/**
- * 丢弃未保存的改动.
- */
 function resetForm(): void {
-  form.value = defaultForm(config.value)
+  Object.assign(form, { ...baseline })
 }
 
 onMounted(loadConfig)
 </script>
 
 <style scoped>
-.restart-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.card-title {
-  font-weight: 600;
-}
-
 .card-desc {
   margin: 0 0 12px;
   color: var(--el-text-color-regular);
@@ -570,16 +549,6 @@ onMounted(loadConfig)
   font-size: 12px;
 }
 
-.config-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.readonly-card {
-  margin-bottom: 16px;
-}
-
 .readonly-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -602,10 +571,6 @@ onMounted(loadConfig)
   font-size: 13px;
   font-family: var(--el-font-family-mono, monospace);
   word-break: break-all;
-}
-
-.readonly-count {
-  margin-left: 8px;
 }
 
 .status-dot {

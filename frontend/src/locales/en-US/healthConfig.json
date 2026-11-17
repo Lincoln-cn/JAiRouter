@@ -30,6 +30,9 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "failHealthOn": "Fails as DOWN",
-    "failHealthOff": "Alert only"
+    "failHealthOff": "Alert only",
+    "readinessConfirm": "Enabling this makes the readiness probe include downstream dependencies: {impact}",
+    "immediateHint": "Applies immediately",
+    "readonlyTag": "Read-only"
   }
 }

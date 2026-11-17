@@ -1,9 +1,12 @@
 <template>
   <PageSkeleton :title="t('pool.title')">
     <template #actions>
-      <el-button :icon="Refresh" circle @click="fetchPools" :title="t('pool.refreshList')" />
       <el-button type="primary" v-permission="'config:pools:write'" @click="handleCreate">
         <el-icon><Plus /></el-icon>&nbsp;{{ t('pool.addPool') }}
+      </el-button>
+      <!-- 工具栏口径：主操作在前、刷新在最后 -->
+      <el-button class="refresh-button" :loading="loading" @click="fetchPools">
+        <el-icon><Refresh /></el-icon>&nbsp;{{ t('pool.refreshList') }}
       </el-button>
     </template>
 
@@ -58,22 +61,51 @@
           <template #default="{ row }">
             <!-- 与服务管理/路由规则一致：行内操作用文字按钮 -->
             <el-button link size="small" v-permission="'config:pools:write'" @click="handleEdit(row)">{{ t('pool.edit') }}</el-button>
-            <el-button link size="small" type="danger" v-permission="'config:pools:write'" @click="handleDelete(row)">{{ t('pool.delete') }}</el-button>
+            <!-- 删除二次确认统一走 ConfirmAction，文案带对象名 -->
+            <ConfirmAction
+              :title="t('pool.deleteDialog.message', { name: row.poolName })"
+              type="danger"
+              :confirm-text="t('pool.deleteDialog.confirm')"
+              :cancel-text="t('pool.deleteDialog.cancel')"
+              :loading="deletingName === row.poolName"
+              :disabled="deletingName === row.poolName"
+              @confirm="handleDelete(row)"
+            >
+              <el-button link size="small" type="danger" v-permission="'config:pools:write'">{{ t('pool.delete') }}</el-button>
+            </ConfirmAction>
           </template>
         </el-table-column>
+        <template #empty>
+          <EmptyState :title="t('pool.emptyTitle')" :description="t('pool.emptyDescription')">
+            <template #actions>
+              <el-button type="primary" v-permission="'config:pools:write'" @click="handleCreate">
+                <el-icon><Plus /></el-icon>&nbsp;{{ t('pool.addPool') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
       </el-table>
     </el-card>
   </PageSkeleton>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? t('pool.editPool') : t('pool.addPool')" width="640px" destroy-on-close>
-      <el-form :model="form" label-width="110px">
-        <el-form-item :label="t('pool.poolName')" required>
-          <el-input v-model="form.poolName" :placeholder="t('pool.poolNamePlaceholder')" :disabled="isEdit" />
+    <!-- 创建/编辑抽屉（单实例，mode 区分新建/编辑） -->
+    <el-drawer
+      v-model="dialogVisible"
+      :title="drawerTitle"
+      :size="drawerSize"
+      direction="rtl"
+      :close-on-click-modal="false"
+      destroy-on-close
+      class="pool-drawer"
+    >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
+        <el-form-item :label="t('pool.poolName')" prop="poolName" required>
+          <el-input v-model="form.poolName" :placeholder="t('pool.poolNamePlaceholder')" :disabled="drawerMode === 'edit'" />
         </el-form-item>
         <el-form-item :label="t('pool.displayName')">
           <el-input v-model="form.name" :placeholder="t('pool.displayNamePlaceholder')" />
         </el-form-item>
-        <el-form-item :label="t('pool.serviceType')" required>
+        <el-form-item :label="t('pool.serviceType')" prop="serviceType" required>
           <el-select v-model="form.serviceType" :placeholder="t('pool.selectServiceType')" style="width: 200px">
             <el-option v-for="s in SERVICE_TYPES" :key="s" :label="s" :value="s" />
           </el-select>
@@ -90,7 +122,7 @@
         <el-form-item :label="t('pool.enabled')">
           <el-switch v-model="form.enabled" :active-text="t('pool.enabled')" :inactive-text="t('pool.disabled')" />
         </el-form-item>
-        <el-form-item :label="t('pool.members')">
+        <el-form-item :label="t('pool.members')" prop="members">
           <div style="width: 100%">
             <div v-for="(m, idx) in form.members" :key="idx" style="display: flex; gap: 8px; margin-bottom: 8px">
               <el-select v-model="m.instanceId" :placeholder="t('pool.selectInstance')" style="flex: 1">
@@ -108,18 +140,28 @@
           <el-input v-model="form.description" type="textarea" :rows="2" :placeholder="t('pool.descriptionPlaceholder')" />
         </el-form-item>
       </el-form>
+
       <template #footer>
-        <el-button @click="dialogVisible = false">{{ t('pool.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" v-permission="'config:pools:write'" @click="handleSave">{{ t('pool.save') }}</el-button>
+        <div class="drawer-footer">
+          <el-button size="large" :disabled="saving" @click="closeDrawer">{{ t('pool.cancel') }}</el-button>
+          <el-button
+            type="primary"
+            size="large"
+            v-permission="'config:pools:write'"
+            :loading="saving"
+            :disabled="saving"
+            @click="handleSave"
+          >{{ t('pool.save') }}</el-button>
+        </div>
       </template>
-    </el-dialog>
+    </el-drawer>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Refresh, Delete } from '@element-plus/icons-vue'
 import { ALL_SERVICE_TYPES as SERVICE_TYPES } from '@/constants/serviceTypes'
 import {
@@ -132,13 +174,19 @@ import {
 } from '@/api/pools'
 import { getServiceInstances, type InstanceConfig } from '@/api/instance'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { useViewport } from '@/composables/useViewport'
 
 const { t } = useI18n()
 const pools = ref<PoolDefinition[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const dialogVisible = ref(false)
-const isEdit = ref(false)
+// 单实例抽屉：create / edit 两态，标题由 drawerTitle 派生
+const drawerMode = ref<'create' | 'edit'>('create')
+const deletingName = ref('')
+const formRef = ref<FormInstance>()
 
 const instances = ref<InstanceConfig[]>([])
 const instancesLoading = ref(false)
@@ -153,6 +201,34 @@ const form = reactive<PoolDefinition>({
   description: '',
   members: [{ instanceId: '', weight: 1 }]
 })
+
+// 抽屉尺寸：字段较多（成员动态行），宽屏 640、窄屏铺满
+const { isNarrow } = useViewport()
+const drawerSize = computed(() => (isNarrow.value ? '100%' : '640px'))
+const drawerTitle = computed(() =>
+  drawerMode.value === 'create'
+    ? t('pool.addPool')
+    : t('pool.editTitle', { name: form.poolName })
+)
+
+// 校验走 el-form rules：池名必填、成员至少一个且都选了实例
+const rules = computed<FormRules>(() => ({
+  poolName: [{ required: true, message: t('pool.messages.poolNameRequired'), trigger: 'blur' }],
+  serviceType: [{ required: true, message: t('pool.selectServiceType'), trigger: 'change' }],
+  members: [
+    {
+      validator: (_rule, value, callback) => {
+        const list = Array.isArray(value) ? (value as PoolMember[]) : []
+        if (list.length === 0 || list.some((m) => !m.instanceId)) {
+          callback(new Error(t('pool.messages.memberRequired')))
+          return
+        }
+        callback()
+      },
+      trigger: 'change'
+    }
+  ]
+}))
 
 const fetchPools = async () => {
   loading.value = true
@@ -218,9 +294,10 @@ watch(() => form.serviceType, (st) => {
 
 const handleCreate = () => {
   resetForm()
-  isEdit.value = false
+  drawerMode.value = 'create'
   dialogVisible.value = true
   loadInstances(form.serviceType)
+  nextTick(() => formRef.value?.clearValidate())
 }
 
 const handleEdit = (row: PoolDefinition) => {
@@ -233,9 +310,17 @@ const handleEdit = (row: PoolDefinition) => {
     description: row.description || '',
     members: (row.members || []).map(m => ({ instanceId: m.instanceId, weight: m.weight }))
   })
-  isEdit.value = true
+  drawerMode.value = 'edit'
   dialogVisible.value = true
   loadInstances(form.serviceType)
+  nextTick(() => formRef.value?.clearValidate())
+}
+
+// 关闭抽屉：保存中不允许关，避免请求还在飞就丢了上下文
+const closeDrawer = () => {
+  if (saving.value) return
+  dialogVisible.value = false
+  formRef.value?.clearValidate()
 }
 
 const addMember = () => {
@@ -251,12 +336,11 @@ const removeMember = (idx: number) => {
 }
 
 const handleSave = async () => {
-  if (!form.poolName.trim()) {
-    ElMessage.warning(t('pool.messages.poolNameRequired'))
-    return
-  }
-  if (!form.members.length || form.members.some(m => !m.instanceId)) {
-    ElMessage.warning(t('pool.messages.memberRequired'))
+  if (!formRef.value || saving.value) return
+  try {
+    await formRef.value.validate()
+  } catch {
+    // 表单内联提示已给出原因，抽屉保留用户已填内容
     return
   }
   saving.value = true
@@ -265,7 +349,7 @@ const handleSave = async () => {
       ...form,
       members: form.members.map(m => ({ ...m }))
     }
-    if (isEdit.value) {
+    if (drawerMode.value === 'edit') {
       await updatePool(form.poolName, payload)
       ElMessage.success(t('pool.messages.updated'))
     } else {
@@ -291,20 +375,18 @@ const handleToggle = async (row: PoolDefinition, val: boolean) => {
   }
 }
 
-const handleDelete = (row: PoolDefinition) => {
-  ElMessageBox.confirm(
-    t('pool.deleteDialog.message', { name: row.poolName }),
-    t('pool.deleteDialog.title'),
-    { confirmButtonText: t('pool.deleteDialog.confirm'), cancelButtonText: t('pool.deleteDialog.cancel'), type: 'warning' }
-  ).then(async () => {
-    try {
-      await deletePool(row.poolName)
-      ElMessage.success(t('pool.messages.deleted'))
-      await fetchPools()
-    } catch (e) {
-      ElMessage.error(t('pool.messages.deleteFailed'))
-    }
-  }).catch(() => {})
+// 删除：二次确认由 ConfirmAction 承担（type=danger + 对象名），这里只做确认后的提交
+const handleDelete = async (row: PoolDefinition) => {
+  deletingName.value = row.poolName
+  try {
+    await deletePool(row.poolName)
+    ElMessage.success(t('pool.messages.deleted'))
+    await fetchPools()
+  } catch (e) {
+    ElMessage.error(t('pool.messages.deleteFailed'))
+  } finally {
+    deletingName.value = ''
+  }
 }
 
 const formatMembers = (members?: PoolMember[]) => {
@@ -347,5 +429,24 @@ onMounted(() => { fetchPools() })
 .pool-name__sub {
   font-size: 12px;
   color: var(--ja-ink-3, var(--ja-text-secondary));
+}
+
+/* 抽屉：标题区与主体统一留白，footer 固定在底部 */
+.pool-drawer :deep(.el-drawer__header) {
+  margin-bottom: 0;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--ja-border-light);
+  background-color: var(--ja-main-bg);
+}
+
+.pool-drawer :deep(.el-drawer__body) {
+  padding: 20px;
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  padding: 10px 20px;
 }
 </style>

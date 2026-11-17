@@ -25,6 +25,17 @@
       "pause": "暂停",
       "eventsTitle": "实时路由事件",
       "selectServiceType": "选择服务类型",
+      "refresh": "刷新",
+      "clearFilters": "清除筛选",
+      "sampledTotal": "已采样总数",
+      "activeServices": "监控服务数",
+      "pausedServices": "已暂停服务",
+      "totalQps": "实时 QPS 合计",
+      "qps": "QPS",
+      "emptyTitle": "暂无路由事件",
+      "emptyDescription": "还没有采集到路由事件；开启采样后事件会通过 WebSocket 实时推送。",
+      "emptySearchTitle": "没有匹配的路由事件",
+      "emptySearchDescription": "当前服务类型筛选下没有事件，清除筛选或等待新的推送。",
       "columns": {
         "time": "时间",
         "serviceType": "服务类型",
@@ -61,14 +72,22 @@
     },
     "strategyConfig": {
       "pageTitle": "负载均衡策略配置",
+      "pageDesc": "全局默认策略只读展示；服务级策略在表格内修改，统一从底部动作条保存。",
+      "tabs": {
+        "global": "全局策略",
+        "services": "服务配置"
+      },
+      "readonlyTag": "只读",
       "globalTitle": "全局默认配置",
+      "globalReadonlyHint": "全局默认策略由配置文件（jairouter.load-balance）决定，控制台未提供写入端点，修改需编辑配置文件后重启。",
       "defaultStrategy": "默认策略",
       "selectStrategy": "选择策略",
       "hashAlgorithm": "Hash算法",
       "selectHashAlgorithm": "选择Hash算法",
       "virtualNodes": "虚拟节点数",
       "serviceConfigsTitle": "服务级配置",
-      "configureHint": "点击配置按钮修改单个服务的负载均衡策略",
+      "configureHint": "逐行修改服务级策略；保存时按服务整体替换，并立即重建该服务的负载均衡器",
+      "saveHint": "每行保存为整体替换（PUT /loadbalancer/config/{serviceType}），未填的 Hash 算法与虚拟节点会回落 md5 / 150，因此提交时显式带全字段。",
       "defaultTag": "默认",
       "configure": "配置",
       "loadBalanceStrategy": "负载均衡策略",
@@ -101,6 +120,7 @@
       "messages": {
         "loadFailed": "加载服务配置失败",
         "configUpdated": "服务 {serviceType} 负载均衡配置已更新",
+        "saved": "负载均衡策略已保存",
         "saveFailed": "保存配置失败"
       }
     }
