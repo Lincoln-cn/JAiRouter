@@ -70,10 +70,10 @@
     },
     "docs/en/api-reference/monitoring-api.md": {
       "FilePath": "docs/en/api-reference/monitoring-api.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-16T16:54:59.309931",
-      "ContentHash": "ee56a75313cbff39",
-      "GitCommit": "b639c8a3",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-17T10:12:02.199491",
+      "ContentHash": "5aeb13da9c490df3",
+      "GitCommit": "1f147ca6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -630,10 +630,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-16T16:54:59.649090",
-      "ContentHash": "a9872d4b37c6d8bb",
-      "GitCommit": "49ab1afa",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-17T10:12:02.469729",
+      "ContentHash": "500f90a60f5aa0f8",
+      "GitCommit": "1f147ca6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -841,10 +841,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.29",
-      "LastModified": "2026-11-16T14:20:14.959146",
-      "ContentHash": "a4b6922da0497fe1",
-      "GitCommit": "556cbf70",
+      "Version": "1.0.30",
+      "LastModified": "2026-11-17T10:12:02.600899",
+      "ContentHash": "de3b97089090e4a5",
+      "GitCommit": "1f147ca6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -995,10 +995,10 @@
     },
     "docs/en/security/rbac-permissions.md": {
       "FilePath": "docs/en/security/rbac-permissions.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-11-16T16:54:59.902808",
-      "ContentHash": "e8752ab1cf525f91",
-      "GitCommit": "49ab1afa",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-17T10:12:02.665865",
+      "ContentHash": "2d31a9f81a6a580e",
+      "GitCommit": "1f147ca6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1226,10 +1226,10 @@
     },
     "docs/zh/api-reference/monitoring-api.md": {
       "FilePath": "docs/zh/api-reference/monitoring-api.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-16T16:55:00.078587",
-      "ContentHash": "edd2bed1bb510fe7",
-      "GitCommit": "b639c8a3",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-17T10:12:02.803360",
+      "ContentHash": "19db8c0f9f14b643",
+      "GitCommit": "1f147ca6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1787,10 +1787,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-16T16:55:00.429488",
-      "ContentHash": "85404e67bb6f6f8a",
-      "GitCommit": "49ab1afa",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-17T10:12:03.075875",
+      "ContentHash": "977fa1ce2dda16d6",
+      "GitCommit": "1f147ca6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2002,10 +2002,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.29",
-      "LastModified": "2026-11-16T14:20:15.867834",
-      "ContentHash": "fd309a8015e32998",
-      "GitCommit": "556cbf70",
+      "Version": "1.0.30",
+      "LastModified": "2026-11-17T10:12:03.224735",
+      "ContentHash": "0c5b6872b2ec3f89",
+      "GitCommit": "1f147ca6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2158,10 +2158,10 @@
     },
     "docs/zh/security/rbac-permissions.md": {
       "FilePath": "docs/zh/security/rbac-permissions.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-11-16T16:55:00.704475",
-      "ContentHash": "756d77894b89ec34",
-      "GitCommit": "49ab1afa",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-17T10:12:03.291008",
+      "ContentHash": "3e210ecbe1d97d60",
+      "GitCommit": "1f147ca6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -8494,7 +8494,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-16T16:55:00.704485",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-17T10:12:02.199497",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-17T10:12:02.469737",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.29",
+      "NewVersion": "1.0.30",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-17T10:12:02.600905",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-17T10:12:02.665870",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-17T10:12:02.803365",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-17T10:12:03.075880",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.29",
+      "NewVersion": "1.0.30",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-17T10:12:03.224741",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-17T10:12:03.291014",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-16T16:55:00.859439"
+  "last_updated": "2026-11-17T10:12:03.554089"
 }
