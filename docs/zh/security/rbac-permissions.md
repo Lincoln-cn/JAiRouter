@@ -12,7 +12,7 @@
 JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问控制）**体系：以 `module:resource:action` 权限码为唯一权限原子，将「权限码 → 角色 → JWT → URL 权限矩阵 → 菜单」串成一条完整链路：
 
 1. **权限码**：74 个 `module:resource:action` 权限码（`action` ∈ `read` / `write` / `manage` / `full-content`），同时驱动后端 URL 访问判定与前端菜单/路由可见性。
-2. **角色模板**：启动时自动在 `role_permissions` 表种入 4 个内置角色模板（ADMIN / OPERATOR / USER / VIEWER），每个角色对应一组权限码（表为空则全量播种；表非空则执行只增不删的增量收敛，见「角色模板」一节）。
+2. **角色模板**：启动时自动在 `role_permissions` 表种入 6 个内置角色模板（ADMIN / OPERATOR / USER / VIEWER / SLA_READONLY / SLA_OPERATOR），每个角色对应一组权限码（表为空则全量播种；表非空则执行只增不删的增量收敛，见「角色模板」一节）。
 3. **JWT 内嵌**：登录成功后，服务端按角色从 `role_permissions` 查询权限码并写入 JWT 的 `permissions` claim（角色仍保留在 `roles` claim；权限码无 `ROLE_` 前缀）。
 4. **URL 权限矩阵**：`PermissionRuleRegistry` 登记 75 条「{HTTP 方法, URL 模式} → 权限码」规则，`PermissionAuthorizationManager` 在网关层对每个 `/api/**` 请求完成权限判定。
 5. **菜单与路由**：前端 `menu.ts` 数据驱动渲染（当前 7 组 34 项 / 48 个 tab；v2.9.8 为 8 组 34 项），`usePermission` 过滤菜单、路由守卫 `meta.permissions` 拦截无权限访问。
@@ -153,7 +153,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 
 收敛只执行 `INSERT`，**绝不删除或修改既有行**。写入后会清空 `RolePermissionService` 权限缓存，避免启动窗口内已签发 JWT 的旧权限集合继续生效。
 
-运维影响：已初始化部署在升级后启动时，缺失的「规则所需」权限码会被自动回填。真实数据库上实测（阶段 2 时点）：OPERATOR +9、USER +4、VIEWER +4、ADMIN +10。`#567` 的新模板在此基础上再增 ADMIN +8、OPERATOR +1（`lb:config:read`）、USER +1（`lb:config:read`）、VIEWER +0；该增量未在真实数据库复测。手工定制过的角色不受影响（整个跳过）。
+运维影响：已初始化部署在升级后启动时，缺失的「规则所需」权限码会被自动回填。真实数据库上实测（阶段 2 时点）：OPERATOR +9、USER +4、VIEWER +4、ADMIN +10。`#567` 的新模板在此基础上再增 ADMIN +8、OPERATOR +1（`lb:config:read`）、USER +1（`lb:config:read`）、VIEWER +0；该增量未在真实数据库复测。手工定制过的角色不受影响（整个跳过）。库中一行权限都没有的角色（例如新版本才内置的模板）不再跳过，而是按模板首次播种 ——否则升级后会出现「登录成功、请求处处 403」（`#1174` 运行态实测）。
 
 ## 工作流程
 

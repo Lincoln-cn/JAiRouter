@@ -138,6 +138,9 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 #### 基础路径: `/api/auth/sla`（匿名，无 `Authorization` 要求）
 
+这两个端点不在认证链上：不需要 `Authorization`、`X-Jairouter-Token` 或 `X-API-Key` 任一头，
+带上也不会改变结论（凭据校验发生在服务内部，不依赖认证层）。
+
 ##### `POST /api/auth/sla/bootstrap`
 
 用一次性接入令牌换长期凭据。
@@ -152,7 +155,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 {
   "accessToken": "eyJhbGciOi...",
   "refreshToken": "刷新凭据明文",
-  "expiresIn": 60,
+  "expiresIn": 3600,
   "subject": "sla:builder"
 }
 ```
@@ -161,6 +164,8 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 - 可预先绑定调用方 IP；不匹配时返回 403。
 - 账号被禁用时返回 403。
 - 明文只在签发与本次响应里出现，库里只存 SHA-256。
+- `expiresIn` 以**秒**为单位（默认 3600）；`refresh` 响应同理。
+- 失败语义：令牌缺失 / 无效 / 已被使用 / 已过期 ⇒ `401`；绑定 IP 不匹配、账号被禁用 ⇒ `403`；账号不存在 ⇒ `404`。
 
 ##### `POST /api/auth/sla/refresh`
 
@@ -170,7 +175,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 { "refreshToken": "刷新凭据明文" }
 ```
 
-响应 `data`：`{ "accessToken": "...", "expiresIn": 60 }`。
+响应 `data`：`{ "accessToken": "...", "expiresIn": 3600 }`。
 
 - 刷新凭据默认 90 天，每次刷新滚动续期（`lastUsedAt`、`expiresAt`、`clientIp` 一并更新）。
 - 已吊销返回「SLA 刷新凭据已被吊销」；已过期返回「SLA 刷新凭据已过期」。

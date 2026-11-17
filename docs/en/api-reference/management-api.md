@@ -133,6 +133,10 @@ role template (`SLA_READONLY` / `SLA_OPERATOR`), and revocation takes effect imm
 
 #### Base path: `/api/auth/sla` (anonymous, no `Authorization` header)
 
+These two endpoints sit outside the authentication chain: they need none of `Authorization`,
+`X-Jairouter-Token` or `X-API-Key`, and sending one changes nothing (the credential check happens
+inside the service rather than in the authentication layer).
+
 ##### `POST /api/auth/sla/bootstrap`
 
 Exchange a one-time bootstrap token for long-lived credentials.
@@ -147,7 +151,7 @@ Response `data`:
 {
   "accessToken": "eyJhbGciOi...",
   "refreshToken": "refresh credential plaintext",
-  "expiresIn": 60,
+  "expiresIn": 3600,
   "subject": "sla:builder"
 }
 ```
@@ -157,6 +161,9 @@ Response `data`:
 - The token may be bound to a caller IP in advance; a mismatch returns 403.
 - A disabled account returns 403.
 - The plaintext appears only at issuance and in this response; the database stores SHA-256.
+- `expiresIn` is in **seconds** (default 3600); the same applies to `refresh`.
+- Failure semantics: missing / invalid / already used / expired token ⇒ `401`; bound IP mismatch or
+  disabled account ⇒ `403`; unknown account ⇒ `404`.
 
 ##### `POST /api/auth/sla/refresh`
 
@@ -166,7 +173,7 @@ Exchange a refresh credential for a new access token.
 { "refreshToken": "refresh credential plaintext" }
 ```
 
-Response `data`: `{ "accessToken": "...", "expiresIn": 60 }`.
+Response `data`: `{ "accessToken": "...", "expiresIn": 3600 }`.
 
 - The refresh credential lives 90 days by default and rolls forward on every use (`lastUsedAt`, `expiresAt`, `clientIp` updated).
 - Revoked ⇒ "SLA refresh credential has been revoked"; expired ⇒ "SLA refresh credential has expired".

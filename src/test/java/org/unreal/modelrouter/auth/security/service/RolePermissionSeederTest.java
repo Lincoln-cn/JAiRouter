@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>覆盖：表空播种 4 角色模板（数量与排除项）；表非空时的增量收敛契约——
  * 只补种「规则所需 ∩ 模板」的缺失码、不删不改既有行、手工定制角色整角色跳过、
+ * 库中一行都没有的内置角色按模板首次播种（#1174）、
  * 幂等、不补种不被任何规则需要的装饰性权限码。</p>
  *
  * <p>被测对象是真实 {@link RolePermissionSeeder} + 真实 {@link PermissionRuleRegistry}
@@ -258,6 +259,9 @@ class RolePermissionSeederTest {
             // OPERATOR 旧部署快照：只持有 2 个早期码（均为模板子集）
             repository.seed("OPERATOR", PermissionCodes.CONFIG_SERVICES_READ, PermissionCodes.CONFIG_SERVICES_WRITE);
             repository.seed("USER", PermissionCodes.OVERVIEW_DASHBOARD_READ);
+            // #1174 后「库里一行都没有的角色」会按模板首次播种，为了让本用例只考察
+            // 「陈旧子集的增量补种」，其余内置角色先各持一个所有模板共有的基线码。
+            seedBaselineForRoles("ADMIN", "VIEWER", "SLA_READONLY", "SLA_OPERATOR");
             Map<String, Long> idsBefore = repository.idByKey();
 
             seeder.seedIfEmpty();
@@ -357,6 +361,7 @@ class RolePermissionSeederTest {
 
             // 只保留一个模板内码，使装饰性码和规则所需码都处于缺失状态
             repository.seed("USER", PermissionCodes.OVERVIEW_DASHBOARD_READ);
+            seedBaselineForRoles("ADMIN", "OPERATOR", "VIEWER", "SLA_READONLY", "SLA_OPERATOR");
 
             seeder.seedIfEmpty();
 
@@ -381,17 +386,24 @@ class RolePermissionSeederTest {
         }
 
         @Test
-        @DisplayName("完全没有任何权限行的角色被跳过，不整表播种")
-        void roleWithNoRowsIsSkipped() {
+        @DisplayName("库里一行都没有的角色按模板首次播种（新增内置角色对存量库生效）")
+        void roleWithNoRowsIsSeededFromTemplate() {
+            // #1174：存量库中不存在新内置角色（SLA_READONLY / SLA_OPERATOR）的行时，
+            // 只跳过会让该角色权限集合为空 —— 登录成功但处处 403。故改为按模板播种。
             repository.seed("OPERATOR", PermissionCodes.CONFIG_SERVICES_READ);
 
             seeder.seedIfEmpty();
 
-            assertFalse(repository.codesOf("USER").contains(PermissionCodes.CONFIG_QUOTA_READ),
-                    "无行角色不得被增量补种");
+            assertTrue(repository.codesOf("USER").contains(PermissionCodes.CONFIG_QUOTA_READ),
+                    "无行角色应按模板播种完整权限集合");
             assertTrue(repository.rows().stream()
-                            .noneMatch(row -> "VIEWER".equals(row.getRoleName())),
-                    "无行角色不得被播种");
+                            .anyMatch(row -> "SLA_READONLY".equals(row.getRoleName())),
+                    "新增内置角色必须对存量库生效");
+            assertTrue(repository.codesOf("SLA_OPERATOR").contains(PermissionCodes.CONFIG_RULES_WRITE),
+                    "SLA_OPERATOR 应含配置写码");
+            // 既有角色的行不被删改（OPERATOR 仍持有 seed 进去的那条；补种只增不删）
+            assertTrue(repository.codesOf("OPERATOR").contains(PermissionCodes.CONFIG_SERVICES_READ),
+                    "既有角色的原有行不得被删除");
         }
 
         @Test
@@ -408,6 +420,18 @@ class RolePermissionSeederTest {
             assertTrue(refreshed.contains(PermissionCodes.CONFIG_CACHE_READ),
                     "补种后必须通过缓存失效读到新权限码，而不是 5 分钟内的陈旧缓存");
             assertTrue(refreshed.contains(PermissionCodes.SECURITY_AUDIT_WRITE));
+        }
+    }
+
+    /**
+     * 给若干内置角色各播一条所有模板共有的基线码（overview:dashboard:read）。
+     *
+     * <p>#1174 之后「库中一行都没有的内置角色」会按模板整表播种；旧用例只 seed 一两个角色时，
+     * 其余角色的整表播种会污染「只补规则所需」的断言。补齐前提而不是放宽断言。</p>
+     */
+    private void seedBaselineForRoles(String... roles) {
+        for (String role : roles) {
+            repository.seed(role, PermissionCodes.OVERVIEW_DASHBOARD_READ);
         }
     }
 

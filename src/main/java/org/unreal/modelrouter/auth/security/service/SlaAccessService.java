@@ -117,7 +117,7 @@ public class SlaAccessService {
                     try {
                         bootstrapTokenRepository.save(row);
                     } catch (ObjectOptimisticLockingFailureException e) {
-                        throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被使用");
+                        throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被使用", ErrorCode.TOKEN_REQUIRED.status());
                     }
                     final String refreshToken = createRefreshToken(account, clientIp, now);
                     return new PreparedBootstrap(account, refreshToken);
@@ -148,12 +148,12 @@ public class SlaAccessService {
         return Mono.fromCallable(() -> {
                     final LocalDateTime now = LocalDateTime.now();
                     final SlaRefreshTokenEntity row = refreshTokenRepository.findByTokenHash(sha256(refreshToken))
-                            .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据无效"));
+                            .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据无效", ErrorCode.TOKEN_REQUIRED.status()));
                     if (row.getRevokedAt() != null) {
-                        throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据已被吊销");
+                        throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据已被吊销", ErrorCode.TOKEN_REQUIRED.status());
                     }
                     if (row.getExpiresAt().isBefore(now)) {
-                        throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据已过期");
+                        throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据已过期", ErrorCode.TOKEN_REQUIRED.status());
                     }
                     final SlaServiceAccountEntity account = requireEnabledAccount(row.getAccountId());
                     ensureJwtAccount(account);
@@ -206,14 +206,14 @@ public class SlaAccessService {
     public AccountView createAccount(final String name, final String roleTemplate, final String createdBy) {
         final String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty() || trimmed.length() > 64) {
-            throw ApiException.of(ErrorCode.INVALID_NAME.code(), "账号名长度必须在 1~64 之间");
+            throw ApiException.of(ErrorCode.INVALID_NAME.code(), "账号名长度必须在 1~64 之间", ErrorCode.INVALID_NAME.status());
         }
         final String template = roleTemplate == null || roleTemplate.isBlank() ? ROLE_READONLY : roleTemplate.trim();
         if (!ROLE_TEMPLATES.contains(template)) {
-            throw ApiException.of(ErrorCode.INVALID_ROLE.code(), "不支持的角色模板: " + template);
+            throw ApiException.of(ErrorCode.INVALID_ROLE.code(), "不支持的角色模板: " + template, ErrorCode.INVALID_ROLE.status());
         }
         if (accountRepository.existsByName(trimmed)) {
-            throw ApiException.of(ErrorCode.CONFLICT_EXISTS.code(), "SLA 账号已存在: " + trimmed);
+            throw ApiException.of(ErrorCode.CONFLICT_EXISTS.code(), "SLA 账号已存在: " + trimmed, ErrorCode.CONFLICT_EXISTS.status());
         }
         final LocalDateTime now = LocalDateTime.now();
         final SlaServiceAccountEntity account = SlaServiceAccountEntity.builder()
@@ -242,7 +242,7 @@ public class SlaAccessService {
     public IssueResult issueBootstrap(final String accountId, final Integer ttlMinutes,
                                       final String allowedIp, final String createdBy) {
         final SlaServiceAccountEntity account = accountRepository.findById(accountId)
-                .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId));
+                .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId, ErrorCode.NOT_FOUND.status()));
         final LocalDateTime now = LocalDateTime.now();
         final Duration ttl = ttlMinutes != null && ttlMinutes > 0 ? Duration.ofMinutes(ttlMinutes) : BOOTSTRAP_TTL;
         final String plain = newToken();
@@ -270,7 +270,7 @@ public class SlaAccessService {
     @Transactional
     public int revokeAll(final String accountId, final String operator) {
         final SlaServiceAccountEntity account = accountRepository.findById(accountId)
-                .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId));
+                .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId, ErrorCode.NOT_FOUND.status()));
         final LocalDateTime now = LocalDateTime.now();
         final List<SlaRefreshTokenEntity> active = refreshTokenRepository.findByAccountIdAndRevokedAtIsNull(accountId);
         active.forEach(token -> token.setRevokedAt(now));
@@ -289,7 +289,7 @@ public class SlaAccessService {
     @Transactional
     public void deleteAccount(final String accountId, final String operator) {
         final SlaServiceAccountEntity account = accountRepository.findById(accountId)
-                .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId));
+                .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId, ErrorCode.NOT_FOUND.status()));
         refreshTokenRepository.deleteAll(refreshTokenRepository.findByAccountId(accountId));
         bootstrapTokenRepository.deleteAll(bootstrapTokenRepository.findByAccountId(accountId));
         accountRepository.delete(account);
@@ -310,28 +310,29 @@ public class SlaAccessService {
     private SlaBootstrapTokenEntity requireValidBootstrapToken(final String token, final String clientIp,
                                                               final LocalDateTime now) {
         if (token == null || token.isBlank()) {
-            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "缺少 SLA 接入令牌");
+            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "缺少 SLA 接入令牌", ErrorCode.TOKEN_REQUIRED.status());
         }
         final SlaBootstrapTokenEntity row = bootstrapTokenRepository.findByTokenHash(sha256(token))
-                .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌无效"));
+                .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌无效", ErrorCode.TOKEN_REQUIRED.status()));
         if (row.getUsedAt() != null) {
-            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被使用");
+            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被使用", ErrorCode.TOKEN_REQUIRED.status());
         }
         if (row.getExpiresAt().isBefore(now)) {
-            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已过期");
+            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已过期", ErrorCode.TOKEN_REQUIRED.status());
         }
         if (row.getAllowedIp() != null && !row.getAllowedIp().equals(clientIp)) {
             throw ApiException.of(ErrorCode.FORBIDDEN.code(),
-                    "SLA 接入令牌绑定来源 IP 为 " + row.getAllowedIp() + "，当前来源 " + clientIp);
+                    "SLA 接入令牌绑定来源 IP 为 " + row.getAllowedIp() + "，当前来源 " + clientIp,
+                    ErrorCode.FORBIDDEN.status());
         }
         return row;
     }
 
     private SlaServiceAccountEntity requireEnabledAccount(final String accountId) {
         final SlaServiceAccountEntity account = accountRepository.findById(accountId)
-                .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 账号不存在或被删除"));
+                .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 账号不存在或被删除", ErrorCode.TOKEN_REQUIRED.status()));
         if (!Boolean.TRUE.equals(account.getEnabled())) {
-            throw ApiException.of(ErrorCode.FORBIDDEN.code(), "SLA 账号已禁用: " + account.getName());
+            throw ApiException.of(ErrorCode.FORBIDDEN.code(), "SLA 账号已禁用: " + account.getName(), ErrorCode.FORBIDDEN.status());
         }
         return account;
     }
@@ -439,7 +440,7 @@ public class SlaAccessService {
             final MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(plain.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
-            throw ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "SHA-256 不可用");
+            throw ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "SHA-256 不可用", ErrorCode.INTERNAL_ERROR.status());
         }
     }
 

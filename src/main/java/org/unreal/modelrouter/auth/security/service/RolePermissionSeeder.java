@@ -121,7 +121,13 @@ public class RolePermissionSeeder implements ApplicationRunner {
     }
 
     /**
-     * 表空则种入 4 个角色模板；表非空则增量收敛（只增不删，见类注释）。
+     * 表空则种入全部角色模板（当前 6 个）；表非空则增量收敛（只增不删，见类注释）。
+     *
+     * <p>「表非空」时**仍然**会为「库里一行都没有」的角色播种完整模板（#1174 运行态实测补的漏）：
+     * 新增内置角色（如 SLA_READONLY / SLA_OPERATOR）只改了代码，存量库的 {@code role_permissions}
+     * 里没有这些行，若不补种，该角色的权限集合就是空的 —— 表现是登录成功、每个接口都 403，
+     * 单测（直接调 service）完全看不出来。这与「管理员手工清空某角色权限」在数据上不可区分，
+     * 但一个零权限内置角色没有存在意义，故按模板播种，并在日志里写明是「首次播种」。
      *
      * <p>收敛或播种写入行之后会清空 {@link RolePermissionService} 权限缓存，
      * 避免启动窗口内已签发 JWT 时缓存的旧权限集合继续生效。
@@ -163,7 +169,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
 
         List<RolePermissionEntity> toInsert = new ArrayList<>();
         int skippedCustomized = 0;
-        int skippedMissing = 0;
+        int seededNewRoles = 0;
         int alreadyCurrent = 0;
 
         for (Map.Entry<String, List<String>> entry : DEFAULT_ROLE_TEMPLATES.entrySet()) {
@@ -172,8 +178,17 @@ public class RolePermissionSeeder implements ApplicationRunner {
             Set<String> held = heldByRole.getOrDefault(role, Set.of());
 
             if (held.isEmpty()) {
-                skippedMissing++;
-                log.info("RolePermissionSeeder: 角色 {} 无任何权限行，跳过增量收敛", role);
+                // 新内置角色首次出现在存量库：播种完整模板（#1174）。
+                // 这里不能跳过：跳过会让该角色的权限集合为空，表现为「登录成功但处处 403」。
+                for (String code : template) {
+                    toInsert.add(RolePermissionEntity.builder()
+                            .roleName(role)
+                            .permissionCode(code)
+                            .build());
+                }
+                seededNewRoles++;
+                log.info("RolePermissionSeeder: 角色 {} 在库中无任何权限行，按模板首次播种 {} 个权限码",
+                        role, template.size());
                 continue;
             }
             if (!template.containsAll(held)) {
@@ -207,12 +222,13 @@ public class RolePermissionSeeder implements ApplicationRunner {
             rolePermissionRepository.saveAll(toInsert);
             rolePermissionService.invalidateCache();
         }
-        log.info("RolePermissionSeeder: 增量收敛完成，补种 {} 条；跳过手工定制 {} 个角色、无行 {} 个角色、已齐备 {} 个角色",
-                toInsert.size(), skippedCustomized, skippedMissing, alreadyCurrent);
+        log.info("RolePermissionSeeder: 增量收敛完成，补种 {} 条；跳过手工定制 {} 个角色、首次播种 {} 个角色、已齐备 {} 个角色",
+                toInsert.size(), skippedCustomized, seededNewRoles, alreadyCurrent);
     }
 
     /**
-     * 已知角色名集合（ADMIN / OPERATOR / USER / VIEWER，供权限管理 API 校验 roleName 合法性）
+     * 已知角色名集合（ADMIN / OPERATOR / USER / VIEWER / SLA_READONLY / SLA_OPERATOR，
+     * 供权限管理 API 校验 roleName 合法性）
      *
      * @return 角色名集合（大写）
      */

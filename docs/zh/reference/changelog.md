@@ -30,6 +30,11 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 - **新增控制台页**：系统 → SLA 接入（`/system/sla`）。
 - 审计新增 4 类事件：`SLA_BOOTSTRAP_ISSUED` / `SLA_BOOTSTRAP_CONSUMED` / `SLA_REFRESH` / `SLA_CREDENTIAL_REVOKED`。
 - 迁移提示：SLA 工具可把 `sla/lib/client.mjs` 的 `login()`（管理员密码）换成 bootstrap + refresh；未切换前旧路径仍可用。
+- **运行态修复（真机实测暴露，本地单测全绿）**：
+  - `POST /api/auth/sla/bootstrap` 与 `/refresh` 曾返回 401 `AUTH_MISSING` —— 认证过滤器早于授权链执行，只在 `SecurityConfiguration` 里 `permitAll` 不足以放行；两条端点已同时登记进认证排除清单，并新增守卫测试（`AnonymousEndpointConsistencyTest`）防止再次漏登记。
+  - SLA 失败语义的状态码改为显式指定：令牌无效/已用/过期 → 401，绑定 IP 不符或账号禁用 → 403，重名 → 409，账号不存在 → 404（此前部分情形落成 500）。
+  - `expiresIn` 单位是**秒**（默认 3600）；文档示例曾误写 60，已更正。
+  - 新增内置角色现在会对存量库按模板首次播种；此前增量收敛对「库里一行都没有的角色」直接跳过，导致升级后 SLA 令牌登录成功、所有请求 403。
 
 ### [Unreleased] - 调用历史正文与元数据分权
 
