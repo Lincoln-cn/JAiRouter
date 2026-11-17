@@ -22,6 +22,15 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### [Unreleased] - SLA 接入凭据（一次性令牌 + refresh）
+
+- **新增 `system:sla:read` / `system:sla:manage`**（权限码 74 个），内置角色模板增至 6 个：`SLA_READONLY`（35 码，只读巡检面）与 `SLA_OPERATOR`（53 码，只读巡检面 + 配置写）。
+- **新增 SLA 接入端点**：`POST /api/auth/sla/bootstrap`（匿名，用一次性令牌换凭据）、`POST /api/auth/sla/refresh`（匿名，换 access token）；管理端 `/api/security/sla/**`（账号 CRUD、签发一次性令牌、吊销）。
+- **新增表**：`sla_service_accounts`、`sla_bootstrap_tokens`、`sla_refresh_tokens`（V16 迁移）。
+- **新增控制台页**：系统 → SLA 接入（`/system/sla`）。
+- 审计新增 4 类事件：`SLA_BOOTSTRAP_ISSUED` / `SLA_BOOTSTRAP_CONSUMED` / `SLA_REFRESH` / `SLA_CREDENTIAL_REVOKED`。
+- 迁移提示：SLA 工具可把 `sla/lib/client.mjs` 的 `login()`（管理员密码）换成 bootstrap + refresh；未切换前旧路径仍可用。
+
 ### [Unreleased] - 调用历史正文与元数据分权
 
 `callhistory:view` 拆成 `callhistory:read` + `callhistory:full-content`：

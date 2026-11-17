@@ -190,7 +190,7 @@ class FlywayDialectEnvironmentPostProcessorTest {
             String latest = FlywayDialectEnvironmentPostProcessor.resolveLatestMigrationVersion(locations);
             assertNotEquals(FlywayDialectEnvironmentPostProcessor.DEFAULT_BASELINE_VERSION, latest,
                     locations + " 上必须扫到脚本；扫不到说明扫描逻辑失效，会退回固定 1 的老行为");
-            assertEquals("15", latest, locations + " 的最新迁移版本");
+            assertEquals("16", latest, locations + " 的最新迁移版本");
         }
     }
 

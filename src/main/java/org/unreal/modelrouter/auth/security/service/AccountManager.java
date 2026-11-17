@@ -198,6 +198,33 @@ public class AccountManager implements UserDetailsService {
     }
 
     /**
+     * 直接为已建立的账户签发访问令牌，**不校验密码**（issue #1174）。
+     *
+     * <p>SLA 服务账号没有密码、也不该有密码：它的凭据是「一次性接入令牌 → 长期 refresh」
+     * 两段式（见 {@code SlaAccessService}）。因此这条路径只负责签发，凭据本身的校验发生在
+     * 调用方那一侧；把校验塞进这里会让「令牌校验」和「密码校验」两件事纠缠在同一处。</p>
+     *
+     * <p>签发仍走 {@link #generateJwtToken}，所以 claims 与人类账号完全一致（roles、
+     * permissions、issuer、jti 黑名单都生效）—— 权限码仍由
+     * {@code RolePermissionService.getPermissionCodesForRoles} 按角色模板查，不存在第二套判权。</p>
+     *
+     * @param username 账户名（SLA 主体形如 {@code sla:<name>}，需先确保 {@code jwt_accounts} 有该行）
+     * @return 访问令牌
+     */
+    public Mono<String> issueTokenForAccount(final String username) {
+        return Mono.fromCallable(() -> generateJwtToken(username, securityProperties));
+    }
+
+    /**
+     * 访问令牌的有效期（分钟），供 SLA 等非交互式调用方安排续期节奏（issue #1174）。
+     *
+     * @return {@code jwt.expiration-minutes} 的当前值
+     */
+    public long accessTokenExpirationMinutes() {
+        return securityProperties.getJwt().getExpirationMinutes();
+    }
+
+    /**
      * 生成JWT令牌
      */
     private String generateJwtToken(final String username, final SecurityProperties securityProperties) {

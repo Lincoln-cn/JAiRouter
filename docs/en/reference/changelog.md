@@ -21,6 +21,15 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [Unreleased] - SLA access credentials (one-time token + refresh)
+
+- **New codes `system:sla:read` / `system:sla:manage`** (74 permission codes) and two built-in role templates: `SLA_READONLY` (35 codes, read-only inspection) and `SLA_OPERATOR` (53 codes, inspection plus configuration writes).
+- **New SLA endpoints**: `POST /api/auth/sla/bootstrap` (anonymous; exchanges a one-time token), `POST /api/auth/sla/refresh` (anonymous; exchanges the refresh credential); admin endpoints under `/api/security/sla/**` (accounts, bootstrap issuance, revoke).
+- **New tables**: `sla_service_accounts`, `sla_bootstrap_tokens`, `sla_refresh_tokens` (migration V16).
+- **New console page**: System → SLA Access (`/system/sla`).
+- Four new audit events: `SLA_BOOTSTRAP_ISSUED` / `SLA_BOOTSTRAP_CONSUMED` / `SLA_REFRESH` / `SLA_CREDENTIAL_REVOKED`.
+- Migration note: the SLA tool can replace `login()` in `sla/lib/client.mjs` (admin password) with bootstrap + refresh; the old path still works until then.
+
 ### [Unreleased] - Call-history bodies split from metadata
 
 `callhistory:view` is split into `callhistory:read` + `callhistory:full-content`:

@@ -19,7 +19,7 @@ import en from '@/locales/en-US/permissions.json'
 
 const ACTIONS = ['read', 'view', 'write', 'manage', 'use']
 /** 后端 PermissionCodes.ALL_PERMISSION_CODES 的当前规模（#1173 新增 monitoring:config:read 后 72） */
-const EXPECTED_TOTAL = 72
+const EXPECTED_TOTAL = 74
 
 interface SplitCode {
   module: string

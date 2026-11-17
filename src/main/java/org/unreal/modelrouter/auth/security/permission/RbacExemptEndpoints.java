@@ -113,6 +113,12 @@ public final class RbacExemptEndpoints {
                         "自助令牌列表；方法级 @PreAuthorize(hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)) 已约束属主，"
                                 + "登记权限码规则会破坏普通用户管理本人令牌"),
 
+                // ===== SLA 接入（issue #1174） =====
+                // /api/auth/sla/bootstrap 与 /api/auth/sla/refresh 都在 SecurityConfiguration 里
+                // permitAll（在 /api/** 规则之前）—— 它们不在这里登记，因为豁免语义仍然是
+                // 「要求已认证」，而这两条链路的调用方手里只有一个尚未被认证层识别的令牌/凭据。
+                // 凭据校验（一次性、TTL、来源 IP、吊销、账号启用）全在 SlaAccessService。
+
                 // ===== 控制台/客户端公共读取 =====
                 Exemption.get("/api/auth/permissions",
                         "当前登录用户自身权限码（PermissionManagementController javadoc 明示任意已登录用户）；控制台菜单渲染依赖"),

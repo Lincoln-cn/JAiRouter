@@ -139,7 +139,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     wrapper.unmount()
   })
 
-  it('ADMIN 视角：七组齐全，安全 6 项与系统 8 项都在（反证不是整栏都没渲染）', async () => {
+  it('ADMIN 视角：七组齐全，安全 6 项与系统 9 项都在（反证不是整栏都没渲染）', async () => {
     const wrapper = await mountAt('/system/cluster', [], ['ADMIN'])
 
     const groups = sidebarGroups(wrapper)
@@ -153,7 +153,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       '开发工具'
     ])
     expect(groups.find(group => group.title === '安全')?.items).toHaveLength(6)
-    expect(groups.find(group => group.title === '系统')?.items).toHaveLength(8)
+    expect(groups.find(group => group.title === '系统')?.items).toHaveLength(9)
     wrapper.unmount()
   })
 

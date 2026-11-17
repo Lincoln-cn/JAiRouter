@@ -38,6 +38,12 @@ public enum AuditEventType {
     // 调用历史配置
     RECORD_LEVEL_CHANGE,    // 记录级别变更
 
+    // SLA 接入（issue #1174）：一次性令牌的签发/消费、刷新、吊销
+    SLA_BOOTSTRAP_ISSUED,   // 签发 SLA 一次性接入令牌
+    SLA_BOOTSTRAP_CONSUMED, // SLA 一次性接入令牌被消费（换取长期凭据）
+    SLA_REFRESH,            // SLA 用刷新凭据换新访问令牌
+    SLA_CREDENTIAL_REVOKED, // SLA 凭据被吊销
+
     // 系统事件
     SYSTEM_CLEANUP,         // 系统清理
     MONITORING_CONFIG_CHANGED, // 监控配置变更（含应急操作，含强制降级/熔断开合/清缓存）

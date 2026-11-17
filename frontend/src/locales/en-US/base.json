@@ -93,6 +93,7 @@
     "accounts": "Accounts",
     "permissions": "Permissions",
     "monitoringConfig": "Monitoring Config",
+    "slaAccess": "SLA Access",
     "statePersistence": "State Persistence",
     "clusterConfig": "Cluster Settings",
     "healthConfig": "Health Probe Settings",
@@ -130,7 +131,8 @@
     "playgroundRerank": "Rerank",
     "playgroundAudio": "Audio Service",
     "playgroundImage": "Image Service",
-    "monitoringRuntime": "Runtime & Emergency"
+    "monitoringRuntime": "Runtime & Emergency",
+    "slaAccess": "SLA Access"
   },
   "route": {
     "dashboard": "Overview",
@@ -175,6 +177,7 @@
     "tracingManagement": "Tracing Config",
     "monitoringConfig": "Monitoring Config",
     "monitoringRuntime": "Runtime & Emergency",
+    "slaAccess": "SLA Access",
     "playgroundChat": "Chat Playground",
     "playgroundEmbedding": "Embedding",
     "playgroundRerank": "Rerank",

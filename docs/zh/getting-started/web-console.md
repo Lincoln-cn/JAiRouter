@@ -24,7 +24,7 @@
 
 | 用户名 | 默认密码 | 角色 | 说明 |
 |--------|----------|------|------|
-| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | 超级管理员，拥有全部 72 个权限码 |
+| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | 超级管理员，拥有全部 74 个权限码 |
 | `user` | `user123456` | USER | 普通用户，只读为主 |
 
 > ⚠️ **首次部署务必修改 `admin` 密码**。密码通过环境变量 `INITIAL_ADMIN_PASSWORD` 设置（见 `src/main/resources/config/auth/jwt.yml`），修改后重启服务即生效。
@@ -61,7 +61,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 2.1 左侧导航
 
-控制台左侧为可折叠侧边栏，包含 **7 个菜单分组**、**33 个菜单项**、**47 个页面（tab）**。同一菜单项下的多个页面收为 **tab**（如「调用历史」下的「调用记录 / 调用历史仪表盘」），tab 按固定顺序排列，可点击切换。
+控制台左侧为可折叠侧边栏，包含 **7 个菜单分组**、**34 个菜单项**、**48 个页面（tab）**。同一菜单项下的多个页面收为 **tab**（如「调用历史」下的「调用记录 / 调用历史仪表盘」），tab 按固定顺序排列，可点击切换。
 
 菜单可见性由权限码控制：缺少对应权限码的分组/菜单项不会显示；**tab 逐项单独校验**——只拥有部分 tab 权限时，该菜单项仍显示，但落地页取「第一个有权限的 tab」。
 
@@ -74,10 +74,10 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | 3 | 流量治理 | Traffic Governance | 路由规则、负载均衡（实时监控 ｜ 策略配置）、限流（限流监控）、熔断（熔断监控 ｜ 熔断历史 ｜ 全局配置）、响应缓存管理、配额运行时配置、资源池 |
 | 4 | 模型与实例 | Model & Instances | 适配器管理、服务管理、实例管理、版本管理 |
 | 5 | 安全 | Security | API 密钥管理、PII 脱敏管理、JWT 令牌管理、黑名单管理、审计日志、记录治理 |
-| 6 | 系统 | System | 账户管理、权限管理、追踪配置、监控配置（监控配置 ｜ 运行时与应急）、状态持久化、集群设置、健康探针设置、操作记录 |
+| 6 | 系统 | System | 账户管理、权限管理、追踪配置、监控配置（监控配置 ｜ 运行时与应急）、状态持久化、集群设置、健康探针设置、操作记录、SLA 接入 |
 | 7 | 开发工具 | Developer Tools | AI 试验场（对话测试 ｜ 向量生成 ｜ 重排序 ｜ 语音服务 ｜ 图像服务）、客户端接入指南 |
 
-> 本次信息架构（IA）由 9 组 40 项收敛为 7 组 28 项；此后陆续增补至 7 组 33 项 / 47 个页面（v3.5.1 记录治理、v3.8.6 集群设置、v3.8.7 健康探针设置、v3.8.8 操作记录与监控配置）：12 个入口降级为同组菜单项的 tab，**URL 一律不变**，深链、书签与本文附录里的路径全部继续有效，只是不再单独占用侧栏一行。
+> 本次信息架构（IA）由 9 组 40 项收敛为 7 组 28 项；此后陆续增补至 7 组 34 项 / 48 个页面（v3.5.1 记录治理、v3.8.6 集群设置、v3.8.7 健康探针设置、v3.8.8 操作记录与监控配置、SLA 接入）：12 个入口降级为同组菜单项的 tab，**URL 一律不变**，深链、书签与本文附录里的路径全部继续有效，只是不再单独占用侧栏一行。
 
 ### 2.2 顶栏
 
@@ -263,14 +263,16 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ## 6. 权限与角色
 
-### 6.1 四个内置角色
+### 6.1 六个内置角色
 
 | 角色 | 权限码数 | 权限范围 | 说明 |
 |------|:-------:|----------|------|
-| **ADMIN** | 72 | 全量权限码 | 超级管理员；URL 规则直通，JWT 内嵌全量码 |
-| **OPERATOR** | 54 | 全部 `:read` + `:write` 码 | 日常运维；不含系统管理（`system:*`）、安全管理类 `manage`（API Key / JWT 令牌 / 黑名单管理）；含 `callhistory:read`（可看调用记录与摘要，看不到正文） |
+| **ADMIN** | 74 | 全量权限码 | 超级管理员；URL 规则直通，JWT 内嵌全量码 |
+| **OPERATOR** | 55 | 全部 `:read` + `:write` 码 | 日常运维；不含系统管理（`system:*`）、安全管理类 `manage`（API Key / JWT 令牌 / 黑名单管理）；含 `callhistory:read`（可看调用记录与摘要，看不到正文） |
 | **USER** | 33 | 仪表盘 + config 只读 + lb/cb/rl 全量 + monitoring 只读 + tracing 仪表盘/搜索 + AI 试验场 | 普通用户；唯一写码 `lb:config:write` |
-| **VIEWER** | 31 | 全部 `:read` 码（排除与写/管理面配对的 8 个码与 `callhistory:read`） | 纯只读角色；不含调用历史（`callhistory:read`）、`ai:playground:use` |
+| **VIEWER** | 31 | 全部 `:read` 码（排除与写/管理面配对的 10 个码与 `callhistory:read`） | 纯只读角色；不含调用历史（`callhistory:read`）、`ai:playground:use` |
+| **SLA_READONLY** | 35 | 只读巡检面 | 给 SLA 工具用的只读角色：仪表板、config 只读、lb/cb/rl 监控、`callhistory:read`（仅摘要）、monitoring 只读、tracing 只读、审计日志只读；不含正文与任何管理码 |
+| **SLA_OPERATOR** | 53 | 只读巡检面 + 配置写 | 在 SLA_READONLY 之上加 15 个 `config:*:write`、`lb:config:write`、`tracing:config:manage`、`monitoring:config:write`；仍不含账户/权限管理与 `security:*:manage` |
 
 ### 6.2 为什么看不到某些菜单页 {#why-menu-pages-missing}
 

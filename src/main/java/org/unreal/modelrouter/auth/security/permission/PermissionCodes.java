@@ -201,6 +201,21 @@ public final class PermissionCodes {
     /** 权限管理 */
     public static final String SYSTEM_PERMISSIONS_MANAGE = "system:permissions:manage";
 
+    // ==================== system-sla（SLA 接入，issue #1174） ====================
+
+    /**
+     * 查看 SLA 接入账号与凭据（只读）。
+     *
+     * <p>SLA 是外部巡检工具的运行主体：它需要读观测面（指标、追踪、调用记录、配置），
+     * 但不该碰用户/权限管理与审计写。这里把「看得到接入配置」与「能签发/吊销凭据」
+     * 拆成两个码，理由同监控配置的 read/write —— 只读值班人员也要能查「谁在什么时候
+     * 换过凭据」。
+     */
+    public static final String SYSTEM_SLA_READ = "system:sla:read";
+
+    /** 管理 SLA 接入账号与凭据（签发一次性接入令牌、吊销、轮换） */
+    public static final String SYSTEM_SLA_MANAGE = "system:sla:manage";
+
     // ==================== ai（AI 试验场） ====================
 
     /** AI 试验场使用 */
@@ -250,6 +265,7 @@ public final class PermissionCodes {
             SECURITY_BLACKLIST_READ, SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ, SECURITY_AUDIT_WRITE,
             SECURITY_SANITIZATION_READ, SECURITY_SANITIZATION_MANAGE,
             SYSTEM_ACCOUNTS_READ, SYSTEM_ACCOUNTS_MANAGE, SYSTEM_PERMISSIONS_READ, SYSTEM_PERMISSIONS_MANAGE,
+            SYSTEM_SLA_READ, SYSTEM_SLA_MANAGE,
             AI_PLAYGROUND_USE,
             ACTUATOR_ADMIN_MANAGE
     );

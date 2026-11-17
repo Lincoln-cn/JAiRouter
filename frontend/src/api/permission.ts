@@ -103,7 +103,8 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     module: 'permissions.groups.system',
     codes: [
       'system:accounts:read', 'system:accounts:manage',
-      'system:permissions:read', 'system:permissions:manage'
+      'system:permissions:read', 'system:permissions:manage',
+    'system:sla:read', 'system:sla:manage'
     ]
   },
   { module: 'permissions.groups.ai', codes: ['ai:playground:use'] },
