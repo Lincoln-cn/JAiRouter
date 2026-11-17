@@ -61,11 +61,20 @@ public class ExcludedPathsConfig {
         // hasRole("ADMIN") ⇒ **带 ADMIN JWT 也进不去**（响应体是 AUTH_MISSING，即「认证没建立」）。
         // 现在只排除**匿名放行清单**（与 AnonymousEndpointPaths.HEALTH_AND_OPS 同一份：健康探针 /
         // info / prometheus），其余 /actuator/** 走正常认证链，于是管理面 JWT 能真正满足 ROLE_ADMIN。
+        // issue #1174（运行态实测补的漏）：SLA 接入的两条端点必须在这里也排除 ——
+        // SecurityConfiguration 里的 permitAll() 只管**授权**，而认证是由
+        // SpringSecurityAuthenticationFilter 在建链之前完成的：它在
+        // ExcludedPathsConfig.isAuthExcluded 为 false 时会先一步写 401
+        // （AUTH_MISSING），根本走不到授权判定。单测直接调 service/controller，
+        // 不经过 filter，所以这类「permitAll 加了、排除清单没加」的漏只能在
+        // 真机请求上暴露（本轮就是这样被发现的）。
         AUTH_EXCLUDED_PATHS = Set.of(
             "/health",
             "/metrics",
             "/api/auth/jwt/login",
             "/api/auth/jwt/validate",
+            "/api/auth/sla/bootstrap",
+            "/api/auth/sla/refresh",
             "/favicon.ico",
             "/.well-known"
         );

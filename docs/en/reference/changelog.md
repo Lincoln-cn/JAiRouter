@@ -29,6 +29,11 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **New console page**: System → SLA Access (`/system/sla`).
 - Four new audit events: `SLA_BOOTSTRAP_ISSUED` / `SLA_BOOTSTRAP_CONSUMED` / `SLA_REFRESH` / `SLA_CREDENTIAL_REVOKED`.
 - Migration note: the SLA tool can replace `login()` in `sla/lib/client.mjs` (admin password) with bootstrap + refresh; the old path still works until then.
+- **Live-run fixes (found against a running server while the unit tests were green)**:
+  - `POST /api/auth/sla/bootstrap` and `/refresh` returned 401 `AUTH_MISSING` — the authentication filter runs before the authorization chain, so `permitAll` alone does not admit a request; both endpoints are now listed in the auth-excluded paths as well, guarded by `AnonymousEndpointConsistencyTest`.
+  - SLA failure semantics now carry explicit statuses: invalid/used/expired token → 401, bound-IP mismatch or disabled account → 403, duplicate name → 409, unknown account → 404 (some cases previously surfaced as 500).
+  - `expiresIn` is in **seconds** (default 3600); the examples used to say 60 and have been corrected.
+  - Newly added built-in roles are now seeded from their template into an existing database; the additive reconcile used to skip roles with no rows at all, which left an upgraded deployment signing in and then failing with 403 everywhere.
 
 ### [Unreleased] - Call-history bodies split from metadata
 
