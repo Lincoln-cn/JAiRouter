@@ -11,7 +11,7 @@
  * 维护方式：后端改 `PermissionCodes.java` 后，跑一次 `npm run test:unit`，
  * 红文会列出差异；按提示增删本清单，不要盲目放开断言。
  *
- * 清单自身另外恒等于 74 项（见 `menu.spec.ts`「白名单自身 = 72 个互不重复的权限码」）。
+ * 清单自身另外恒等于 76 项（见 `menu.spec.ts`「白名单自身 = 76 个互不重复的权限码」）。
  */
 export const KNOWN_PERMISSION_CODES: readonly string[] = [
   'overview:dashboard:read',
@@ -80,6 +80,8 @@ export const KNOWN_PERMISSION_CODES: readonly string[] = [
   'security:blacklist:manage',
   'security:audit:read',
   'security:audit:write',
+  'security:loginguard:read',
+  'security:loginguard:manage',
   'security:sanitization:read',
   'security:sanitization:manage',
   'system:accounts:read',

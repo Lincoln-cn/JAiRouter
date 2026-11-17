@@ -11,7 +11,12 @@
     </template>
 
     <template #actions>
-      <el-button type="primary" @click="handleSearch" :loading="searching">{{ t('tracing.search.search') }}</el-button>
+      <!-- 列表页统一动作区：先刷新、再导出（查询按钮在筛选区末尾） -->
+      <el-button @click="handleSearch" :loading="searching">
+        <el-icon><Refresh /></el-icon>
+        {{ t('tracing.search.refresh') }}
+      </el-button>
+      <el-button @click="handleExport" :disabled="traces.length === 0">{{ t('tracing.search.export') }}</el-button>
     </template>
 
     <!-- 搜索条件 -->
@@ -68,6 +73,13 @@
               <el-option :label="t('tracing.search.error')" :value="true" />
             </el-select>
           </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch" :loading="searching">
+              <el-icon><Search /></el-icon>
+              {{ t('tracing.search.search') }}
+            </el-button>
+          </el-form-item>
         </el-form>
       </FilterBar>
     </template>
@@ -77,11 +89,10 @@
       <div class="card-header">
         <span>{{ t('tracing.search.resultsTitle', { count: traces.length }) }}</span>
         <div class="header-actions">
-          <el-button @click="handleExport" :disabled="traces.length === 0">{{ t('tracing.search.export') }}</el-button>
           <el-checkbox v-model="includeArchived" class="archived-toggle">
-          {{ t('tracing.search.includeArchived') }}
-        </el-checkbox>
-        <el-button @click="handleGetRecent">{{ t('tracing.search.getRecent') }}</el-button>
+            {{ t('tracing.search.includeArchived') }}
+          </el-checkbox>
+          <el-button @click="handleGetRecent">{{ t('tracing.search.getRecent') }}</el-button>
         </div>
       </div>
     </template>
@@ -112,7 +123,7 @@
       </el-table-column>
       <el-table-column prop="duration" :label="t('tracing.search.durationColumn')" min-width="70" sortable>
         <template #default="{ row }">
-          <span :class="{ 'high-latency': row.duration > 1000 }">{{ Math.round(row.duration) }}</span>
+          <span :class="{ 'high-latency': row.duration > 1000 }">{{ formatMs(row.duration) }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="startTime" :label="t('tracing.search.startTime')" min-width="140">
@@ -162,7 +173,7 @@
               <el-descriptions-item :label="t('tracing.search.primaryService')">{{ selectedTrace.serviceName }}</el-descriptions-item>
               <el-descriptions-item :label="t('tracing.search.totalDurationLabel')">
                 <span :class="{ 'high-latency': (traceChain?.stats?.totalDuration || selectedTrace?.duration || 0) > 1000 }">
-                  {{ Math.round(traceChain?.stats?.totalDuration || selectedTrace?.duration || 0) }}ms
+                  {{ formatDurationWithUnit(traceChain?.stats?.totalDuration ?? selectedTrace?.duration) }}
                 </span>
               </el-descriptions-item>
               <el-descriptions-item :label="t('tracing.search.spanCount')">
@@ -170,7 +181,7 @@
                   {{ traceChain?.stats?.totalSpans || selectedTrace?.spanCount || 0 }}
                 </el-tag>
               </el-descriptions-item>
-              <el-descriptions-item :label="t('tracing.search.startTime')">{{ formatTime(selectedTrace?.startTime) }}</el-descriptions-item>
+              <el-descriptions-item :label="t('tracing.search.startTime')"><TimeText :value="selectedTrace?.startTime" /></el-descriptions-item>
               <el-descriptions-item :label="t('tracing.search.status')">
                 <el-tag :type="selectedTrace?.hasError ? 'danger' : 'success'">
                   {{ selectedTrace?.hasError ? t('tracing.search.error') : t('tracing.search.success') }}
@@ -180,16 +191,16 @@
                 <el-tag type="danger" size="small">{{ traceChain?.stats?.errorCount }}</el-tag>
               </el-descriptions-item>
               <el-descriptions-item :label="t('tracing.search.avgDurationLabel')">
-                {{ Math.round(traceChain?.stats?.avgDuration || 0) }}ms
+                {{ formatDurationWithUnit(traceChain?.stats?.avgDuration) }}
               </el-descriptions-item>
               <el-descriptions-item :label="t('tracing.search.maxDurationLabel')">
-                {{ Math.round(traceChain?.stats?.maxDuration || 0) }}ms
+                {{ formatDurationWithUnit(traceChain?.stats?.maxDuration) }}
               </el-descriptions-item>
               <el-descriptions-item :label="t('tracing.search.gatewayDurationLabel')">
-                {{ Math.round(gatewayDuration) }}ms
+                {{ formatDurationWithUnit(gatewayDuration) }}
               </el-descriptions-item>
               <el-descriptions-item :label="t('tracing.search.upstreamDurationLabel')">
-                {{ Math.round(upstreamDuration) }}ms
+                {{ formatDurationWithUnit(upstreamDuration) }}
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
@@ -230,7 +241,7 @@
                 <el-table-column prop="duration" :label="t('tracing.search.durationMsColumn')" min-width="70" sortable>
                   <template #default="{ row }">
                     <span :class="{ 'high-latency': row.duration > 500 }">
-                      {{ Math.round(row.duration) }}
+                      {{ formatMs(row.duration) }}
                     </span>
                   </template>
                 </el-table-column>
@@ -243,7 +254,7 @@
                 </el-table-column>
                 <el-table-column prop="startTime" :label="t('tracing.search.startTime')" min-width="140" sortable>
                   <template #default="{ row }">
-                    {{ formatTime(row.startTime) }}
+                    <TimeText :value="row.startTime" />
                   </template>
                 </el-table-column>
                 <el-table-column prop="error" :label="t('tracing.search.status')" min-width="70">
@@ -312,6 +323,7 @@ import type {
 import ListPageLayout from '@/components/ListPageLayout.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
+import { Refresh, Search } from '@element-plus/icons-vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
@@ -861,21 +873,16 @@ const loadAvailableServices = async () => {
   }
 }
 
-// 时间格式化
-const formatTime = (timeStr?: string) => {
-  if (!timeStr) return ''
-  try {
-    const date = new Date(timeStr)
-    return date.toLocaleString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })
-  } catch {
-    return timeStr
-  }
+// 毫秒一律取整：摘要区自带 ms 单位，表格列的单位已在表头声明
+const formatMs = (value?: number | null): string => {
+  const num = Number(value)
+  return Number.isFinite(num) ? `${Math.round(num)}` : '-'
+}
+
+/** 摘要区需要单位（表格列的单位在表头，不重复） */
+const formatDurationWithUnit = (value?: number | null): string => {
+  const num = Number(value)
+  return Number.isFinite(num) ? `${Math.round(num)}ms` : '-'
 }
 
 // 状态码类型判断

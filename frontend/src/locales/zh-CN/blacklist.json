@@ -98,6 +98,13 @@
     "cleanupConfirm": "确认清理所有过期的黑名单条目？",
     "cleanupConfirmTitle": "确认清理",
     "cleanupDone": "清理完成，共清理 {count} 条",
-    "cleanupFailed": "清理失败"
+    "cleanupFailed": "清理失败",
+    "addTitle": "添加黑名单",
+    "close": "关闭",
+    "removeConfirmMessage": "确认将 {target} 从黑名单移除？",
+    "emptyTitle": "暂无黑名单条目",
+    "emptyDescription": "当前没有生效的黑名单记录，可添加 Token、IP 或设备条目",
+    "emptySearchTitle": "没有匹配的黑名单条目",
+    "emptySearchDescription": "当前筛选条件没有匹配结果，可调整筛选或重置后重试"
   }
 }

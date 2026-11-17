@@ -54,22 +54,57 @@
           <el-button link size="small" @click="handleView(scope.row)">
             {{ t('version.view') }}
           </el-button>
-          <!-- 切流是破坏性动作：secondary 按钮 + handleApply 内已有的二次确认 -->
-          <el-button plain size="small" :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
-            :loading="applyingVersions.has(scope.row.version)" v-permission="'config:versions:write'" @click="handleApply(scope.row)">
-            {{ t('version.apply') }}
-          </el-button>
-          <el-button link type="danger" size="small" :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
-            :loading="deletingVersions.has(scope.row.version)" v-permission="'config:versions:write'" @click="handleDelete(scope.row)">
-            {{ t('version.delete') }}
-          </el-button>
+          <!-- 二次确认统一用 ConfirmAction（气泡确认），不再用 MessageBox 的 confirm 弹层 -->
+          <ConfirmAction
+            class="action-item"
+            :title="t('version.confirmApplyTitle', { version: scope.row.version })"
+            :confirm-text="t('version.confirmApply')"
+            :cancel-text="t('version.confirmCancel')"
+            :width="280"
+            type="warning"
+            :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
+            :loading="applyingVersions.has(scope.row.version)"
+            @confirm="handleApply(scope.row)"
+          >
+            <el-button plain size="small" :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
+              :loading="applyingVersions.has(scope.row.version)" v-permission="'config:versions:write'">
+              {{ t('version.apply') }}
+            </el-button>
+          </ConfirmAction>
+          <ConfirmAction
+            class="action-item"
+            type="danger"
+            :title="t('version.confirmDeleteTitle', { version: scope.row.version })"
+            :confirm-text="t('version.confirmDelete')"
+            :cancel-text="t('version.confirmCancel')"
+            :width="280"
+            :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
+            :loading="deletingVersions.has(scope.row.version)"
+            @confirm="handleDelete(scope.row)"
+          >
+            <el-button link type="danger" size="small" :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
+              :loading="deletingVersions.has(scope.row.version)" v-permission="'config:versions:write'">
+              {{ t('version.delete') }}
+            </el-button>
+          </ConfirmAction>
         </template>
       </el-table-column>
     </el-table>
+
+    <EmptyState
+      v-if="!loading && versions.length === 0"
+      icon="Clock"
+      :title="t('version.emptyTitle')"
+      :description="t('version.emptyDescription')"
+    >
+      <template #actions>
+        <el-button :loading="loading" @click="handleRefresh">{{ t('version.refresh') }}</el-button>
+      </template>
+    </EmptyState>
   </PageSkeleton>
 
-  <!-- 查看版本详情对话框 -->
-  <el-dialog v-model="detailDialogVisible" class="version-dialog" :title="t('version.detailTitle')" width="620px">
+  <!-- 版本详情：只读抽屉（DetailDrawer 已内置 close-on-click-modal / loading 骨架） -->
+  <DetailDrawer v-model="detailDrawerVisible" :title="t('version.detailTitle')" :width="detailDrawerWidth">
     <el-descriptions :column="1" border>
       <el-descriptions-item :label="t('version.versionNo')">{{ currentVersion.version }}</el-descriptions-item>
       <el-descriptions-item :label="t('version.status')">
@@ -101,15 +136,13 @@
     </div>
 
     <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="detailDialogVisible = false">{{ t('version.close') }}</el-button>
-      </span>
+      <el-button @click="detailDrawerVisible = false">{{ t('version.close') }}</el-button>
     </template>
-  </el-dialog>
+  </DetailDrawer>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
 import type { VersionInfo } from '@/api/version'
@@ -117,10 +150,17 @@ import { getErrorMessage } from '@/utils/error'
 import { applyVersion, deleteConfigVersion, getAllVersionInfo, type Version } from '@/api/version.ts'
 import { formatDateTime } from '@/utils/format'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import DetailDrawer from '@/components/DetailDrawer.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { useViewport } from '@/composables/useViewport'
 
 const { t } = useI18n()
+const { isNarrow } = useViewport()
 const versions = ref<Version[]>([])
-const detailDialogVisible = ref(false)
+const detailDrawerVisible = ref(false)
+/** 详情抽屉：普通屏 520，窄屏占满（规范 §P3 抽屉尺寸） */
+const detailDrawerWidth = computed(() => (isNarrow.value ? '100%' : 520))
 const currentVersion = ref({} as Version)
 const loading = ref(false)
 const applyingVersions = ref<Set<number>>(new Set())
@@ -225,44 +265,11 @@ const handleRefresh = () => {
 // 查看版本详情
 const handleView = (row: Version) => {
   currentVersion.value = row
-  detailDialogVisible.value = true
+  detailDrawerVisible.value = true
 }
 
-// 应用版本
+// 应用版本：二次确认由模板里的 ConfirmAction 承担，这里只做执行
 const handleApply = async (row: Version) => {
-  // 显示详细的确认对话框
-  const confirmResult = await ElMessageBox.confirm(
-    `
-    <div>
-      <p><strong>${t('version.applyDialog.heading')}</strong></p>
-      <p>${t('version.applyDialog.version', { version: row.version })}</p>
-      <p>${t('version.applyDialog.operation', { operation: getOperationDisplayName(row.operation) })}</p>
-      <p>${t('version.applyDialog.detail', { detail: row.operationDetail || t('version.none') })}</p>
-      <p style="color: var(--ja-warning); margin-top: 10px;">
-        <i class="el-icon-warning"></i>
-        ${t('version.applyDialog.warning')}
-      </p>
-    </div>
-    `,
-    t('version.applyDialog.title'),
-    {
-      confirmButtonText: t('version.applyDialog.confirm'),
-      cancelButtonText: t('version.applyDialog.cancel'),
-      type: 'warning',
-      dangerouslyUseHTMLString: true,
-      showClose: false,
-      closeOnClickModal: false,
-      closeOnPressEscape: false
-    }
-  ).catch(() => {
-    // 用户取消操作
-    return false
-  })
-
-  if (!confirmResult) {
-    return
-  }
-
   // 显示应用进度
   const loadingInstance = ElLoading.service({
     lock: true,
@@ -372,9 +379,9 @@ const handleApply = async (row: Version) => {
   }
 }
 
-// 删除版本
+// 删除版本：二次确认由模板里的 ConfirmAction（type="danger"）承担，这里只做执行
 const handleDelete = async (row: Version) => {
-  // 检查是否为当前版本
+  // 防御性守卫：当前版本不可删除（按钮已置灰，正常路径点不到）
   if (row.status === 'current') {
     ElMessageBox.alert(
       `
@@ -398,45 +405,16 @@ const handleDelete = async (row: Version) => {
     return
   }
 
-  // 显示详细的删除确认对话框
-  const confirmResult = await ElMessageBox.confirm(
-    `
-    <div>
-      <p><strong>${t('version.deleteDialog.heading')}</strong></p>
-      <p>${t('version.deleteDialog.version', { version: row.version })}</p>
-      <p>${t('version.deleteDialog.operation', { operation: getOperationDisplayName(row.operation) })}</p>
-      <p>${t('version.deleteDialog.detail', { detail: row.operationDetail || t('version.none') })}</p>
-      <p>${t('version.deleteDialog.createdAt', { time: formatTimestamp(row.timestamp) })}</p>
-      <p style="color: var(--ja-danger); margin-top: 15px;">
-        <i class="el-icon-warning"></i>
-        <strong>${t('version.deleteDialog.warning')}</strong>
-      </p>
-      <p style="color: var(--ja-text-secondary); font-size: 12px; margin-top: 10px;">
-        ${t('version.deleteDialog.hint')}
-      </p>
-    </div>
-    `,
-    t('version.deleteDialog.title'),
-    {
-      confirmButtonText: t('version.deleteDialog.confirm'),
-      cancelButtonText: t('version.deleteDialog.cancel'),
-      type: 'error',
-      dangerouslyUseHTMLString: true,
-      showClose: false,
-      closeOnClickModal: false,
-      closeOnPressEscape: false,
-      buttonSize: 'default'
-    }
-  ).catch(() => {
-    // 用户取消操作
-    return false
-  })
-
-  if (!confirmResult) {
-    return
+  deletingVersions.value.add(row.version)
+  try {
+    await deleteConfigVersion(row.version)
+    await fetchVersions()
+  } catch (error) {
+    console.error('删除版本失败:', error)
+    ElMessage.error(t('version.messages.deleteFailed', { message: getErrorMessage(error) || t('version.errors.unknown') }))
+  } finally {
+    deletingVersions.value.delete(row.version)
   }
-  await deleteConfigVersion(row.version)
-  await fetchVersions()
 }
 
 // 组件挂载时获取数据
@@ -505,35 +483,9 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-  padding: 10px 20px;
-}
-
-.version-dialog :deep(.el-dialog__header) {
-  background-color: var(--ja-primary-light-9, #fbfdff);
-  border-bottom: 1px solid var(--ja-border-lighter);
-  padding: 14px 20px;
-}
-
-.version-dialog :deep(.el-dialog__title) {
-  font-weight: 700;
-  color: var(--ja-text-primary);
-  font-size: 18px;
-}
-
-.version-dialog :deep(.el-dialog__body) {
-  padding: 20px;
-}
-
-.version-dialog :deep(.el-descriptions__header) {
-  margin-bottom: 4px;
-}
-
-.version-dialog :deep(.el-descriptions__label) {
-  font-weight: 600;
+/* 行内操作：ConfirmAction 包住按钮后相邻间距由 span 承担，补回来 */
+.action-item {
+  margin-left: 8px;
 }
 
 .config-preview {

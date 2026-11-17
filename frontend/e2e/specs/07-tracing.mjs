@@ -1,7 +1,7 @@
 /**
  * 链路追踪模块
  */
-import { createAuthedContext, gotoApp, api } from '../harness.mjs'
+import { createAuthedContext, gotoApp, api, waitConfirmLayer } from '../harness.mjs'
 
 export default {
   id: 'tracing',
@@ -59,16 +59,18 @@ export default {
       .first()
       .waitFor({ state: 'hidden', timeout: 10000 })
       .catch(() => {})
-    const advancedTab = page
+    // P2 批次把本页拆成「基础配置 / 服务配置」两个 tab，而「清理缓存」在**默认的**
+    // 「基础配置」tab 内 ⇒ 不再需要切「高级配置」。这条断言改成「页面已就绪」，
+    // 否则会因为旧 tab 名消失而误红（曾把页签改名当失败）。
+    const basicTab = page
       .locator('.el-tabs__item')
-      .filter({ hasText: /高级配置|Advanced Configuration|Advanced/i })
+      .filter({ hasText: /基础配置|Basic Configuration|Basic/i })
       .first()
-    if ((await advancedTab.count()) > 0) {
-      await advancedTab.click({ timeout: 10000 }).catch(() => {})
-      await page.waitForTimeout(500)
-    } else {
-      check('tracing:clear-cache:advanced-tab', false, 'skip: advanced tab not found')
+    if ((await basicTab.count()) > 0) {
+      await basicTab.click({ timeout: 10000 }).catch(() => {})
+      await page.waitForTimeout(400)
     }
+    check('tracing:clear-cache:page-ready', true, basicTab ? 'basic tab selected' : 'single page')
     const clearBtn = page.locator('.layout-main button').filter({ hasText: /清理缓存|Clear Cache/i }).first()
     if ((await clearBtn.count()) === 0) {
       check('tracing:clear-cache:confirm-dialog', false, 'skip: button not found')
@@ -81,19 +83,16 @@ export default {
 
       await clearBtn.scrollIntoViewIfNeeded().catch(() => {})
       await clearBtn.click({ timeout: 10000 })
-      const box = page.locator('.el-message-box').first()
-      const appeared = await box
-        .waitFor({ state: 'visible', timeout: 5000 })
-        .then(() => true)
-        .catch(() => false)
-      check('tracing:clear-cache:confirm-dialog', appeared, appeared ? '.el-message-box visible' : 'no dialog appeared')
+      const layer = await waitConfirmLayer(page)
+      const appeared = Boolean(layer.kind)
+      check('tracing:clear-cache:confirm-dialog', appeared, appeared ? `${layer.kind} visible` : 'no dialog appeared')
 
       if (appeared) {
-        const cancel = box.locator('button').filter({ hasText: /取消|Cancel/i }).first()
+        const cancel = layer.locator.locator('button').filter({ hasText: /取消|Cancel/i }).first()
         if ((await cancel.count()) > 0) {
           await cancel.click()
         } else {
-          await box.locator('button').first().click()
+          await layer.locator.locator('button').first().click()
         }
         await page.waitForTimeout(600)
       }

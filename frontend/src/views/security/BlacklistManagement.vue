@@ -1,15 +1,23 @@
 <template>
   <PageSkeleton :title="t('blacklist.pageTitle')">
     <template #actions>
-      <el-button v-permission="'security:blacklist:manage'" type="primary" @click="handleOpenAddDialog">
+      <el-button v-permission="'security:blacklist:manage'" type="primary" @click="handleOpenAddDrawer">
         <el-icon><Plus /></el-icon>{{ t('blacklist.add') }}
       </el-button>
-      <el-button :loading="loading" @click="handleRefresh">
-        <el-icon><Refresh /></el-icon>{{ t('blacklist.refresh') }}
-      </el-button>
-      <el-button v-permission="'security:blacklist:manage'" @click="handleCleanup">
-        <el-icon><Delete /></el-icon>{{ t('blacklist.cleanupExpired') }}
-      </el-button>
+      <!-- 清理过期是批量危险操作，二次确认统一走 ConfirmAction -->
+      <ConfirmAction
+        v-permission="'security:blacklist:manage'"
+        :title="t('blacklist.cleanupConfirm')"
+        :confirm-text="t('blacklist.cleanupExpired')"
+        :cancel-text="t('blacklist.cancel')"
+        type="danger"
+        :loading="cleanupLoading"
+        @confirm="handleCleanup"
+      >
+        <el-button :loading="cleanupLoading">
+          <el-icon><Delete /></el-icon>{{ t('blacklist.cleanupExpired') }}
+        </el-button>
+      </ConfirmAction>
     </template>
 
     <template #stats>
@@ -34,10 +42,14 @@
       <el-input v-model="filterForm.userId" :placeholder="t('blacklist.userIdPlaceholder')" clearable @keyup.enter="handleSearch" style="width: 200px" />
       <el-button plain @click="handleSearch">{{ t('blacklist.search') }}</el-button>
       <el-button @click="handleResetFilter">{{ t('blacklist.reset') }}</el-button>
+      <!-- 工具栏顺序：筛选 → 刷新 -->
+      <el-button :loading="loading" @click="handleRefresh">
+        <el-icon><Refresh /></el-icon>{{ t('blacklist.refresh') }}
+      </el-button>
     </template>
 
     <!-- 黑名单列表 -->
-    <el-table v-loading="loading" :data="pageData.content" style="width: 100%">
+    <el-table v-show="loading || pageData.content.length > 0" v-loading="loading" :data="pageData.content" style="width: 100%">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="blacklistType" :label="t('blacklist.type')" width="100">
         <template #default="scope">
@@ -79,9 +91,20 @@
       </el-table-column>
       <el-table-column :label="t('blacklist.actions')" width="120" fixed="right">
         <template #default="scope">
-          <el-button v-if="scope.row.status === 'ACTIVE'" v-permission="'security:blacklist:manage'" link type="danger" size="small" @click="handleRemove(scope.row)">
-            {{ t('blacklist.remove') }}
-          </el-button>
+          <!-- 移除二次确认统一走 ConfirmAction，气泡文案带对象名 -->
+          <ConfirmAction
+            v-if="scope.row.status === 'ACTIVE'"
+            v-permission="'security:blacklist:manage'"
+            :title="t('blacklist.removeConfirmMessage', { target: scope.row.targetValueMasked || scope.row.id })"
+            :confirm-text="t('blacklist.remove')"
+            :cancel-text="t('blacklist.cancel')"
+            type="danger"
+            @confirm="handleRemove(scope.row)"
+          >
+            <el-button link type="danger" size="small">
+              {{ t('blacklist.remove') }}
+            </el-button>
+          </ConfirmAction>
           <el-button size="small" link @click="handleViewDetail(scope.row)">
             {{ t('blacklist.detail') }}
           </el-button>
@@ -89,8 +112,22 @@
       </el-table-column>
     </el-table>
 
+    <EmptyState
+      v-if="!loading && pageData.content.length === 0"
+      icon="List"
+      :title="hasActiveFilter ? t('blacklist.emptySearchTitle') : t('blacklist.emptyTitle')"
+      :description="hasActiveFilter ? t('blacklist.emptySearchDescription') : t('blacklist.emptyDescription')"
+    >
+      <template #actions>
+        <el-button v-permission="'security:blacklist:manage'" type="primary" @click="handleOpenAddDrawer">
+          <el-icon><Plus /></el-icon>&nbsp;{{ t('blacklist.add') }}
+        </el-button>
+      </template>
+    </EmptyState>
+
     <template #footer>
       <el-pagination
+        v-show="loading || pageData.content.length > 0"
         v-model:current-page="filterForm.page"
         v-model:page-size="filterForm.size"
         :page-sizes="[10, 20, 50, 100]"
@@ -102,8 +139,15 @@
     </template>
   </PageSkeleton>
 
-    <!-- 添加黑名单对话框 -->
-    <el-dialog v-model="addDialogVisible" :title="t('blacklist.add')" width="600px">
+    <!-- 添加黑名单抽屉：整页只保留这一个编辑实例 -->
+    <el-drawer
+      v-model="addDrawerVisible"
+      direction="rtl"
+      :title="t('blacklist.addTitle')"
+      :size="addDrawerSize"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
       <el-form ref="addFormRef" :model="addForm" :rules="addFormRules" label-width="100px">
         <el-form-item :label="t('blacklist.type')" prop="blacklistType">
           <el-radio-group v-model="addForm.blacklistType" @change="handleTypeChange">
@@ -248,10 +292,12 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="addDialogVisible = false">{{ t('blacklist.cancel') }}</el-button>
-        <el-button type="primary" :loading="addLoading" @click="handleAdd">{{ t('blacklist.confirmAdd') }}</el-button>
+        <span class="drawer-footer">
+          <el-button @click="addDrawerVisible = false">{{ t('blacklist.cancel') }}</el-button>
+          <el-button type="primary" :loading="addLoading" :disabled="addLoading" @click="handleAdd">{{ t('blacklist.confirmAdd') }}</el-button>
+        </span>
       </template>
-    </el-dialog>
+    </el-drawer>
 
     <!-- 设备选择对话框 -->
     <el-dialog v-model="showDeviceSelector" :title="t('blacklist.deviceDialogTitle')" width="500px">
@@ -262,8 +308,15 @@
       </el-table>
     </el-dialog>
 
-    <!-- 详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" :title="t('blacklist.detailTitle')" width="500px">
+    <!-- 详情抽屉：只读展示，避免与「添加」编辑抽屉共用对话框层级 -->
+    <el-drawer
+      v-model="detailDrawerVisible"
+      direction="rtl"
+      :title="t('blacklist.detailTitle')"
+      :size="detailDrawerSize"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
       <el-descriptions :column="1" border>
         <el-descriptions-item label="ID">{{ detailData?.id }}</el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.type')">
@@ -289,13 +342,18 @@
         </el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.source')">{{ detailData?.source }}</el-descriptions-item>
       </el-descriptions>
-    </el-dialog>
+      <template #footer>
+        <span class="drawer-footer">
+          <el-button @click="detailDrawerVisible = false">{{ t('blacklist.close') }}</el-button>
+        </span>
+      </template>
+    </el-drawer>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Delete } from '@element-plus/icons-vue'
 import {
   getBlacklistPage,
@@ -315,6 +373,9 @@ import { getTokens, type JwtTokenInfo } from '@/api/jwtToken'
 import { getJwtAccounts, type JwtAccount } from '@/api/account'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { useViewport } from '@/composables/useViewport'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
@@ -354,10 +415,17 @@ const formatReason = (reason?: string): string => {
 // 状态
 const loading = ref(false)
 const addLoading = ref(false)
-const addDialogVisible = ref(false)
-const detailDialogVisible = ref(false)
+const cleanupLoading = ref(false)
+const addDrawerVisible = ref(false)
+const detailDrawerVisible = ref(false)
 const detailData = ref<BlacklistEntry | null>(null)
 const showDeviceSelector = ref(false)
+
+const { isNarrow } = useViewport()
+
+/** 抽屉宽度：常规 520px，窄屏占满 */
+const addDrawerSize = computed(() => (isNarrow.value ? '100%' : '520px'))
+const detailDrawerSize = computed(() => (isNarrow.value ? '100%' : '520px'))
 
 // 选择器数据
 const tokenLoading = ref(false)
@@ -421,6 +489,9 @@ const filterForm = reactive({
   page: 0,
   size: 20
 })
+
+/** 是否有生效的筛选条件：决定空态文案是「暂无数据」还是「筛选无结果」 */
+const hasActiveFilter = computed(() => Boolean(filterForm.type || filterForm.status || filterForm.userId))
 
 // 添加表单
 const addFormRef = ref()
@@ -588,8 +659,8 @@ function handleResetFilter() {
   loadPage()
 }
 
-// 打开添加对话框
-function handleOpenAddDialog() {
+// 打开添加抽屉
+function handleOpenAddDrawer() {
   addForm.blacklistType = 'IP'
   addForm.targetValue = ''
   addForm.userId = ''
@@ -597,7 +668,7 @@ function handleOpenAddDialog() {
   addForm.riskLevel = 'MEDIUM'
   addForm.expiryType = 'permanent'
   addForm.expiresInDays = 30
-  addDialogVisible.value = true
+  addDrawerVisible.value = true
   // 默认加载IP列表
   loadSuspiciousIPs()
 }
@@ -624,7 +695,7 @@ async function handleAdd() {
     const res = await addToBlacklist(request)
     if (res.success) {
       ElMessage.success(t('blacklist.addSuccess'))
-      addDialogVisible.value = false
+      addDrawerVisible.value = false
       await handleRefresh()
     } else {
       ElMessage.error(res.message || t('blacklist.addFailed'))
@@ -636,10 +707,9 @@ async function handleAdd() {
   }
 }
 
-// 移除黑名单
+// 移除黑名单（二次确认由行内 ConfirmAction 负责）
 async function handleRemove(row: BlacklistEntry) {
   try {
-    await ElMessageBox.confirm(t('blacklist.removeConfirm'), t('blacklist.removeConfirmTitle'), { type: 'warning' })
     const res = await removeFromBlacklist(row.id)
     if (res.success) {
       ElMessage.success(t('blacklist.removeSuccess'))
@@ -647,19 +717,21 @@ async function handleRemove(row: BlacklistEntry) {
     } else {
       ElMessage.error(res.message || t('blacklist.removeFailed'))
     }
-  } catch {}
+  } catch {
+    ElMessage.error(t('blacklist.removeFailed'))
+  }
 }
 
 // 查看详情
 function handleViewDetail(row: BlacklistEntry) {
   detailData.value = row
-  detailDialogVisible.value = true
+  detailDrawerVisible.value = true
 }
 
-// 清理过期
+// 清理过期（二次确认由 ConfirmAction 负责）
 async function handleCleanup() {
+  cleanupLoading.value = true
   try {
-    await ElMessageBox.confirm(t('blacklist.cleanupConfirm'), t('blacklist.cleanupConfirmTitle'), { type: 'warning' })
     const res = await cleanupExpiredBlacklist()
     if (res.success) {
       ElMessage.success(t('blacklist.cleanupDone', { count: res.data }))
@@ -667,7 +739,11 @@ async function handleCleanup() {
     } else {
       ElMessage.error(res.message || t('blacklist.cleanupFailed'))
     }
-  } catch {}
+  } catch {
+    ElMessage.error(t('blacklist.cleanupFailed'))
+  } finally {
+    cleanupLoading.value = false
+  }
 }
 
 // 格式化时间（委托共享 format.ts）
@@ -771,5 +847,12 @@ function getRiskTagType(level: RiskLevel | undefined) {
 /* 原因选择器 */
 .reason-selector {
   width: 100%;
+}
+
+/* 抽屉底部操作区：右对齐、固定间距 */
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ja-space-2, 8px);
 }
 </style>

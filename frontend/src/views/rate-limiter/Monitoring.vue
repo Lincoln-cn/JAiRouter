@@ -2,7 +2,39 @@
   <PageSkeleton :title="t('rateLimiter.monitoring.pageTitle')">
     <template #stats>
       <!-- 概览统计：一行式中性指标条；只有「高使用率实例」带语义色 -->
-      <MetricStrip :items="metricItems" :columns="6" />
+      <MetricStrip :items="metricItems" :loading="loading" :columns="6" />
+    </template>
+
+    <!-- 工具栏顺序（设计 §P4）：时间范围 → 维度筛选 → 刷新 → 导出。
+         本页三个数据接口都不接受时间范围参数（只有实时快照），故从维度筛选起 -->
+    <template #toolbar>
+      <el-select
+        v-model="filterScope"
+        :placeholder="t('rateLimiter.monitoring.scopePlaceholder')"
+        clearable
+        style="width: 120px"
+      >
+        <el-option :label="t('rateLimiter.monitoring.scopeOptions.global')" value="global" />
+        <el-option :label="t('rateLimiter.monitoring.scopeOptions.service')" value="service" />
+        <el-option :label="t('rateLimiter.monitoring.scopeOptions.instance')" value="instance" />
+      </el-select>
+      <el-select
+        v-model="filterAlgorithm"
+        :placeholder="t('rateLimiter.monitoring.algorithmPlaceholder')"
+        clearable
+        style="width: 150px"
+      >
+        <el-option label="Token Bucket" value="TOKEN_BUCKET" />
+        <el-option label="Leaky Bucket" value="LEAKY_BUCKET" />
+        <el-option label="Sliding Window" value="SLIDING_WINDOW" />
+        <el-option label="Warm Up" value="WARM_UP" />
+      </el-select>
+      <el-button v-if="hasActiveFilter" @click="clearFilters">
+        {{ t('rateLimiter.monitoring.clearFilters') }}
+      </el-button>
+      <el-button type="primary" :loading="loading" @click="loadMetrics">
+        {{ t('rateLimiter.monitoring.refresh') }}
+      </el-button>
     </template>
 
     <!-- 限流器详细指标 -->
@@ -10,22 +42,6 @@
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('rateLimiter.monitoring.metricsTitle') }}</span>
-          <div class="control-buttons">
-            <el-select v-model="filterScope" :placeholder="t('rateLimiter.monitoring.scopePlaceholder')" clearable style="width: 120px; margin-right: 8px">
-              <el-option :label="t('rateLimiter.monitoring.scopeOptions.global')" value="global" />
-              <el-option :label="t('rateLimiter.monitoring.scopeOptions.service')" value="service" />
-              <el-option :label="t('rateLimiter.monitoring.scopeOptions.instance')" value="instance" />
-            </el-select>
-            <el-select v-model="filterAlgorithm" :placeholder="t('rateLimiter.monitoring.algorithmPlaceholder')" clearable style="width: 150px; margin-right: 8px">
-              <el-option label="Token Bucket" value="TOKEN_BUCKET" />
-              <el-option label="Leaky Bucket" value="LEAKY_BUCKET" />
-              <el-option label="Sliding Window" value="SLIDING_WINDOW" />
-              <el-option label="Warm Up" value="WARM_UP" />
-            </el-select>
-            <el-button type="primary" size="small" @click="loadMetrics" :loading="loading">
-              {{ t('rateLimiter.monitoring.refresh') }}
-            </el-button>
-          </div>
         </div>
       </template>
 
@@ -87,10 +103,25 @@
                 :status="getUsageStatus(row.usageRatio)"
                 :stroke-width="10"
               />
-              <span class="usage-text">{{ row.usageRatio }}%</span>
+              <span class="usage-text">{{ formatPercent(row.usageRatio) }}</span>
             </div>
           </template>
         </el-table-column>
+
+        <!-- 空态统一走 EmptyState，区分「暂无数据」与「筛选无结果」 -->
+        <template #empty>
+          <EmptyState
+            icon="Odometer"
+            :title="hasActiveFilter ? t('rateLimiter.monitoring.emptySearchTitle') : t('rateLimiter.monitoring.emptyTitle')"
+            :description="hasActiveFilter ? t('rateLimiter.monitoring.emptySearchDescription') : t('rateLimiter.monitoring.emptyDescription')"
+          >
+            <template v-if="hasActiveFilter" #actions>
+              <el-button size="small" @click="clearFilters">
+                {{ t('rateLimiter.monitoring.clearFilters') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
       </el-table>
     </el-card>
 
@@ -132,6 +163,7 @@ import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { t } = useI18n()
@@ -193,6 +225,21 @@ const filteredMetrics = computed(() => {
   return result
 })
 
+/** 工具栏是否处于筛选态：决定空态文案取「暂无数据」还是「筛选无结果」 */
+const hasActiveFilter = computed(() => Boolean(filterScope.value || filterAlgorithm.value))
+
+const clearFilters = () => {
+  filterScope.value = ''
+  filterAlgorithm.value = ''
+}
+
+/** 使用率统一 1 位小数（与指标条口径一致） */
+const formatPercent = (value: number | null | undefined): string => {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return '-'
+  return `${num.toFixed(1)}%`
+}
+
 /**
  * 指标条数据：默认态一律中性；只有「高使用率实例 > 0」是告警语义，给 warning。
  */
@@ -204,7 +251,7 @@ const metricItems = computed<MetricStripItem[]>(() => [
   {
     key: 'averageUsage',
     label: t('rateLimiter.monitoring.averageUsage'),
-    value: `${summary.value.averageUsageRatio}%`
+    value: formatPercent(summary.value.averageUsageRatio)
   },
   {
     key: 'highUsage',
@@ -328,11 +375,6 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: var(--ja-ink);
-}
-
-.control-buttons {
-  display: flex;
-  align-items: center;
 }
 
 .metrics-table {

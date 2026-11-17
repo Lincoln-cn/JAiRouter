@@ -155,6 +155,16 @@ class PermissionRuleRegistryTest {
         assertTrue(stillUnregistered.isEmpty(), "这些自助端点不应被规则匹配到: " + stillUnregistered);
     }
 
+    @Test
+    @DisplayName("登录保护：查询用读码、解锁用管理码（issue #1176）")
+    void loginGuardReadAndManageAreSeparated() {
+        assertRuleCode(HttpMethod.GET, "/api/security/login-guard", PermissionCodes.SECURITY_LOGINGUARD_READ);
+        assertRuleCode(HttpMethod.GET, "/api/security/login-guard/locked", PermissionCodes.SECURITY_LOGINGUARD_READ);
+        assertRuleCode(HttpMethod.PUT, "/api/security/login-guard", PermissionCodes.SECURITY_LOGINGUARD_MANAGE);
+        assertRuleCode(HttpMethod.POST, "/api/security/login-guard/unlock",
+                PermissionCodes.SECURITY_LOGINGUARD_MANAGE);
+    }
+
     private void assertRuleCode(final HttpMethod method, final String path, final String expectedCode) {
         PermissionRule rule = registry.findRule(method, path)
                 .orElseThrow(() -> new AssertionError(method + " " + path + " 未命中任何权限规则"));

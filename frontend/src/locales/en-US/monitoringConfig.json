@@ -34,6 +34,8 @@
     "invalidPrefix": "Metric prefix must start with a letter and contain only letters, digits and underscores",
     "invalidInterval": "Collection interval must be greater than 0 seconds",
     "invalidSampling": "Sampling rates must be between 0 and 1",
-    "invalidBuffer": "Buffer size must be at least the batch size"
+    "invalidBuffer": "Buffer size must be at least the batch size",
+    "pageDesc": "Runtime parameters for metrics collection. Changes take effect immediately and revert to the configuration file after a restart.",
+    "immediateHint": "Applies immediately"
   }
 }

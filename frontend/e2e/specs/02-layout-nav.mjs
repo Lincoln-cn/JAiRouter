@@ -4,7 +4,7 @@
 import { createAuthedContext, gotoApp, currentPathname } from '../harness.mjs'
 import { ALL_ROUTES } from '../routes.mjs'
 
-// P0-3 IA：7 组 34 项（v3.5.1 记录治理、v3.8.8 监控配置、v3.8.9 SLA 接入；顺序与 src/config/menu.ts 的 menuGroups 一致）
+// P0-3 IA：7 组 35 项（v3.5.1 记录治理、v3.8.8 监控配置、v3.8.9 SLA 接入、登录保护；顺序与 src/config/menu.ts 的 menuGroups 一致）
 const MENU_GROUPS = [
   'dashboard',
   'observability',
@@ -16,7 +16,7 @@ const MENU_GROUPS = [
 ]
 
 // 每组菜单项数（合计 31）：40 → 29 后 12 个页面收进 tabs，不再单独占侧栏
-const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 6, 9, 2]
+const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 7, 9, 2]
 
 export default {
   id: 'layout-nav',
@@ -26,7 +26,19 @@ export default {
   async run({ browser, check }) {
     const page = await createAuthedContext(browser)
     await gotoApp(page, '/dashboard/main')
-    await page.waitForTimeout(500)
+    // 全量跑批时（前面已跑过十几套、Chromium 更忙）首屏可能 >500ms 才挂载，
+    // 固定 sleep 会把「还在加载」判成「没有布局骨架」。这里等到骨架可见再断言，
+    // 并把 URL 打进 detail —— 否则失败信息只有「items=0」，看不出停在登录页还是空白页。
+    const shellReady = await page
+      .locator('.layout-container')
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 })
+      .then(() => true)
+      .catch(() => false)
+    if (!shellReady) {
+      check('layout-shell-ready', false, `url=${page.url()}`)
+    }
+    await page.waitForTimeout(300)
 
     // 布局骨架
     check('layout-container', await page.locator('.layout-container').first().isVisible().catch(() => false))
@@ -39,9 +51,9 @@ export default {
     const subCount = await subMenus.count()
     check('layout-menu-groups', subCount === 7, `sub-menus=${subCount}`)
 
-    // 菜单项总数与逐组项数（7 组 34 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
+    // 菜单项总数与逐组项数（7 组 35 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
     const allItems = await page.locator('.layout-menu .el-menu-item').count()
-    check('layout-menu-item-total', allItems === 34, `items=${allItems}`)
+    check('layout-menu-item-total', allItems === 35, `items=${allItems}`)
     for (let i = 0; i < MENU_GROUPS.length; i++) {
       const group = page.locator('.layout-menu .el-sub-menu').nth(i)
       const count = await group.locator('.el-menu-item').count()

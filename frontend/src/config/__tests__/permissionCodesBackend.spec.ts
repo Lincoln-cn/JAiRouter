@@ -65,8 +65,8 @@ describe('前端权限码白名单与后端 PermissionCodes 一致', () => {
   const { byName, listedNames } = parsePermissionCodes(source)
 
   it('解析结果自证：常量表与 List.of 都解析到了（防正则失效后空转）', () => {
-    expect(byName.size).toBeGreaterThanOrEqual(74)
-    expect(listedNames.length).toBeGreaterThanOrEqual(74)
+    expect(byName.size).toBeGreaterThanOrEqual(76)
+    expect(listedNames.length).toBeGreaterThanOrEqual(76)
     // 锚点：确认正则没有把注释或别的东西算进来
     expect(byName.get('OVERVIEW_DASHBOARD_READ')).toBe('overview:dashboard:read')
     expect(byName.get('CALLHISTORY_READ')).toBe('callhistory:read')
@@ -78,10 +78,10 @@ describe('前端权限码白名单与后端 PermissionCodes 一致', () => {
     expect(dangling, 'ALL_PERMISSION_CODES 引用了未定义的常量').toEqual([])
   })
 
-  it('后端权威全集恰好 74 个且无重复', () => {
+  it('后端权威全集恰好 76 个且无重复', () => {
     const values = listedNames.map(name => byName.get(name)!)
-    expect(values).toHaveLength(74)
-    expect(new Set(values).size).toBe(74)
+    expect(values).toHaveLength(76)
+    expect(new Set(values).size).toBe(76)
   })
 
   it('前端白名单与后端全集集合相等（少了或多了都会红）', () => {

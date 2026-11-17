@@ -11,6 +11,7 @@
     </template>
 
     <template #filters>
+      <!-- 工具栏顺序：时间范围 → 维度筛选（阈值/显示数量）→ 刷新 → 重置 -->
       <FilterBar>
         <el-form :inline="true" class="filter-form">
           <el-form-item :label="t('callHistory.common.timeRange')">
@@ -41,8 +42,8 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
-            <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
+            <el-button type="primary" icon="Refresh" @click="loadData">{{ t('callHistory.common.refresh') }}</el-button>
+            <el-button @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
           </el-form-item>
         </el-form>
       </FilterBar>
@@ -122,6 +123,7 @@ import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import { formatNumber as formatNumberBase } from '@/utils/format'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -135,10 +137,10 @@ const limit = ref(50)
 const slowCalls = ref<ApiCallHistoryRecord[]>([])
 const loading = ref(true)
 
-// 格式化数字
+// 格式化数字（千分位，委托共享 format.ts，与其它调用历史页一致）
 const formatNumber = (num?: number): string => {
   if (!num && num !== 0) return '0'
-  return num.toLocaleString()
+  return formatNumberBase(num)
 }
 
 // 服务类型 key -> i18n 键名映射（保持原有顺序）

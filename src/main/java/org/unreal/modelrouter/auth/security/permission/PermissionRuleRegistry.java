@@ -83,6 +83,11 @@ public class PermissionRuleRegistry {
                 // 后者的凭据能读到调用历史与配置面，误授的代价更大。
                 PermissionRule.get("/api/security/sla/**", PermissionCodes.SYSTEM_SLA_READ),
                 PermissionRule.write("/api/security/sla/**", PermissionCodes.SYSTEM_SLA_MANAGE),
+                // issue #1176: 登录保护（LoginGuardController）→ 查询走 security:loginguard:read，
+                // 改阈值与手动解锁走 security:loginguard:manage。两个端点都会写审计，
+                // 但审计归属由控制器内的事件类型决定，不影响这里的权限判定。
+                PermissionRule.get("/api/security/login-guard/**", PermissionCodes.SECURITY_LOGINGUARD_READ),
+                PermissionRule.write("/api/security/login-guard/**", PermissionCodes.SECURITY_LOGINGUARD_MANAGE),
 
                 // ===== 调用历史（原硬编码 ADMIN 规则迁移） =====
                 // issue #514：这里原来是 any(...)（空方法集 = 所有方法），于是「查看」权限码

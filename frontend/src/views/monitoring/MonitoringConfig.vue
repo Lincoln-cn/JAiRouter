@@ -1,19 +1,17 @@
 <template>
-  <PageSkeleton :title="t('monitoringConfig.pageTitle')">
-    <template #actions>
-      <el-button size="default" :loading="loading" @click="loadConfig">
-        <el-icon><Refresh /></el-icon>
-        {{ t('monitoringConfig.refresh') }}
-      </el-button>
-    </template>
-
-    <template #toolbar>
-      <p class="restart-hint">
-        <el-icon><InfoFilled /></el-icon>
-        <span>{{ t('monitoringConfig.restartHint') }}</span>
-      </p>
-    </template>
-
+  <ConfigPageShell
+    :title="t('monitoringConfig.pageTitle')"
+    :description="t('monitoringConfig.pageDesc')"
+    :loading="loading"
+    :saving="saving"
+    :saving-label="savingLabel"
+    :dirty-count="dirtyCount"
+    :can-write="canWrite"
+    save-permission="monitoring:config:write"
+    @refresh="loadConfig"
+    @save="handleSave"
+    @discard="resetForms"
+  >
     <el-alert
       v-if="!config"
       type="warning"
@@ -24,29 +22,35 @@
     />
 
     <template v-else>
-      <el-card shadow="hover" class="config-card">
-        <template #header>
-          <span class="card-title">{{ t('monitoringConfig.basicTitle') }}</span>
-        </template>
-
+      <ConfigSectionCard
+        :title="t('monitoringConfig.basicTitle')"
+        :description="t('monitoringConfig.restartHint')"
+        :error="errors.basic"
+      >
         <div class="config-grid">
           <div class="config-item">
             <span class="config-label">{{ t('monitoringConfig.enabledLabel') }}</span>
-            <el-switch v-model="basicForm.enabled" />
+            <SettingsSwitch
+              :model-value="basicForm.enabled"
+              :disabled="!canWrite"
+              :immediate-hint="t('monitoringConfig.immediateHint')"
+              :submit="submitEnabled"
+              @update:model-value="basicForm.enabled = $event"
+            />
             <span class="config-hint">{{ t('monitoringConfig.enabledHint') }}</span>
           </div>
           <div class="config-item">
             <span class="config-label">{{ t('monitoringConfig.prefixLabel') }}</span>
-            <el-input v-model="basicForm.prefix" style="width: 220px" />
+            <el-input v-model="basicForm.prefix" :disabled="!canWrite" style="width: 220px" />
             <span class="config-hint">{{ t('monitoringConfig.prefixHint') }}</span>
           </div>
           <div class="config-item">
             <span class="config-label">{{ t('monitoringConfig.intervalLabel') }}</span>
-            <el-input-number v-model="basicForm.intervalSeconds" :min="1" :max="3600" />
+            <el-input-number v-model="basicForm.intervalSeconds" :min="1" :max="3600" :disabled="!canWrite" />
           </div>
           <div class="config-item">
             <span class="config-label">{{ t('monitoringConfig.categoriesLabel') }}</span>
-            <el-select v-model="basicForm.categories" multiple style="width: 260px">
+            <el-select v-model="basicForm.categories" multiple :disabled="!canWrite" style="width: 260px">
               <el-option
                 v-for="category in categoryOptions"
                 :key="category"
@@ -56,28 +60,13 @@
             </el-select>
           </div>
         </div>
+      </ConfigSectionCard>
 
-        <div class="config-actions">
-          <el-button
-            v-if="canWrite"
-            v-permission="'monitoring:config:write'"
-            type="primary"
-            :loading="saving"
-            @click="saveBasic"
-          >
-            <el-icon><Check /></el-icon>
-            {{ t('monitoringConfig.save') }}
-          </el-button>
-          <el-button :disabled="saving" @click="resetForms">{{ t('monitoringConfig.reset') }}</el-button>
-        </div>
-      </el-card>
-
-      <el-card shadow="hover" class="config-card">
-        <template #header>
-          <span class="card-title">{{ t('monitoringConfig.samplingTitle') }}</span>
-        </template>
-        <p class="config-hint">{{ t('monitoringConfig.samplingHint') }}</p>
-
+      <ConfigSectionCard
+        :title="t('monitoringConfig.samplingTitle')"
+        :description="t('monitoringConfig.samplingHint')"
+        :error="errors.sampling"
+      >
         <div class="config-grid">
           <div v-for="field in samplingFields" :key="field.key" class="config-item">
             <span class="config-label">{{ t(field.labelKey) }}</span>
@@ -87,69 +76,45 @@
               :max="1"
               :step="0.05"
               :precision="2"
+              :disabled="!canWrite"
             />
           </div>
         </div>
+      </ConfigSectionCard>
 
-        <div class="config-actions">
-          <el-button
-            v-if="canWrite"
-            v-permission="'monitoring:config:write'"
-            type="primary"
-            :loading="saving"
-            @click="saveSampling"
-          >
-            <el-icon><Check /></el-icon>
-            {{ t('monitoringConfig.save') }}
-          </el-button>
-        </div>
-      </el-card>
-
-      <el-card shadow="hover" class="config-card">
-        <template #header>
-          <span class="card-title">{{ t('monitoringConfig.performanceTitle') }}</span>
-        </template>
-        <p class="config-hint">{{ t('monitoringConfig.performanceHint') }}</p>
-
+      <ConfigSectionCard
+        :title="t('monitoringConfig.performanceTitle')"
+        :description="t('monitoringConfig.performanceHint')"
+        :error="errors.performance"
+      >
         <div class="config-grid">
           <div class="config-item">
             <span class="config-label">{{ t('monitoringConfig.asyncLabel') }}</span>
-            <el-switch v-model="performanceForm.asyncProcessing" />
+            <el-switch v-model="performanceForm.asyncProcessing" :disabled="!canWrite" />
           </div>
           <div class="config-item">
             <span class="config-label">{{ t('monitoringConfig.batchSizeLabel') }}</span>
-            <el-input-number v-model="performanceForm.batchSize" :min="1" :max="10000" />
+            <el-input-number v-model="performanceForm.batchSize" :min="1" :max="10000" :disabled="!canWrite" />
           </div>
           <div class="config-item">
             <span class="config-label">{{ t('monitoringConfig.bufferSizeLabel') }}</span>
-            <el-input-number v-model="performanceForm.bufferSize" :min="1" :max="100000" />
+            <el-input-number v-model="performanceForm.bufferSize" :min="1" :max="100000" :disabled="!canWrite" />
           </div>
         </div>
-
-        <div class="config-actions">
-          <el-button
-            v-if="canWrite"
-            v-permission="'monitoring:config:write'"
-            type="primary"
-            :loading="saving"
-            @click="savePerformance"
-          >
-            <el-icon><Check /></el-icon>
-            {{ t('monitoringConfig.save') }}
-          </el-button>
-        </div>
-      </el-card>
+      </ConfigSectionCard>
     </template>
-  </PageSkeleton>
+  </ConfigPageShell>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Check, InfoFilled, Refresh } from '@element-plus/icons-vue'
-import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
+import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
+import SettingsSwitch from '@/components/config/SettingsSwitch.vue'
 import { usePermission } from '@/composables/usePermission'
+import { useConfigDraft } from '@/composables/useConfigDraft'
 import {
   formatDurationSeconds,
   getMonitoringConfig,
@@ -183,7 +148,6 @@ const SAMPLING_FIELDS: { key: keyof MonitoringSampling; labelKey: string }[] = [
 ]
 
 const loading = ref(false)
-const saving = ref(false)
 const config = ref<MonitoringConfig | null>(null)
 
 const basicForm = reactive({
@@ -204,6 +168,19 @@ const performanceForm = reactive<MonitoringPerformance>({
   asyncProcessing: true,
   batchSize: 100,
   bufferSize: 1000
+})
+
+/**
+ * 基线 = 上次保存成功（或最近一次加载）的值。`放弃修改` 与 dirty 判定都以它为准，
+ * 所以它必须与表单分别维护，不能拿 `config` 直接比 —— `config` 在保存后会被重新拉取，
+ * 而 duration 之类字段会被服务端归一化。
+ */
+const baseline = reactive({
+  prefix: '',
+  intervalSeconds: 10,
+  categories: [] as string[],
+  sampling: { ...samplingForm },
+  performance: { ...performanceForm }
 })
 
 const categoryOptions = CATEGORY_OPTIONS
@@ -228,6 +205,12 @@ const applyConfig = (value: MonitoringConfig) => {
   performanceForm.asyncProcessing = value.performance?.asyncProcessing ?? true
   performanceForm.batchSize = value.performance?.batchSize ?? 100
   performanceForm.bufferSize = value.performance?.bufferSize ?? 1000
+
+  baseline.prefix = basicForm.prefix
+  baseline.intervalSeconds = basicForm.intervalSeconds
+  baseline.categories = [...basicForm.categories]
+  Object.assign(baseline.sampling, { ...samplingForm })
+  Object.assign(baseline.performance, { ...performanceForm })
 }
 
 const loadConfig = async () => {
@@ -252,83 +235,107 @@ const resetForms = () => {
   }
 }
 
-/** 基础配置有 4 个独立端点：只提交真正变化的项，避免把未改的项也写一遍审计。 */
-const saveBasic = async () => {
-  const current = config.value
-  if (!current) {
-    return
-  }
-  if (!PREFIX_PATTERN.test(basicForm.prefix)) {
-    ElMessage.error(t('monitoringConfig.invalidPrefix'))
-    return
-  }
-  if (!(basicForm.intervalSeconds > 0)) {
-    ElMessage.error(t('monitoringConfig.invalidInterval'))
-    return
-  }
+const sameCategories = (a: string[], b: string[]): boolean =>
+  [...a].sort().join(',') === [...b].sort().join(',')
 
-  saving.value = true
-  try {
-    if (basicForm.enabled !== current.enabled) {
-      await updateMonitoringEnabled(basicForm.enabled)
-    }
-    if (basicForm.prefix !== current.prefix) {
-      await updateMonitoringPrefix(basicForm.prefix)
-    }
-    const currentSeconds = parseDurationSeconds(current.collectionInterval)
-    if (currentSeconds !== basicForm.intervalSeconds) {
-      await updateMonitoringCollectionInterval(formatDurationSeconds(basicForm.intervalSeconds))
-    }
-    const currentCategories = [...(current.enabledCategories ?? [])].sort().join(',')
-    if ([...basicForm.categories].sort().join(',') !== currentCategories) {
-      await updateMonitoringCategories([...basicForm.categories])
-    }
-    ElMessage.success(t('monitoringConfig.saved'))
-    await loadConfig()
-  } catch {
-    ElMessage.error(t('monitoringConfig.saveFailed'))
-  } finally {
-    saving.value = false
-  }
+const basicDirty = (): boolean =>
+  basicForm.prefix !== baseline.prefix
+  || basicForm.intervalSeconds !== baseline.intervalSeconds
+  || !sameCategories(basicForm.categories, baseline.categories)
+
+const samplingDirty = (): boolean =>
+  SAMPLING_FIELDS.some(({ key }) => samplingForm[key] !== baseline.sampling[key])
+
+const performanceDirty = (): boolean =>
+  performanceForm.asyncProcessing !== baseline.performance.asyncProcessing
+  || performanceForm.batchSize !== baseline.performance.batchSize
+  || performanceForm.bufferSize !== baseline.performance.bufferSize
+
+/** 开关即时生效：失败时抛错，SettingsSwitch 会让开关回弹。 */
+const submitEnabled = async (next: boolean): Promise<void> => {
+  await updateMonitoringEnabled(next)
+  config.value = config.value ? { ...config.value, enabled: next } : config.value
 }
 
-const saveSampling = async () => {
-  const invalid = SAMPLING_FIELDS.some(({ key }) => {
-    const value = samplingForm[key]
-    return value < 0 || value > 1
-  })
-  if (invalid) {
-    ElMessage.error(t('monitoringConfig.invalidSampling'))
+const { saving, savingLabel, errors, dirtyCount, save } = useConfigDraft(
+  [
+    {
+      key: 'basic',
+      label: () => t('monitoringConfig.basicTitle'),
+      isDirty: basicDirty,
+      validate: () => {
+        if (!PREFIX_PATTERN.test(basicForm.prefix)) {
+          return t('monitoringConfig.invalidPrefix')
+        }
+        if (!(basicForm.intervalSeconds > 0)) {
+          return t('monitoringConfig.invalidInterval')
+        }
+        return null
+      },
+      save: async () => {
+        if (basicForm.prefix !== baseline.prefix) {
+          await updateMonitoringPrefix(basicForm.prefix)
+        }
+        if (basicForm.intervalSeconds !== baseline.intervalSeconds) {
+          await updateMonitoringCollectionInterval(formatDurationSeconds(basicForm.intervalSeconds))
+        }
+        if (!sameCategories(basicForm.categories, baseline.categories)) {
+          await updateMonitoringCategories([...basicForm.categories])
+        }
+      },
+      commit: () => {
+        baseline.prefix = basicForm.prefix
+        baseline.intervalSeconds = basicForm.intervalSeconds
+        baseline.categories = [...basicForm.categories]
+      }
+    },
+    {
+      key: 'sampling',
+      label: () => t('monitoringConfig.samplingTitle'),
+      isDirty: samplingDirty,
+      validate: () => {
+        const invalid = SAMPLING_FIELDS.some(({ key }) => {
+          const value = samplingForm[key]
+          return value < 0 || value > 1
+        })
+        return invalid ? t('monitoringConfig.invalidSampling') : null
+      },
+      save: async () => {
+        await updateMonitoringSampling({ ...samplingForm })
+      },
+      commit: () => {
+        Object.assign(baseline.sampling, { ...samplingForm })
+      }
+    },
+    {
+      key: 'performance',
+      label: () => t('monitoringConfig.performanceTitle'),
+      isDirty: performanceDirty,
+      validate: () => (performanceForm.bufferSize < performanceForm.batchSize
+        ? t('monitoringConfig.invalidBuffer')
+        : null),
+      save: async () => {
+        await updateMonitoringPerformance({ ...performanceForm })
+      },
+      commit: () => {
+        Object.assign(baseline.performance, { ...performanceForm })
+      }
+    }
+  ],
+  { fallbackError: () => t('monitoringConfig.saveFailed') }
+)
+
+const handleSave = async (): Promise<void> => {
+  const result = await save()
+  if (!result.ok) {
+    if (result.failed) {
+      ElMessage.error(`${result.failed.message}`)
+    }
     return
   }
-
-  saving.value = true
-  try {
-    await updateMonitoringSampling({ ...samplingForm })
+  if (result.saved.length > 0) {
     ElMessage.success(t('monitoringConfig.saved'))
     await loadConfig()
-  } catch {
-    ElMessage.error(t('monitoringConfig.saveFailed'))
-  } finally {
-    saving.value = false
-  }
-}
-
-const savePerformance = async () => {
-  if (performanceForm.bufferSize < performanceForm.batchSize) {
-    ElMessage.error(t('monitoringConfig.invalidBuffer'))
-    return
-  }
-
-  saving.value = true
-  try {
-    await updateMonitoringPerformance({ ...performanceForm })
-    ElMessage.success(t('monitoringConfig.saved'))
-    await loadConfig()
-  } catch {
-    ElMessage.error(t('monitoringConfig.saveFailed'))
-  } finally {
-    saving.value = false
   }
 }
 
@@ -336,23 +343,6 @@ onMounted(loadConfig)
 </script>
 
 <style scoped>
-.restart-hint {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  margin: 0;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.card-title {
-  font-weight: 600;
-}
-
-.config-card {
-  margin-bottom: 16px;
-}
-
 .config-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -371,14 +361,9 @@ onMounted(loadConfig)
 }
 
 .config-hint {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 12px;
+  line-height: 1.6;
   color: var(--el-text-color-secondary);
-}
-
-.config-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <PageSkeleton :title="t('callHistory.dashboard.title')">
     <template #toolbar>
-      <!-- 时间筛选 -->
+      <!-- 工具栏顺序：时间范围 → 刷新（本页无维度筛选、无导出） -->
       <el-form :inline="true" class="filter-form">
         <el-form-item :label="t('callHistory.common.timeRange')">
           <el-date-picker
@@ -16,8 +16,8 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
-          <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
+          <el-button type="primary" icon="Refresh" @click="loadData">{{ t('callHistory.common.refresh') }}</el-button>
+          <el-button @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </template>
@@ -36,8 +36,9 @@
           :title="t('callHistory.dashboard.chart.dailyTrendTitle')"
           :loading="loading"
           :empty="dailyEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
+          :height="300"
         >
           <div ref="dailyChartRef" class="chart-container"></div>
         </ChartCard>
@@ -49,8 +50,9 @@
           :title="t('callHistory.dashboard.chart.modelDistributionTitle')"
           :loading="loading"
           :empty="modelEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
+          :height="300"
         >
           <!-- 单类数据：饼图只剩一整圈（无对比意义）⇒ 「大数字 + 说明」 -->
           <div v-if="modelSingle" class="chart-single">
@@ -70,8 +72,9 @@
           :title="t('callHistory.dashboard.chart.serviceTypeDistributionTitle')"
           :loading="loading"
           :empty="serviceTypeEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
+          :height="300"
         >
           <div v-if="serviceTypeSingle" class="chart-single">
             <div class="chart-single__value">{{ formatNumber(serviceTypeSingleItem?.requestCount) }}</div>
@@ -88,8 +91,9 @@
           :title="t('callHistory.dashboard.chart.hourlyDistributionTitle')"
           :loading="loading"
           :empty="hourlyEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
+          :height="300"
         >
           <div ref="hourlyChartRef" class="chart-container"></div>
         </ChartCard>
@@ -103,8 +107,9 @@
           :title="t('callHistory.dashboard.chart.statusCodeDistributionTitle')"
           :loading="loading"
           :empty="statusCodeEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
+          :height="300"
         >
           <div v-if="statusCodeSingle" class="chart-single">
             <div class="chart-single__value">{{ formatNumber(statusCodeSingleItem?.count) }}</div>
@@ -121,8 +126,9 @@
           :title="t('callHistory.dashboard.chart.errorCodeDistributionTitle')"
           :loading="loading"
           :empty="errorCodeEmpty"
-          :empty-title="t('common.chartEmpty')"
-          :empty-description="t('common.chartEmptyHint')"
+          :empty-title="emptyTitle"
+          :empty-description="emptyDescription"
+          :height="300"
         >
           <div ref="errorCodeChartRef" class="chart-container"></div>
         </ChartCard>
@@ -134,10 +140,16 @@
       <template #header>
         <span class="chart-title">{{ t('callHistory.dashboard.chart.recentCallsTitle') }}</span>
       </template>
-      <el-table :data="recentCalls" border stripe :max-height="400">
+      <!-- 空态区分「无数据」与「筛选无结果」，不留 el-table 默认空文案 -->
+      <EmptyState
+        v-if="!loading && recentCalls.length === 0"
+        :title="emptyTitle"
+        :description="emptyDescription"
+      />
+      <el-table v-else :data="recentCalls" border stripe :max-height="400">
         <el-table-column :label="t('callHistory.common.time')" prop="createdAt" width="180">
           <template #default="scope">
-            {{ formatTime(scope.row.createdAt) }}
+            <TimeText :value="scope.row.createdAt" />
           </template>
         </el-table-column>
         <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="160" show-overflow-tooltip />
@@ -208,9 +220,11 @@ import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import ChartCard from '@/components/ChartCard.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import TimeText from '@/components/TimeText.vue'
 import { useChartSkin } from '@/composables/useChartSkin'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
-import { formatDateTime as formatDateTimeBase, formatNumber as formatNumberBase } from '@/utils/format'
+import { formatNumber as formatNumberBase } from '@/utils/format'
 
 const { t } = useI18n()
 
@@ -267,11 +281,14 @@ const formatNumber = (num?: number): string => {
   return formatNumberBase(num)
 }
 
-// 格式化时间（委托共享 format.ts）
-const formatTime = (time?: string) => {
-  if (!time) return '-'
-  return formatDateTimeBase(time)
-}
+// 空态文案：区分「无数据」与「筛选无结果」——选了时间范围即视为筛选
+const hasFilter = computed(() => !!dateRange.value)
+const emptyTitle = computed(() =>
+  t(hasFilter.value ? 'callHistory.common.emptyFilteredTitle' : 'callHistory.common.emptyNoDataTitle')
+)
+const emptyDescription = computed(() =>
+  t(hasFilter.value ? 'callHistory.common.emptyFilteredDescription' : 'callHistory.common.emptyNoDataDescription')
+)
 
 /**
  * 指标条数据。
@@ -287,7 +304,7 @@ const kpiItems = computed<MetricStripItem[]>(() => [
   {
     key: 'successRate',
     label: t('callHistory.dashboard.stats.successRate'),
-    value: `${(statistics.value.successRate || 0).toFixed(2)}%`
+    value: `${(statistics.value.successRate || 0).toFixed(1)}%`
   },
   {
     key: 'avgResponseTime',

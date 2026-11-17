@@ -3,6 +3,11 @@
     "title": "Service Management",
     "addService": "Add Service",
     "editService": "Edit Service",
+    "createTitle": "New Service",
+    "editTitle": "Edit Service: {type}",
+    "refresh": "Refresh",
+    "emptyTitle": "No services yet",
+    "emptyDescription": "Add the first service type to configure its adapter, load balancing and session stickiness here.",
     "allTypesAdded": "All service types have been added",
     "searchPlaceholder": "Search service type or adapter (press Enter or pause)",
     "filters": {
@@ -53,7 +58,8 @@
       "editSuccess": "Service updated successfully",
       "addSuccess": "Service added successfully",
       "editFailed": "Update failed",
-      "addFailed": "Add failed"
+      "addFailed": "Add failed",
+      "refreshed": "Refreshed"
     },
     "form": {
       "serviceType": "Service Type",
@@ -63,6 +69,7 @@
       "selectServiceType": "Select a service type",
       "selectAdapter": "Select an adapter",
       "selectLoadBalance": "Select a load balance strategy",
+      "validationFailed": "Please complete the required fields first: service type, adapter, load balance strategy",
       "descriptionPlaceholder": "Add a brief description for identification (e.g. used for customer service chat)"
     },
     "sticky": {

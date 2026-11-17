@@ -34,6 +34,8 @@
     "invalidPrefix": "指标前缀需以字母开头，且只能包含字母、数字和下划线",
     "invalidInterval": "采集间隔必须大于 0 秒",
     "invalidSampling": "采样率需在 0~1 之间",
-    "invalidBuffer": "缓冲区必须不小于批大小"
+    "invalidBuffer": "缓冲区必须不小于批大小",
+    "pageDesc": "监控采集的运行时参数。保存后立即生效；重启后回到配置文件中的值。",
+    "immediateHint": "立即生效"
   }
 }

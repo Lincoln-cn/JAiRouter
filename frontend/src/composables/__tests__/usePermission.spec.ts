@@ -48,12 +48,12 @@ describe('filterMenuByPermission', () => {
     expect(groups.map(group => group.index)).toEqual(['dashboard', 'dev-tools'])
   })
 
-  it('ADMIN 拥有全部权限 ⇒ 7 组 34 项全在', () => {
+  it('ADMIN 拥有全部权限 ⇒ 7 组 35 项全在', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
     expect(groups).toHaveLength(7)
-    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(34)
+    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(35)
   })
 
   it('无 permission 声明的菜单项（客户端接入）对所有已登录用户可见', () => {
@@ -183,11 +183,11 @@ describe('菜单可见性：权限码是唯一门控', () => {
     expect(security?.children.map(item => item.path)).toEqual(['/security/audit-logs'])
   })
 
-  it('ADMIN 不受影响（安全组 6 项、系统组 9 项都在）', () => {
+  it('ADMIN 不受影响（安全组 7 项、系统组 9 项都在）', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
-    expect(groups.find(group => group.index === 'security')?.children).toHaveLength(6)
+    expect(groups.find(group => group.index === 'security')?.children).toHaveLength(7)
     expect(groups.find(group => group.index === 'system')?.children).toHaveLength(9)
   })
 

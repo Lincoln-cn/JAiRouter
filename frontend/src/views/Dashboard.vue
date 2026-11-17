@@ -1,15 +1,18 @@
 <template>
   <PageSkeleton :title="t('dashboard.pageTitle')">
-    <template #actions>
-      <el-button size="small" type="primary" @click="fetchDashboardData" :loading="configLoading" plain>
-        <el-icon><Refresh /></el-icon> {{ t('dashboard.refreshAll') }}
-      </el-button>
-    </template>
-
     <template #stats>
       <!-- 概览指标：一条中性 MetricStrip，只有「异常实例」带语义色 -->
       <div class="stats-wrap">
         <MetricStrip :items="metricItems" :columns="6" />
+      </div>
+    </template>
+
+    <!-- 工具栏：本页无时间范围与维度筛选，按统一顺序只保留「刷新」 -->
+    <template #toolbar>
+      <div class="toolbar-row">
+        <el-button type="primary" plain @click="fetchDashboardData" :loading="configLoading">
+          <el-icon><Refresh /></el-icon> {{ t('dashboard.refreshAll') }}
+        </el-button>
       </div>
     </template>
 
@@ -67,15 +70,15 @@
                 <div class="gov-metrics">
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.enabledRules') }}</span>
-                    <span class="gov-metric-value">{{ ruleStats.enabledCount }}</span>
+                    <span class="gov-metric-value">{{ formatNumber(ruleStats.enabledCount, 0) }}</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.totalHitsCount') }}</span>
-                    <span class="gov-metric-value">{{ ruleStats.totalHits }}</span>
+                    <span class="gov-metric-value">{{ formatNumber(ruleStats.totalHits, 0) }}</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.triggeredRuleCount') }}</span>
-                    <span class="gov-metric-value">{{ ruleStats.triggeredRuleCount }}</span>
+                    <span class="gov-metric-value">{{ formatNumber(ruleStats.triggeredRuleCount, 0) }}</span>
                   </div>
                 </div>
               </div>
@@ -94,17 +97,17 @@
                 <div class="gov-metrics">
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.avgUsageRatio') }}</span>
-                    <span class="gov-metric-value">{{ rlSummary.averageUsageRatio }}%</span>
+                    <span class="gov-metric-value">{{ formatNumber(rlSummary.averageUsageRatio, 1) }}%</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.highUsageRatio') }}</span>
                     <span :class="['gov-metric-value', rlSummary.highUsageLimiters > 0 ? 'gov-metric-value--danger' : '']">
-                      {{ rlSummary.highUsageLimiters }}
+                      {{ formatNumber(rlSummary.highUsageLimiters, 0) }}
                     </span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.serviceInstanceLimiters') }}</span>
-                    <span class="gov-metric-value">{{ rlSummary.serviceLimiters }} / {{ rlSummary.instanceLimiters }}</span>
+                    <span class="gov-metric-value">{{ formatNumber(rlSummary.serviceLimiters, 0) }} / {{ formatNumber(rlSummary.instanceLimiters, 0) }}</span>
                   </div>
                 </div>
               </div>
@@ -123,18 +126,18 @@
                 <div class="gov-metrics">
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">CLOSED</span>
-                    <span class="gov-metric-value">{{ cbStateCounts.CLOSED }}</span>
+                    <span class="gov-metric-value">{{ formatNumber(cbStateCounts.CLOSED, 0) }}</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">OPEN</span>
                     <span :class="['gov-metric-value', cbStateCounts.OPEN > 0 ? 'gov-metric-value--danger' : '']">
-                      {{ cbStateCounts.OPEN }}
+                      {{ formatNumber(cbStateCounts.OPEN, 0) }}
                     </span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">HALF_OPEN</span>
                     <span :class="['gov-metric-value', cbStateCounts.HALF_OPEN > 0 ? 'gov-metric-value--warning' : '']">
-                      {{ cbStateCounts.HALF_OPEN }}
+                      {{ formatNumber(cbStateCounts.HALF_OPEN, 0) }}
                     </span>
                   </div>
                 </div>
@@ -154,15 +157,15 @@
                 <div class="gov-metrics">
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.totalInstanceCount') }}</span>
-                    <span class="gov-metric-value">{{ lbSummary.totalInstances }}</span>
+                    <span class="gov-metric-value">{{ formatNumber(lbSummary.totalInstances, 0) }}</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.healthyInstanceCount') }}</span>
-                    <span class="gov-metric-value">{{ lbSummary.healthyInstances }}</span>
+                    <span class="gov-metric-value">{{ formatNumber(lbSummary.healthyInstances, 0) }}</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.serviceCount') }}</span>
-                    <span class="gov-metric-value">{{ lbSummary.serviceCount }}</span>
+                    <span class="gov-metric-value">{{ formatNumber(lbSummary.serviceCount, 0) }}</span>
                   </div>
                 </div>
               </div>
@@ -240,7 +243,7 @@
             <el-table :data="recentExceptions" stripe size="small" class="alert-table">
               <el-table-column prop="occurredAt" :label="t('dashboard.time')" width="170">
                 <template #default="{ row }">
-                  <span class="alert-time">{{ formatAlertTime(row.occurredAt) }}</span>
+                  <span class="alert-time"><TimeText :value="row.occurredAt" /></span>
                 </template>
               </el-table-column>
               <el-table-column prop="exceptionType" :label="t('dashboard.type')" width="180" show-overflow-tooltip>
@@ -269,10 +272,11 @@
             </el-table>
           </div>
 
-          <div v-else class="alert-empty">
-            <el-icon class="alert-empty-icon"><CircleCheckFilled /></el-icon>
-            <span>{{ t('dashboard.noException') }}</span>
-          </div>
+          <EmptyState
+            v-else
+            :icon="CircleCheckFilled"
+            :title="t('dashboard.noException')"
+          />
         </el-card>
       </el-col>
     </el-row>
@@ -466,6 +470,10 @@ import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import ChartCard from '@/components/ChartCard.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import TimeText from '@/components/TimeText.vue'
+// 数字千分位与百分比位数统一走共享格式工具（同页内只保留一种写法）
+import { formatNumber } from '@/utils/format'
 import SystemMetricsPanel from './dashboard/SystemMetricsPanel.vue'
 import GettingStartedCard from './dashboard/GettingStartedCard.vue'
 import ValueSummaryCard from './dashboard/ValueSummaryCard.vue'
@@ -973,17 +981,6 @@ const fetchGovernanceData = async () => {
   }
 }
 
-const formatAlertTime = (iso: string | undefined) => {
-  if (!iso) return '-'
-  try {
-    const d = new Date(iso)
-    const pad = (n: number) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-  } catch {
-    return iso
-  }
-}
-
 const fetchDashboardData = async () => {
   try {
     const statsRes = await getServiceStats()
@@ -1053,6 +1050,9 @@ onBeforeUnmount(() => {
 <style scoped>
 /* ════════════ 概览指标 ════════════ */
 .stats-wrap { min-width: 0; }
+
+/* 工具栏行：本页只有「刷新」，与其它观测页共用同一行对齐方式 */
+.toolbar-row { display: flex; align-items: center; gap: var(--ja-space-2); flex-wrap: wrap; }
 
 /* ════════════ 主体两栏 ════════════ */
 .main-row { align-items: stretch; }
@@ -1209,17 +1209,6 @@ onBeforeUnmount(() => {
 .alert-count-tag { color: var(--ja-ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
 .alert-time { color: var(--ja-ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
 
-.alert-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ja-space-2);
-  padding: var(--ja-space-7) var(--ja-space-4);
-  color: var(--ja-ink-3);
-  font-size: 14px;
-}
-
-.alert-empty-icon { font-size: 20px; }
 .alert-table { width: 100%; }
 
 /* ════════════ 服务配置 ════════════ */

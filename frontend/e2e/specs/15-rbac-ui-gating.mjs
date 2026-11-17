@@ -36,7 +36,8 @@ export default {
     const accId = (Array.isArray(items) ? items : []).find((a) => a.username === uname)?.id ?? null
 
     const lowPage = await createAuthedContextAs(browser, uname, pass)
-    const saveBtnText = /保存配置|Save Configuration/
+    // P1 批次把页面保存按钮收进 `ConfigPageShell` 的动作条，文案统一成「保存」。
+    const saveBtnText = /保存|Save/
 
     // ── 低权限：页面能进，但保存按钮必须不存在 ──
     await gotoApp(lowPage, '/config/quota', { waitMs: 700 })
@@ -216,10 +217,21 @@ export default {
 
     await gotoApp(opPage, '/security/audit-logs', { waitMs: 1500 })
     const opPath = new URL(opPage.url()).pathname
+    // 授权面在 2026-11 变了：`/security`、`/system` 父路由的 `roles:['ADMIN']` 已撤，
+    // 页面可见性改由权限码决定。OPERATOR 持 `security:audit:read` ⇒ 审计日志**应当能进**。
     check(
-      'rbac-ui:security-pages-are-admin-only',
-      !opPath.includes('/security/'),
-      `operator 落在 ${opPath}（期望被重定向出 /security/）`
+      'rbac-ui:security-pages-follow-codes',
+      opPath.includes('/security/audit-logs'),
+      `operator 落在 ${opPath}（期望停留：OPERATOR 持 security:audit:read）`
+    )
+
+    // 反面：`/system/accounts` 需要 `system:accounts:read`，OPERATOR 不持 ⇒ 必须被弹回仪表板。
+    await gotoApp(opPage, '/system/accounts', { waitMs: 1500 })
+    const opAccountsPath = new URL(opPage.url()).pathname
+    check(
+      'rbac-ui:system-accounts-blocked-without-code',
+      !opAccountsPath.includes('/system/accounts'),
+      `operator 落在 ${opAccountsPath}（期望被重定向：无 system:accounts:read）`
     )
 
     // 对照：ADMIN 必须**留在**该页（证明重定向确实来自角色门，而不是页面本身坏了）

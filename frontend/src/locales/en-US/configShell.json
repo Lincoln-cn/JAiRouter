@@ -1,0 +1,22 @@
+{
+  "configShell": {
+    "refresh": "Refresh",
+    "refreshDirtyConfirm": "{count} unsaved change(s) will be discarded. Continue?",
+    "refreshDirtyTitle": "Discard unsaved changes",
+    "discardChanges": "Discard changes",
+    "discardConfirm": "Revert to the last saved values without submitting anything. Continue?",
+    "unsavedCount": "{count} unsaved change(s)",
+    "allSaved": "All changes saved",
+    "saving": "Saving",
+    "savingSection": "Saving: {label}",
+    "saveSuccess": "Saved",
+    "saveFailed": "Save failed",
+    "restartRequired": "Restart required",
+    "leaveTitle": "Unsaved changes",
+    "leaveMessage": "Leaving this page discards {count} unsaved change(s).",
+    "leaveConfirm": "Leave anyway",
+    "leaveCancel": "Stay on this page",
+    "loadFailed": "Failed to load configuration",
+    "readonlyHint": "This account can view the configuration but cannot modify it"
+  }
+}

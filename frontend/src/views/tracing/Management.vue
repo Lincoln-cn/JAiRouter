@@ -1,30 +1,43 @@
 <template>
-  <PageSkeleton :title="t('tracing.management.title')">
-    <template #actions>
-      <el-button @click="handleRefresh" :loading="loading">{{ t('tracing.management.refresh') }}</el-button>
-      <el-button v-permission="'tracing:config:manage'" type="primary" @click="handleSaveConfig" :loading="saving">{{ t('tracing.management.saveConfig') }}</el-button>
-    </template>
-
-    <el-tabs v-model="activeTab" type="border-card">
-      <!-- 状态监控 Tab -->
-      <el-tab-pane :label="t('tracing.management.tabs.status')" name="status">
-        <el-row :gutter="24">
-          <el-col :xs="24" :lg="12">
-            <el-card shadow="never" class="status-card">
-              <template #header>
-                <div class="section-header">
-                  <span>{{ t('tracing.management.tracingStatus') }}</span>
-                  <el-switch
-                    v-model="tracingEnabled"
-                    :active-text="t('tracing.management.enabled')"
-                    :inactive-text="t('tracing.management.disabled')"
-                    @change="handleToggleTracing"
-                  />
-                </div>
-              </template>
-              <el-descriptions :column="1" border>
-                <el-descriptions-item :label="t('tracing.management.serviceName')">{{ statusInfo.serviceName }}</el-descriptions-item>
-                <el-descriptions-item :label="t('tracing.management.serviceVersion')">{{ statusInfo.serviceVersion }}</el-descriptions-item>
+  <ConfigPageShell
+    :title="t('tracing.management.title')"
+    :description="t('tracing.management.pageDesc')"
+    :loading="loading"
+    :saving="saving"
+    :saving-label="savingLabel"
+    :dirty-count="dirtyCount"
+    :can-write="canWrite"
+    save-permission="tracing:config:manage"
+    @refresh="loadAllData"
+    @save="handleSave"
+    @discard="resetForms"
+  >
+    <el-tabs v-model="activeTab">
+      <!-- 配置 Tab：运行状态 + 采样 / 导出器 / 性能与数据管理 -->
+      <el-tab-pane :label="t('tracing.management.tabs.config')" name="config">
+        <ConfigSectionCard :title="t('tracing.management.tracingStatus')">
+          <template #actions>
+            <el-tag size="small" type="info" effect="plain">{{ t('tracing.management.readonlyTag') }}</el-tag>
+          </template>
+          <div class="status-grid">
+            <div class="status-block">
+              <div class="config-item">
+                <span class="config-label">{{ t('tracing.management.enabled') }}</span>
+                <SettingsSwitch
+                  :model-value="tracingEnabled"
+                  :disabled="!canWrite"
+                  :immediate-hint="t('tracing.management.immediateHint')"
+                  :submit="submitTracingEnabled"
+                  @update:model-value="tracingEnabled = $event"
+                />
+              </div>
+              <el-descriptions :column="1" border size="small">
+                <el-descriptions-item :label="t('tracing.management.serviceName')">
+                  {{ statusInfo.serviceName }}
+                </el-descriptions-item>
+                <el-descriptions-item :label="t('tracing.management.serviceVersion')">
+                  {{ statusInfo.serviceVersion }}
+                </el-descriptions-item>
                 <el-descriptions-item label="OpenTelemetry">
                   <el-tag :type="statusInfo.openTelemetryEnabled ? 'info' : 'danger'" size="small">
                     {{ statusInfo.openTelemetryEnabled ? t('tracing.management.enabled') : t('tracing.management.disabled') }}
@@ -34,24 +47,15 @@
                   <el-tag size="small">{{ statusInfo.exporterType || 'logging' }}</el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('tracing.management.globalSamplingRate')">
-                  <el-progress
-                    :percentage="statusInfo.globalSamplingRatio * 100"
-                    :format="(p: number) => `${p}%`"
-                  />
+                  <el-progress :percentage="statusInfo.globalSamplingRatio" :format="formatPercentage" />
                 </el-descriptions-item>
               </el-descriptions>
-            </el-card>
-          </el-col>
-          <el-col :xs="24" :lg="12">
-            <el-card shadow="never" class="status-card">
-              <template #header>
-                <span>{{ t('tracing.management.healthStatus') }}</span>
-              </template>
-              <el-descriptions :column="1" border>
+            </div>
+            <div class="status-block">
+              <span class="config-label">{{ t('tracing.management.healthStatus') }}</span>
+              <el-descriptions :column="1" border size="small">
                 <el-descriptions-item :label="t('tracing.management.overallStatus')">
-                  <el-tag :type="healthStatus.status === 'UP' ? 'info' : 'danger'">
-                    {{ healthStatus.status }}
-                  </el-tag>
+                  <el-tag :type="healthStatus.status === 'UP' ? 'info' : 'danger'">{{ healthStatus.status }}</el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('tracing.management.memoryUsage')">
                   <el-progress
@@ -59,7 +63,9 @@
                     :status="healthStatus.memoryUsage > 80 ? 'exception' : ''"
                   />
                 </el-descriptions-item>
-                <el-descriptions-item :label="t('tracing.management.activeTraces')">{{ healthStatus.activeTraces }}</el-descriptions-item>
+                <el-descriptions-item :label="t('tracing.management.activeTraces')">
+                  {{ healthStatus.activeTraces }}
+                </el-descriptions-item>
                 <el-descriptions-item :label="t('tracing.management.bufferUsage')">
                   <el-progress
                     :percentage="healthStatus.bufferUsage"
@@ -67,17 +73,19 @@
                   />
                 </el-descriptions-item>
               </el-descriptions>
-            </el-card>
-          </el-col>
-        </el-row>
-      </el-tab-pane>
+            </div>
+          </div>
+        </ConfigSectionCard>
 
-      <!-- 采样配置 Tab -->
-      <el-tab-pane :label="t('tracing.management.tabs.sampling')" name="sampling">
-        <el-card shadow="never">
-          <el-form :model="samplingConfig" label-width="150px">
-            <el-form-item :label="t('tracing.management.samplingStrategy')">
-              <el-select v-model="samplingConfig.strategy" style="width: 100%">
+        <ConfigSectionCard
+          :title="t('tracing.management.samplingStrategy')"
+          :description="t('tracing.management.samplingHint')"
+          :error="errors.sampling"
+        >
+          <div class="config-grid">
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.samplingStrategy') }}</span>
+              <el-select v-model="samplingForm.strategy" :disabled="!canWrite" style="width: 100%">
                 <el-option
                   v-for="option in strategyOptions"
                   :key="option.value"
@@ -85,170 +93,287 @@
                   :value="option.value"
                 />
               </el-select>
-              <div class="form-hint">{{ t('tracing.management.strategyHint') }}</div>
-            </el-form-item>
-            <el-form-item :label="t('tracing.management.globalSamplingRate')">
-              <el-slider
-                v-model="samplingConfig.globalRate"
-                :min="0"
-                :max="100"
-                show-input
-                :marks="{ 0: '0%', 25: '25%', 50: '50%', 75: '75%', 100: '100%' }"
+              <span class="config-hint">{{ t('tracing.management.strategyHint') }}</span>
+            </div>
+            <div class="config-item is-wide">
+              <span class="config-label">{{ t('tracing.management.globalSamplingRate') }}</span>
+              <el-slider v-model="samplingForm.globalRate" :min="0" :max="100" show-input :disabled="!canWrite" />
+            </div>
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.adaptiveSampling') }}</span>
+              <el-switch v-model="samplingForm.adaptiveSampling" :disabled="!canWrite" />
+            </div>
+          </div>
+
+          <div v-if="samplingForm.adaptiveSampling" class="config-grid is-spaced">
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.alwaysSamplePaths') }}</span>
+              <el-select
+                v-model="samplingForm.alwaysSamplePaths"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :placeholder="t('tracing.management.pathPlaceholder')"
+                :disabled="!canWrite"
+                style="width: 100%"
               />
-            </el-form-item>
-            <el-form-item :label="t('tracing.management.adaptiveSampling')">
-              <el-switch v-model="samplingConfig.adaptiveSampling" />
-            </el-form-item>
-            <template v-if="samplingConfig.adaptiveSampling">
-              <el-form-item :label="t('tracing.management.alwaysSamplePaths')">
-                <el-select
-                  v-model="samplingConfig.alwaysSamplePaths"
-                  multiple
-                  filterable
-                  allow-create
-                  default-first-option
-                  :placeholder="t('tracing.management.pathPlaceholder')"
-                  style="width: 100%"
-                />
-              </el-form-item>
-              <el-form-item :label="t('tracing.management.neverSamplePaths')">
-                <el-select
-                  v-model="samplingConfig.neverSamplePaths"
-                  multiple
-                  filterable
-                  allow-create
-                  default-first-option
-                  :placeholder="t('tracing.management.pathPlaceholder')"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </template>
-          </el-form>
+            </div>
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.neverSamplePaths') }}</span>
+              <el-select
+                v-model="samplingForm.neverSamplePaths"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :placeholder="t('tracing.management.pathPlaceholder')"
+                :disabled="!canWrite"
+                style="width: 100%"
+              />
+            </div>
+          </div>
+        </ConfigSectionCard>
 
-          <el-divider content-position="left">{{ t('tracing.management.serviceSamplingDivider') }}</el-divider>
+        <ConfigSectionCard
+          :title="t('tracing.management.tabs.exporter')"
+          :description="t('tracing.management.exporterHint')"
+          :error="errors.exporter"
+        >
+          <div class="config-grid">
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.exporterType') }}</span>
+              <el-select v-model="exporterForm.type" :disabled="!canWrite" style="width: 100%">
+                <el-option :label="t('tracing.management.loggingOption')" value="logging" />
+                <el-option :label="t('tracing.management.otlpOption')" value="otlp" />
+                <el-option :label="t('tracing.management.jaegerOption')" value="jaeger" />
+              </el-select>
+            </div>
+            <div v-if="exporterForm.type === 'otlp'" class="config-item">
+              <span class="config-label">OTLP Endpoint</span>
+              <el-input
+                v-model="exporterForm.otlpEndpoint"
+                :disabled="!canWrite"
+                placeholder="http://localhost:4318/v1/traces"
+              />
+            </div>
+            <div v-if="exporterForm.type === 'jaeger'" class="config-item">
+              <span class="config-label">Jaeger Endpoint</span>
+              <el-input
+                v-model="exporterForm.jaegerEndpoint"
+                :disabled="!canWrite"
+                placeholder="http://localhost:14268/api/traces"
+              />
+            </div>
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.loggingEnabled') }}</span>
+              <el-switch v-model="exporterForm.loggingEnabled" :disabled="!canWrite" />
+            </div>
+          </div>
+        </ConfigSectionCard>
 
-          <el-table :data="samplingConfig.serviceConfigs" style="width: 100%">
-            <el-table-column prop="service" :label="t('tracing.management.serviceName')" width="200">
+        <ConfigSectionCard
+          :title="t('tracing.management.performanceTitle')"
+          :description="t('tracing.management.dataManagementHint')"
+          :error="errors.performance"
+        >
+          <template #actions>
+            <ConfirmAction
+              :title="t('tracing.management.clearCacheMessage')"
+              :confirm-text="t('tracing.management.confirm')"
+              :cancel-text="t('tracing.management.cancel')"
+              type="danger"
+              :disabled="!canWrite"
+              :loading="clearingCache"
+              @confirm="handleClearCache"
+            >
+              <el-button
+                v-permission="'tracing:config:manage'"
+                type="danger"
+                plain
+                size="small"
+                :loading="clearingCache"
+                :disabled="!canWrite"
+              >
+                {{ t('tracing.management.clearCache') }}
+              </el-button>
+            </ConfirmAction>
+            <ConfirmAction
+              :title="t('tracing.management.cleanupExpiredConfirm', { hours: retentionHours })"
+              :confirm-text="t('tracing.management.confirm')"
+              :cancel-text="t('tracing.management.cancel')"
+              type="danger"
+              :disabled="!canWrite"
+              :loading="cleaningUp"
+              @confirm="handleCleanupExpired"
+            >
+              <el-button
+                v-permission="'tracing:config:manage'"
+                type="danger"
+                plain
+                size="small"
+                :loading="cleaningUp"
+                :disabled="!canWrite"
+              >
+                {{ t('tracing.management.cleanupExpired') }}
+              </el-button>
+            </ConfirmAction>
+            <el-button size="small" @click="handleExportConfig">{{ t('tracing.management.exportConfig') }}</el-button>
+          </template>
+
+          <div class="config-grid">
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.asyncProcessing') }}</span>
+              <SettingsSwitch
+                :model-value="performanceForm.asyncProcessing"
+                :disabled="!canWrite"
+                :immediate-hint="t('tracing.management.immediateHint')"
+                :submit="submitAsyncProcessing"
+                @update:model-value="performanceForm.asyncProcessing = $event"
+              />
+            </div>
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.threadPoolCoreSize') }}</span>
+              <el-input-number v-model="performanceForm.threadPoolCoreSize" :min="1" :max="100" :disabled="!canWrite" />
+            </div>
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.bufferSize') }}</span>
+              <el-input-number
+                v-model="performanceForm.bufferSize"
+                :min="100"
+                :max="10000"
+                :step="100"
+                :disabled="!canWrite"
+              />
+            </div>
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.memoryLimitMb') }}</span>
+              <el-input-number
+                v-model="performanceForm.memoryLimitMb"
+                :min="64"
+                :max="2048"
+                :step="64"
+                :disabled="!canWrite"
+              />
+            </div>
+            <div class="config-item">
+              <span class="config-label">{{ t('tracing.management.retentionHours') }}</span>
+              <el-input-number v-model="retentionHours" :min="1" :max="720" :disabled="!canWrite" />
+              <span class="config-hint">{{ t('tracing.management.retentionPrompt') }}</span>
+            </div>
+          </div>
+        </ConfigSectionCard>
+      </el-tab-pane>
+
+      <!-- 服务配置 Tab：服务级采样率表格 -->
+      <el-tab-pane :label="t('tracing.management.tabs.services')" name="services">
+        <ConfigSectionCard
+          :title="t('tracing.management.serviceConfigsTitle')"
+          :description="t('tracing.management.servicesHint')"
+          :error="errors.services"
+        >
+          <el-table :data="serviceForm.rows" style="width: 100%">
+            <el-table-column :label="t('tracing.management.serviceName')" min-width="200">
               <template #default="{ row }">
-                <el-input v-model="row.service" :placeholder="t('tracing.management.serviceName')" />
+                <el-input v-model="row.service" :placeholder="t('tracing.management.serviceName')" :disabled="!canWrite" />
               </template>
             </el-table-column>
-            <el-table-column prop="rate" :label="t('tracing.management.samplingRate')" width="250">
+            <el-table-column :label="t('tracing.management.samplingRate')" min-width="260">
               <template #default="{ row }">
-                <el-slider v-model="row.rate" :min="0" :max="100" show-input />
+                <el-slider v-model="row.rate" :min="0" :max="100" show-input :disabled="!canWrite" />
               </template>
             </el-table-column>
             <el-table-column :label="t('tracing.management.action')" width="100">
               <template #default="{ $index }">
-                <el-button v-permission="'tracing:config:manage'" type="danger" text @click="removeServiceConfig($index)">
+                <el-button
+                  v-permission="'tracing:config:manage'"
+                  type="danger"
+                  text
+                  :disabled="!canWrite"
+                  @click="removeServiceConfig($index)"
+                >
                   {{ t('tracing.management.delete') }}
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
-          <el-button v-permission="'tracing:config:manage'" type="primary" text @click="addServiceConfig" style="margin-top: 12px">
+          <el-button
+            v-permission="'tracing:config:manage'"
+            type="primary"
+            text
+            style="margin-top: 12px"
+            :disabled="!canWrite"
+            @click="addServiceConfig"
+          >
             {{ t('tracing.management.addServiceConfig') }}
           </el-button>
-        </el-card>
-      </el-tab-pane>
-
-      <!-- 导出器配置 Tab -->
-      <el-tab-pane :label="t('tracing.management.tabs.exporter')" name="exporter">
-        <el-card shadow="never">
-          <el-form :model="exporterConfig" label-width="150px">
-            <el-form-item :label="t('tracing.management.exporterType')">
-              <el-select v-model="exporterConfig.type" style="width: 200px">
-                <el-option :label="t('tracing.management.loggingOption')" value="logging" />
-                <el-option :label="t('tracing.management.otlpOption')" value="otlp" />
-                <el-option :label="t('tracing.management.jaegerOption')" value="jaeger" />
-              </el-select>
-            </el-form-item>
-
-            <template v-if="exporterConfig.type === 'otlp'">
-              <el-form-item label="OTLP Endpoint">
-                <el-input v-model="exporterConfig.otlpEndpoint" placeholder="http://localhost:4317" />
-              </el-form-item>
-            </template>
-
-            <template v-if="exporterConfig.type === 'jaeger'">
-              <el-form-item label="Jaeger Endpoint">
-                <el-input v-model="exporterConfig.jaegerEndpoint" placeholder="http://localhost:14268/api/traces" />
-              </el-form-item>
-            </template>
-
-            <el-form-item :label="t('tracing.management.loggingEnabled')">
-              <el-switch v-model="exporterConfig.loggingEnabled" />
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-tab-pane>
-
-      <!-- 高级配置 Tab -->
-      <el-tab-pane :label="t('tracing.management.tabs.advanced')" name="advanced">
-        <el-card shadow="never">
-          <el-form :model="performanceConfig" label-width="150px">
-            <el-form-item :label="t('tracing.management.asyncProcessing')">
-              <el-switch v-model="performanceConfig.asyncProcessing" />
-            </el-form-item>
-            <el-form-item :label="t('tracing.management.threadPoolCoreSize')">
-              <el-input-number v-model="performanceConfig.threadPoolCoreSize" :min="1" :max="100" />
-            </el-form-item>
-            <el-form-item :label="t('tracing.management.bufferSize')">
-              <el-input-number v-model="performanceConfig.bufferSize" :min="100" :max="10000" :step="100" />
-            </el-form-item>
-            <el-form-item :label="t('tracing.management.memoryLimitMb')">
-              <el-input-number v-model="performanceConfig.memoryLimitMb" :min="64" :max="2048" :step="64" />
-            </el-form-item>
-          </el-form>
-
-          <el-divider content-position="left">{{ t('tracing.management.dataManagement') }}</el-divider>
-
-          <div class="action-buttons">
-            <el-button v-permission="'tracing:config:manage'" type="danger" @click="handleClearCache" :loading="clearingCache">
-              {{ t('tracing.management.clearCache') }}
-            </el-button>
-            <el-button v-permission="'tracing:config:manage'" type="danger" @click="handleCleanupExpired" :loading="cleaningUp">
-              {{ t('tracing.management.cleanupExpired') }}
-            </el-button>
-            <el-button @click="handleExportConfig">
-              {{ t('tracing.management.exportConfig') }}
-            </el-button>
-          </div>
-        </el-card>
+        </ConfigSectionCard>
       </el-tab-pane>
     </el-tabs>
-  </PageSkeleton>
+  </ConfigPageShell>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
+import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
+import SettingsSwitch from '@/components/config/SettingsSwitch.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import { usePermission } from '@/composables/usePermission'
+import { useConfigDraft } from '@/composables/useConfigDraft'
 import {
-  getTracingStatus,
-  getTracingHealth,
-  getTracingConfig,
-  updateTracingConfig,
-  enableTracing,
-  disableTracing,
-  refreshTracingData,
   cleanupExpiredTraces,
-  refreshSamplingStrategy
+  disableTracing,
+  enableTracing,
+  getTracingConfig,
+  getTracingHealth,
+  getTracingStatus,
+  refreshSamplingStrategy,
+  refreshTracingData,
+  updateTracingConfig
 } from '@/api/tracing'
 import type { TracingConfig, TracingHealth, TracingStatus } from '@/types/tracing'
-import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { t } = useI18n()
+const { hasPermission } = usePermission()
 
-// 状态
+/** 写操作统一走 tracing:config:manage（与原页面 v-permission 一致）。 */
+const canWrite = computed(() => hasPermission('tracing:config:manage'))
+
+interface ServiceRateRow {
+  service: string
+  rate: number
+}
+
+/** 后端返回的段可能是任意形状（`TracingConfig` 只声明了本页用到的字段），统一用记录读。 */
+const asRecord = (value: unknown): Record<string, unknown> =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {}
+
+const asNumber = (value: unknown, fallback: number): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback
+
+const asString = (value: unknown, fallback: string): string =>
+  typeof value === 'string' ? value : fallback
+
+const asStringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+
 const loading = ref(false)
-const saving = ref(false)
+const activeTab = ref('config')
 const clearingCache = ref(false)
 const cleaningUp = ref(false)
-const activeTab = ref('status')
+const retentionHours = ref(24)
 const tracingEnabled = ref(true)
 
-// 状态信息
+/**
+ * GET /config 返回整份 TracingConfiguration；PUT /config 里 sampling / exporter 整段替换、
+ * performance 的子对象整段替换，未传的段会用默认对象覆盖回去（logging / monitoring 亦然）。
+ * 所以保存时必须「整份快照 + 覆盖本页编辑字段」，不能只传被改的那一段。
+ */
+const fullConfig = ref<Record<string, unknown>>({})
+
 const statusInfo = ref({
   serviceName: '',
   serviceVersion: '',
@@ -257,7 +382,6 @@ const statusInfo = ref({
   globalSamplingRatio: 0.1
 })
 
-// 健康状态
 const healthStatus = ref({
   status: 'UP',
   memoryUsage: 0,
@@ -265,19 +389,54 @@ const healthStatus = ref({
   bufferUsage: 0
 })
 
-// 采样配置
-const samplingConfig = ref({
+const samplingForm = reactive({
   strategy: 'ratio',
   globalRate: 10,
-  adaptiveSampling: true,
+  adaptiveSampling: false,
   alwaysSamplePaths: [] as string[],
-  neverSamplePaths: [] as string[],
-  serviceConfigs: [
-    { service: 'chat', rate: 20 },
-    { service: 'embedding', rate: 15 },
-    { service: 'rerank', rate: 10 }
-  ]
+  neverSamplePaths: [] as string[]
 })
+
+const exporterForm = reactive({
+  type: 'logging',
+  otlpEndpoint: '',
+  jaegerEndpoint: '',
+  loggingEnabled: false
+})
+
+const performanceForm = reactive({
+  asyncProcessing: true,
+  threadPoolCoreSize: 2,
+  bufferSize: 1024,
+  memoryLimitMb: 100
+})
+
+const serviceForm = reactive<{ rows: ServiceRateRow[] }>({ rows: [] })
+
+/** 基线 = 上次保存成功（或最近一次加载）的值，dirty 判定与「放弃修改」都以它为准。 */
+const samplingBaseline = reactive({
+  strategy: 'ratio',
+  globalRate: 10,
+  adaptiveSampling: false,
+  alwaysSamplePaths: [] as string[],
+  neverSamplePaths: [] as string[]
+})
+
+const exporterBaseline = reactive({
+  type: 'logging',
+  otlpEndpoint: '',
+  jaegerEndpoint: '',
+  loggingEnabled: false
+})
+
+const performanceBaseline = reactive({
+  asyncProcessing: true,
+  threadPoolCoreSize: 2,
+  bufferSize: 1024,
+  memoryLimitMb: 100
+})
+
+const serviceBaseline = reactive<{ rows: ServiceRateRow[] }>({ rows: [] })
 
 const strategyOptions = computed(() => [
   { value: 'ratio', label: t('tracing.management.strategyRatio') },
@@ -285,44 +444,35 @@ const strategyOptions = computed(() => [
   { value: 'adaptive', label: t('tracing.management.strategyAdaptive') }
 ])
 
-// 后端返回的原始 sampling 段。保存时以它为基底再覆盖本页可编辑的字段，
-// 否则本页没暴露的 rules / adaptive.targetSpansPerSecond / minRatio / maxRatio
-// 会被一并覆盖成默认值（后端是整体替换 sampling，不是逐字段合并）。
-const rawSampling = ref<Record<string, unknown> | null>(null)
+const formatPercentage = (value: number): string => `${Math.round(value)}%`
 
-// 导出器配置
-const exporterConfig = ref({
-  type: 'logging',
-  otlpEndpoint: '',
-  jaegerEndpoint: '',
-  loggingEnabled: true
-})
-
-// 性能配置
-const performanceConfig = ref({
-  asyncProcessing: true,
-  threadPoolCoreSize: 10,
-  bufferSize: 1000,
-  memoryLimitMb: 512
-})
-
-// 加载数据
-const loadAllData = async () => {
-  loading.value = true
-  try {
-    await Promise.all([
-      loadStatus(),
-      loadHealth(),
-      loadConfig()
-    ])
-  } catch (error) {
-    console.error('加载数据失败:', error)
-  } finally {
-    loading.value = false
-  }
+const copySamplingBaseline = (): void => {
+  samplingBaseline.strategy = samplingForm.strategy
+  samplingBaseline.globalRate = samplingForm.globalRate
+  samplingBaseline.adaptiveSampling = samplingForm.adaptiveSampling
+  samplingBaseline.alwaysSamplePaths = [...samplingForm.alwaysSamplePaths]
+  samplingBaseline.neverSamplePaths = [...samplingForm.neverSamplePaths]
 }
 
-const loadStatus = async () => {
+const copyExporterBaseline = (): void => {
+  exporterBaseline.type = exporterForm.type
+  exporterBaseline.otlpEndpoint = exporterForm.otlpEndpoint
+  exporterBaseline.jaegerEndpoint = exporterForm.jaegerEndpoint
+  exporterBaseline.loggingEnabled = exporterForm.loggingEnabled
+}
+
+const copyPerformanceBaseline = (): void => {
+  performanceBaseline.asyncProcessing = performanceForm.asyncProcessing
+  performanceBaseline.threadPoolCoreSize = performanceForm.threadPoolCoreSize
+  performanceBaseline.bufferSize = performanceForm.bufferSize
+  performanceBaseline.memoryLimitMb = performanceForm.memoryLimitMb
+}
+
+const copyServiceBaseline = (): void => {
+  serviceBaseline.rows = serviceForm.rows.map((row) => ({ service: row.service, rate: row.rate }))
+}
+
+const loadStatus = async (): Promise<void> => {
   try {
     const response = await getTracingStatus()
     const data = (response.data?.data || response.data) as TracingStatus | undefined
@@ -332,7 +482,7 @@ const loadStatus = async () => {
         serviceVersion: data.serviceVersion || '1.0.0',
         openTelemetryEnabled: data.openTelemetry?.enabled ?? true,
         exporterType: data.exporter?.type || 'logging',
-        globalSamplingRatio: data.sampling?.globalRatio || 0.1
+        globalSamplingRatio: Math.round((data.sampling?.globalRatio ?? 0.1) * 100)
       }
       tracingEnabled.value = data.enabled !== false
     }
@@ -341,7 +491,7 @@ const loadStatus = async () => {
   }
 }
 
-const loadHealth = async () => {
+const loadHealth = async (): Promise<void> => {
   try {
     const response = await getTracingHealth()
     const data = (response.data?.data || response.data) as TracingHealth | undefined
@@ -358,158 +508,288 @@ const loadHealth = async () => {
   }
 }
 
-const loadConfig = async () => {
+const loadConfig = async (): Promise<void> => {
   try {
     const response = await getTracingConfig()
     const data = (response.data?.data || response.data) as TracingConfig | undefined
-    if (data) {
-      if (data.sampling) {
-        rawSampling.value = data.sampling
-        samplingConfig.value.strategy = data.sampling.strategy || 'ratio'
-        samplingConfig.value.globalRate = (data.sampling.ratio || 0.1) * 100
-        samplingConfig.value.adaptiveSampling = data.sampling.adaptive?.enabled ?? true
-        samplingConfig.value.alwaysSamplePaths = data.sampling.alwaysSample || []
-        samplingConfig.value.neverSamplePaths = data.sampling.neverSample || []
-        if (data.sampling.serviceRatios) {
-          samplingConfig.value.serviceConfigs = Object.entries(data.sampling.serviceRatios).map(
-            ([service, rate]) => ({ service, rate: (rate as number) * 100 })
-          )
-        }
-      }
-      if (data.exporter) {
-        exporterConfig.value.type = data.exporter.type || 'logging'
-        exporterConfig.value.loggingEnabled = data.exporter.logging?.enabled ?? true
-      }
-      if (data.performance) {
-        performanceConfig.value.asyncProcessing = data.performance.asyncProcessing ?? true
-        performanceConfig.value.threadPoolCoreSize = data.performance.threadPool?.coreSize || 10
-        performanceConfig.value.bufferSize = data.performance.buffer?.size || 1000
-        performanceConfig.value.memoryLimitMb = data.performance.memory?.memoryLimitMb || 512
-      }
+    if (!data) {
+      return
     }
+    const raw = data as unknown as Record<string, unknown>
+    fullConfig.value = raw
+
+    const sampling = asRecord(raw.sampling)
+    samplingForm.strategy = asString(sampling.strategy, 'ratio')
+    samplingForm.globalRate = Math.round(asNumber(sampling.ratio, 0.1) * 100)
+    samplingForm.adaptiveSampling = asRecord(sampling.adaptive).enabled === true
+    samplingForm.alwaysSamplePaths = asStringArray(sampling.alwaysSample)
+    samplingForm.neverSamplePaths = asStringArray(sampling.neverSample)
+    copySamplingBaseline()
+
+    const exporter = asRecord(raw.exporter)
+    exporterForm.type = asString(exporter.type, 'logging')
+    exporterForm.loggingEnabled = asRecord(exporter.logging).enabled === true
+    exporterForm.otlpEndpoint = asString(asRecord(exporter.otlp).endpoint, '')
+    exporterForm.jaegerEndpoint = asString(asRecord(exporter.jaeger).endpoint, '')
+    copyExporterBaseline()
+
+    const performance = asRecord(raw.performance)
+    performanceForm.asyncProcessing = performance.asyncProcessing !== false
+    performanceForm.threadPoolCoreSize = asNumber(asRecord(performance.threadPool).coreSize, 2)
+    performanceForm.bufferSize = asNumber(asRecord(performance.buffer).size, 1024)
+    performanceForm.memoryLimitMb = asNumber(asRecord(performance.memory).memoryLimitMb, 100)
+    copyPerformanceBaseline()
+
+    serviceForm.rows = Object.entries(asRecord(sampling.serviceRatios)).map(([service, rate]) => ({
+      service,
+      rate: Math.round(asNumber(rate, 0) * 100)
+    }))
+    copyServiceBaseline()
   } catch (error) {
     console.error('加载配置失败:', error)
   }
 }
 
-// 事件处理
-const handleRefresh = () => {
-  loadAllData()
-}
-
-const handleToggleTracing = async (enabled: boolean) => {
+const loadAllData = async (): Promise<void> => {
+  loading.value = true
   try {
-    if (enabled) {
-      await enableTracing()
-      ElMessage.success(t('tracing.management.messages.tracingEnabled'))
-    } else {
-      await disableTracing()
-      ElMessage.success(t('tracing.management.messages.tracingDisabled'))
-    }
-  } catch (error) {
-    console.error('切换追踪状态失败:', error)
-    ElMessage.error(t('tracing.management.messages.operationFailed'))
-    tracingEnabled.value = !enabled
-  }
-}
-
-const handleSaveConfig = async () => {
-  saving.value = true
-  try {
-    const config = {
-      sampling: {
-        // 以服务端原始 sampling 段为基底，避免把本页未暴露的 rules / adaptive.* 清空
-        ...(rawSampling.value || {}),
-        strategy: samplingConfig.value.strategy,
-        ratio: samplingConfig.value.globalRate / 100,
-        adaptive: {
-          ...((rawSampling.value?.adaptive as Record<string, unknown>) || {}),
-          enabled: samplingConfig.value.adaptiveSampling
-        },
-        alwaysSample: samplingConfig.value.alwaysSamplePaths,
-        neverSample: samplingConfig.value.neverSamplePaths,
-        serviceRatios: samplingConfig.value.serviceConfigs.reduce((acc, { service, rate }) => {
-          acc[service] = rate / 100
-          return acc
-        }, {} as Record<string, number>)
-      },
-      exporter: {
-        type: exporterConfig.value.type,
-        logging: { enabled: exporterConfig.value.loggingEnabled }
-      },
-      performance: {
-        asyncProcessing: performanceConfig.value.asyncProcessing,
-        threadPool: { coreSize: performanceConfig.value.threadPoolCoreSize },
-        buffer: { size: performanceConfig.value.bufferSize },
-        memory: { memoryLimitMb: performanceConfig.value.memoryLimitMb }
-      }
-    }
-
-    await updateTracingConfig(config)
-    await refreshSamplingStrategy()
-    ElMessage.success(t('tracing.management.messages.configSaved'))
-  } catch (error) {
-    console.error('保存配置失败:', error)
-    ElMessage.error(t('tracing.management.messages.saveFailed'))
+    await Promise.all([loadStatus(), loadHealth(), loadConfig()])
   } finally {
-    saving.value = false
+    loading.value = false
   }
 }
 
-// 清理追踪缓存会影响所有正在采样的链路数据 ⇒ 必须二次确认。
-// 审计 #460：同文件 :472 的 ElMessageBox.prompt 是「清理过期」用的，盖不住本函数；
-// 且本函数会误导——refreshTracingData() 看着像只读刷新，实际 POST 到
-// /tracing/actuator/clear-cache。守卫见 07-tracing.mjs 的 tracing:clear-cache:*。
-const handleClearCache = () => {
-  ElMessageBox.confirm(
-    t('tracing.management.clearCacheMessage'),
-    t('tracing.management.clearCacheTitle'),
-    {
-      confirmButtonText: t('tracing.management.confirm'),
-      cancelButtonText: t('tracing.management.cancel'),
-      type: 'warning'
-    }
-  ).then(async () => {
-    clearingCache.value = true
-    try {
-      await refreshTracingData()
-      ElMessage.success(t('tracing.management.messages.cacheCleared'))
-    } catch (error) {
-      ElMessage.error(t('tracing.management.messages.clearFailed'))
-    } finally {
-      clearingCache.value = false
-    }
-  })
+const resetForms = (): void => {
+  samplingForm.strategy = samplingBaseline.strategy
+  samplingForm.globalRate = samplingBaseline.globalRate
+  samplingForm.adaptiveSampling = samplingBaseline.adaptiveSampling
+  samplingForm.alwaysSamplePaths = [...samplingBaseline.alwaysSamplePaths]
+  samplingForm.neverSamplePaths = [...samplingBaseline.neverSamplePaths]
+
+  exporterForm.type = exporterBaseline.type
+  exporterForm.otlpEndpoint = exporterBaseline.otlpEndpoint
+  exporterForm.jaegerEndpoint = exporterBaseline.jaegerEndpoint
+  exporterForm.loggingEnabled = exporterBaseline.loggingEnabled
+
+  performanceForm.asyncProcessing = performanceBaseline.asyncProcessing
+  performanceForm.threadPoolCoreSize = performanceBaseline.threadPoolCoreSize
+  performanceForm.bufferSize = performanceBaseline.bufferSize
+  performanceForm.memoryLimitMb = performanceBaseline.memoryLimitMb
+
+  serviceForm.rows = serviceBaseline.rows.map((row) => ({ service: row.service, rate: row.rate }))
 }
 
-const handleCleanupExpired = async () => {
-  try {
-    const { value } = await ElMessageBox.prompt(t('tracing.management.retentionPrompt'), t('tracing.management.cleanupExpired'), {
-      confirmButtonText: t('tracing.management.confirm'),
-      cancelButtonText: t('tracing.management.cancel'),
-      inputValue: '24',
-      inputValidator: (v) => !isNaN(parseInt(v)) && parseInt(v) > 0 || t('tracing.management.hoursInvalid')
-    })
+const sameList = (left: string[], right: string[]): boolean =>
+  [...left].sort().join('\u0000') === [...right].sort().join('\u0000')
 
-    cleaningUp.value = true
-    const hours = parseInt(value)
+const samplingDirty = (): boolean =>
+  samplingForm.strategy !== samplingBaseline.strategy
+  || samplingForm.globalRate !== samplingBaseline.globalRate
+  || samplingForm.adaptiveSampling !== samplingBaseline.adaptiveSampling
+  || !sameList(samplingForm.alwaysSamplePaths, samplingBaseline.alwaysSamplePaths)
+  || !sameList(samplingForm.neverSamplePaths, samplingBaseline.neverSamplePaths)
+
+const exporterDirty = (): boolean =>
+  exporterForm.type !== exporterBaseline.type
+  || exporterForm.otlpEndpoint !== exporterBaseline.otlpEndpoint
+  || exporterForm.jaegerEndpoint !== exporterBaseline.jaegerEndpoint
+  || exporterForm.loggingEnabled !== exporterBaseline.loggingEnabled
+
+/** asyncProcessing 是即时开关（拨动即写库），不进草稿 dirty。 */
+const performanceDirty = (): boolean =>
+  performanceForm.threadPoolCoreSize !== performanceBaseline.threadPoolCoreSize
+  || performanceForm.bufferSize !== performanceBaseline.bufferSize
+  || performanceForm.memoryLimitMb !== performanceBaseline.memoryLimitMb
+
+const serviceDirty = (): boolean =>
+  JSON.stringify(serviceForm.rows) !== JSON.stringify(serviceBaseline.rows)
+
+interface SnapshotOptions {
+  /** 覆盖异步处理开关（即时提交用） */
+  asyncProcessing?: boolean
+  /** false = 用基线值拼快照（即时提交不应顺带写入未保存的草稿） */
+  useDraft?: boolean
+}
+
+/**
+ * 拼出「整份配置」的提交体：基底是 GET /config 的完整快照，只覆盖本页可编辑字段。
+ * sampling / exporter 是整段替换语义，performance 的子对象也是整段替换，
+ * 因此被编辑段必须显式带上未暴露字段（rules / adaptive.custom / threadPool.maxSize …）。
+ */
+const buildSnapshot = ({ asyncProcessing, useDraft = true }: SnapshotOptions = {}): Record<string, unknown> => {
+  const samplingBase = asRecord(fullConfig.value.sampling)
+  const exporterBase = asRecord(fullConfig.value.exporter)
+  const performanceBase = asRecord(fullConfig.value.performance)
+
+  const sampling = useDraft ? samplingForm : samplingBaseline
+  const exporter = useDraft ? exporterForm : exporterBaseline
+  const performance = useDraft ? performanceForm : performanceBaseline
+  const serviceRows = useDraft ? serviceForm.rows : serviceBaseline.rows
+
+  const serviceRatios = serviceRows.reduce<Record<string, number>>((acc, row) => {
+    const name = row.service.trim()
+    if (name) {
+      acc[name] = row.rate / 100
+    }
+    return acc
+  }, {})
+
+  return {
+    ...fullConfig.value,
+    sampling: {
+      ...samplingBase,
+      strategy: sampling.strategy,
+      ratio: sampling.globalRate / 100,
+      adaptive: { ...asRecord(samplingBase.adaptive), enabled: sampling.adaptiveSampling },
+      alwaysSample: [...sampling.alwaysSamplePaths],
+      neverSample: [...sampling.neverSamplePaths],
+      serviceRatios
+    },
+    exporter: {
+      ...exporterBase,
+      type: exporter.type,
+      logging: { ...asRecord(exporterBase.logging), enabled: exporter.loggingEnabled },
+      otlp: { ...asRecord(exporterBase.otlp), endpoint: exporter.otlpEndpoint },
+      jaeger: { ...asRecord(exporterBase.jaeger), endpoint: exporter.jaegerEndpoint }
+    },
+    performance: {
+      ...performanceBase,
+      asyncProcessing: asyncProcessing ?? performance.asyncProcessing,
+      threadPool: { ...asRecord(performanceBase.threadPool), coreSize: performance.threadPoolCoreSize },
+      buffer: { ...asRecord(performanceBase.buffer), size: performance.bufferSize },
+      memory: { ...asRecord(performanceBase.memory), memoryLimitMb: performance.memoryLimitMb }
+    }
+  }
+}
+
+const submitSnapshot = async (options: SnapshotOptions = {}): Promise<void> => {
+  await updateTracingConfig(buildSnapshot(options) as unknown as Partial<TracingConfig>)
+}
+
+/** 开关即时生效：失败时抛错，SettingsSwitch 会让开关回弹。 */
+const submitTracingEnabled = async (next: boolean): Promise<void> => {
+  if (next) {
+    await enableTracing()
+    ElMessage.success(t('tracing.management.messages.tracingEnabled'))
+  } else {
+    await disableTracing()
+    ElMessage.success(t('tracing.management.messages.tracingDisabled'))
+  }
+  await loadStatus()
+}
+
+const submitAsyncProcessing = async (next: boolean): Promise<void> => {
+  await submitSnapshot({ asyncProcessing: next, useDraft: false })
+  performanceForm.asyncProcessing = next
+  performanceBaseline.asyncProcessing = next
+  ElMessage.success(t('tracing.management.messages.configSaved'))
+}
+
+const { saving, savingLabel, errors, dirtyCount, save } = useConfigDraft(
+  [
+    {
+      key: 'sampling',
+      label: () => t('tracing.management.samplingStrategy'),
+      isDirty: samplingDirty,
+      save: async () => {
+        await submitSnapshot()
+        await refreshSamplingStrategy()
+      },
+      commit: copySamplingBaseline
+    },
+    {
+      key: 'services',
+      label: () => t('tracing.management.serviceConfigsTitle'),
+      isDirty: serviceDirty,
+      validate: () => {
+        const names = serviceForm.rows.map((row) => row.service.trim())
+        if (names.some((name) => !name)) {
+          return t('tracing.management.serviceNameRequired')
+        }
+        if (new Set(names).size !== names.length) {
+          return t('tracing.management.duplicateService')
+        }
+        return null
+      },
+      save: async () => {
+        await submitSnapshot()
+        await refreshSamplingStrategy()
+      },
+      commit: copyServiceBaseline
+    },
+    {
+      key: 'exporter',
+      label: () => t('tracing.management.tabs.exporter'),
+      isDirty: exporterDirty,
+      save: async () => {
+        await submitSnapshot()
+      },
+      commit: copyExporterBaseline
+    },
+    {
+      key: 'performance',
+      label: () => t('tracing.management.performanceTitle'),
+      isDirty: performanceDirty,
+      save: async () => {
+        await submitSnapshot()
+      },
+      commit: copyPerformanceBaseline
+    }
+  ],
+  { fallbackError: () => t('tracing.management.messages.saveFailed') }
+)
+
+const handleSave = async (): Promise<void> => {
+  const result = await save()
+  if (!result.ok) {
+    if (result.failed) {
+      ElMessage.error(`${result.failed.message}`)
+    }
+    return
+  }
+  if (result.saved.length > 0) {
+    ElMessage.success(t('tracing.management.messages.configSaved'))
+    await loadConfig()
+    await loadStatus()
+  }
+}
+
+// 清缓存会丢弃所有正在采样的链路数据 ⇒ 二次确认由 ConfirmAction 承担。
+// 注意 refreshTracingData() 名字像只读，实际是 POST /tracing/actuator/clear-cache。
+const handleClearCache = async (): Promise<void> => {
+  clearingCache.value = true
+  try {
+    await refreshTracingData()
+    ElMessage.success(t('tracing.management.messages.cacheCleared'))
+  } catch (error) {
+    console.error('清理追踪缓存失败:', error)
+    ElMessage.error(t('tracing.management.messages.clearFailed'))
+  } finally {
+    clearingCache.value = false
+  }
+}
+
+const handleCleanupExpired = async (): Promise<void> => {
+  cleaningUp.value = true
+  try {
+    const hours = Math.max(1, Math.round(retentionHours.value))
     const response = await cleanupExpiredTraces(hours)
     const removed = response.data?.data?.removedCount || 0
     ElMessage.success(t('tracing.management.messages.cleanedUp', { count: removed }))
-  } catch (e) {
-    if (e !== 'cancel') {
-      ElMessage.error(t('tracing.management.messages.clearFailed'))
-    }
+  } catch (error) {
+    console.error('清理过期追踪数据失败:', error)
+    ElMessage.error(t('tracing.management.messages.clearFailed'))
   } finally {
     cleaningUp.value = false
   }
 }
 
-const handleExportConfig = () => {
+const handleExportConfig = (): void => {
+  const snapshot = buildSnapshot()
   const config = {
-    sampling: samplingConfig.value,
-    exporter: exporterConfig.value,
-    performance: performanceConfig.value
+    sampling: snapshot.sampling,
+    exporter: snapshot.exporter,
+    performance: snapshot.performance
   }
   const dataStr = JSON.stringify(config, null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
@@ -524,40 +804,61 @@ const handleExportConfig = () => {
   ElMessage.success(t('tracing.management.messages.configExported'))
 }
 
-const addServiceConfig = () => {
-  samplingConfig.value.serviceConfigs.push({ service: '', rate: 10 })
+const addServiceConfig = (): void => {
+  serviceForm.rows.push({ service: '', rate: 10 })
 }
 
-const removeServiceConfig = (index: number) => {
-  samplingConfig.value.serviceConfigs.splice(index, 1)
+const removeServiceConfig = (index: number): void => {
+  serviceForm.rows.splice(index, 1)
 }
 
-onMounted(() => {
-  loadAllData()
-})
+onMounted(loadAllData)
 </script>
 
 <style scoped>
-.status-card {
-  margin-bottom: 16px;
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
 }
 
-.section-header {
+.status-block {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
-.action-buttons {
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.config-grid.is-spaced {
+  margin-top: 16px;
+}
+
+.config-item {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
-.form-hint {
-  margin-top: 4px;
-  color: var(--ja-ink-3);
+.config-item.is-wide {
+  grid-column: span 2;
+}
+
+.config-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.config-hint {
+  margin: 0;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 </style>

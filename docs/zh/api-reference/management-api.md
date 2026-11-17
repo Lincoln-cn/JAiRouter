@@ -213,6 +213,38 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 删除账号，连同其一次性令牌、刷新凭据与 `jwt_accounts` 中对应的 `sla:<name>` 主体。
 
+### 登录保护 {#login-guard}
+
+登录失败次数超阈值后，登录接口返回 `429` 与 `RATE_LIMITED_LOGIN`；本组端点用于查看阈值、改阈值与解除锁定。
+
+#### 基础路径: `/api/security/login-guard`
+
+| 方法 | 路径 | 说明 | 所需权限 |
+| --- | --- | --- | --- |
+| GET | `/api/security/login-guard` | 当前生效阈值 + 最后修改人与时间 | `security:loginguard:read` |
+| PUT | `/api/security/login-guard` | 修改四个阈值（落库 + 立即热改 + 审计） | `security:loginguard:manage` |
+| GET | `/api/security/login-guard/locked` | 当前仍处于锁定窗口内的主体 | `security:loginguard:read` |
+| POST | `/api/security/login-guard/unlock` | 解除锁定（不传参数 = 全部解锁） | `security:loginguard:manage` |
+
+请求体（PUT）四项必须同时提供：
+
+```json
+{
+  "maxFailuresPerPrincipal": 5,
+  "maxFailuresPerIp": 30,
+  "windowMinutes": 15,
+  "lockMinutes": 15
+}
+```
+
+**配置来源与优先级**：`config/auth/login-guard.yml` 的 `jairouter.auth.login-bruteforce.*` 只在该表**还没有那一行**时作为初始值（首次启动落库，`updatedBy=system`）；
+一旦库里有了行，启动时以数据库为准 —— 与 `jwt_accounts` 的口径一致。所以「改配置文件」对已初始化的部署不再生效，改阈值请走本页或本端点。
+
+**解锁语义**：`{"username": "admin", "ip": "127.0.0.1"}` 只解该组合；只给 `username` 解该用户名在所有 IP 的锁定；只给 `ip` 解该 IP 的计数（含跨用户名的 `ip:` 维度）；给空对象则清空全部。返回 `{"data": {"cleared": 2}}`。
+
+**已锁主体只在实例内存里**：多副本部署时每个副本各自计数，本页与 `/locked` 只反映当前实例；要解除某用户在所有副本上的锁定需逐个实例调用，或等待 `lockMinutes` 到期自动失效。
+重新保存阈值**不会**自动解开已锁定的主体（放宽阈值不等于放行）。
+
 ### API 密钥管理
 
 #### 基础路径: `/api/config/ratelimit`

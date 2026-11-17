@@ -39,6 +39,7 @@
     "retentionDayLabel": "Day Retention",
     "retentionMonthLabel": "Month Retention",
     "confirm": "Confirm",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "immediateHint": "Takes effect immediately"
   }
 }

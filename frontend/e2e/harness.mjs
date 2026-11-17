@@ -346,18 +346,17 @@ export async function closeOverlay(page) {
   return (await countVisibleOverlays(page)) === 0
 }
 
-/** 处理 Element Plus MessageBox 确认框 */
+/**
+ * 处理「二次确认」并点确认。
+ *
+ * 2026-11 的 P3/P4 批次把删除/重置/清空这类操作统一换成了 `ConfirmAction`
+ * （内部是 `el-popconfirm`），而 `ElMessageBox.confirm` 仍用于少数竞态提示。
+ * 因此这里两种都接受：只认 message-box 会让「换成更轻的气泡」被判成失败。
+ */
 export async function confirmMessageBox(page, textRe = /确定|删除|确认|移除|OK|Confirm/i) {
-  const box = page.locator('.el-message-box, .el-overlay-message-box')
-  const visible = await box.first().isVisible().catch(() => false)
-  if (!visible) return false
-  const btn = box.locator('button').filter({ hasText: textRe }).first()
-  if ((await btn.count().catch(() => 0)) === 0) {
-    // 兜底：最后一个主按钮
-    await box.locator('button').last().click().catch(() => {})
-  } else {
-    await btn.click()
-  }
+  const layer = await waitConfirmLayer(page, 3000)
+  if (!layer.kind) return false
+  await clickConfirmInLayer(page, layer, textRe)
   await page.waitForTimeout(400)
   return true
 }
@@ -410,6 +409,53 @@ export async function clickRowAction(page, rowTextRe, actionRe) {
  * AdminApiRateLimiter 按客户端 IP 计数（X-Forwarded-For 优先）。
  * E2E 注入独立 IP，避免与人工操作/历史跑次共享 30/min、100/hour 桶。
  */
+/**
+ * 等「二次确认层」出现，并告诉调用方它是哪一种：
+ * - `messagebox` = `ElMessageBox.confirm`（`.el-message-box`）
+ * - `popconfirm` = `ConfirmAction` 用的 `el-popconfirm`（`.el-popconfirm`）
+ *
+ * 两套并存是既有事实：确认类操作在 2026-11 的 P3/P4 批次里统一换成了
+ * `ConfirmAction`，但仍有少量 `ElMessageBox` 调用（例如文件导入的竞态提示）。
+ * 断言必须同时接受两者，否则「换成更轻的气泡」会被误判成「确认层消失了」——
+ * 这正是 e2e 曾经红过的原因（详见 `05-traffic-governance.mjs` 的注释）。
+ */
+export async function waitConfirmLayer(page, timeout = 6000) {
+  const box = page.locator('.el-message-box').first()
+  const pop = page.locator('.el-popconfirm').first()
+  const half = Math.max(1200, Math.floor(timeout / 2))
+  if (await box.waitFor({ state: 'visible', timeout: half }).then(() => true).catch(() => false)) {
+    return { kind: 'messagebox', locator: box }
+  }
+  if (await pop.waitFor({ state: 'visible', timeout: timeout - half }).then(() => true).catch(() => false)) {
+    return { kind: 'popconfirm', locator: pop }
+  }
+  return { kind: null, locator: box }
+}
+
+/** 在已出现的确认层上点「确认」；返回实际命中的类型（`null` = 没有确认层）。 */
+export async function clickConfirmInLayer(page, layer, textRe = /确定|确认|删除|重置|移除|OK|Confirm/i) {
+  if (!layer || !layer.kind) {
+    return null
+  }
+  if (layer.kind === 'popconfirm') {
+    // el-popconfirm 的按钮区：取消在前、确认在后
+    await layer.locator.locator('.el-popconfirm__action button').last().click()
+    return layer.kind
+  }
+  const btn = layer.locator.locator('button').filter({ hasText: textRe }).first()
+  if ((await btn.count()) > 0) {
+    await btn.click()
+  } else {
+    await layer.locator.locator('button').last().click()
+  }
+  return layer.kind
+}
+
+/** 当前是否还有可见的确认层（用于「取消后应关闭」这类断言）。 */
+export async function countVisibleConfirmLayers(page) {
+  return page.locator('.el-message-box:visible, .el-popconfirm:visible').count()
+}
+
 export function e2eClientIp(_tag = 'suite') {
   if (process.env.E2E_CLIENT_IP) return process.env.E2E_CLIENT_IP
   const n = Math.floor(Math.random() * 200) + 10

@@ -24,7 +24,7 @@ Both entry points serve the same frontend code with identical functionality.
 
 | Username | Default Password | Role | Description |
 |----------|-----------------|------|-------------|
-| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 74 permission codes |
+| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 76 permission codes |
 | `user` | `user123456` | USER | Regular user, primarily read-only |
 
 > ⚠️ **Change the `admin` password before first production use.** The password is set via the `INITIAL_ADMIN_PASSWORD` environment variable (see `src/main/resources/config/auth/jwt.yml`). Restart the service after changing it.
@@ -73,11 +73,11 @@ Menu visibility is controlled by permission codes: groups/menu items for which t
 | 2 | Observability | 运行观测 | Call History (Call Records ｜ Call History Dashboard), Distributed Tracing (Trace Search ｜ Tracing Dashboard), Exceptions (Exception List ｜ Statistics), Slow Requests (Slow Calls ｜ Slow SQL), Usage (Token Usage ｜ Quota Usage) |
 | 3 | Traffic Governance | 流量治理 | Routing Rules, Load Balancing (Real-time Monitoring ｜ Strategy Config), Rate Limiting (Rate Limit Monitoring), Circuit Breakers (Circuit Monitoring ｜ Circuit History ｜ Global Config), Response Cache Management, Quota Runtime Config, Resource Pools |
 | 4 | Model & Instances | 模型与实例 | Adapters, Service Management, Instance Management, Version Management |
-| 5 | Security | 安全 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs, Record Governance |
+| 5 | Security | 安全 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs, Record Governance, Login Protection |
 | 6 | System | 系统 | Account Management, Permission Management, Tracing Config, Monitoring Config (Monitoring Config ｜ Runtime & Emergency), State Persistence, Cluster Settings, Health Probe Settings, Operation Records, SLA Access |
 | 7 | Developer Tools | 开发工具 | AI Playground (Chat Playground ｜ Embedding ｜ Rerank ｜ Audio Service ｜ Image Service), Client Access Guide |
 
-> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items; later additions brought it to 7 groups / 34 items and 48 pages (v3.5.1 Record Governance, v3.8.6 Cluster Settings, v3.8.7 Health Probe Settings, v3.8.8 Operation Records and Monitoring Config, SLA Access): 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
+> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items; later additions brought it to 7 groups / 35 items and 49 pages (v3.5.1 Record Governance, v3.8.6 Cluster Settings, v3.8.7 Health Probe Settings, v3.8.8 Operation Records and Monitoring Config, SLA Access): 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
 
 ### 2.2 Top Bar
 
@@ -267,7 +267,7 @@ Overview → Dashboard provides a single-pane view:
 
 | Role | Permission Count | Permission Scope | Description |
 |------|:----------------:|------------------|-------------|
-| **ADMIN** | 74 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
+| **ADMIN** | 76 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
 | **OPERATOR** | 55 | All `:read` + `:write` codes | Day-to-day ops; excludes system management (`system:*`), security management `manage` codes (API Key / JWT Token / Blacklist management); holds `callhistory:read` (records and summaries, no bodies) |
 | **USER** | 33 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI Playground | Regular user; only write code is `lb:config:write` |
 | **VIEWER** | 31 | All `:read` codes (minus the 10 codes paired with write/manage surfaces and `callhistory:read`) | Pure read-only role; no call history (`callhistory:read`), `ai:playground:use`, or other non-`:read` codes |
@@ -413,6 +413,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 | Security | Blacklist Management | `/security/blacklist` |
 | Security | Audit Logs | `/security/audit-logs` |
 | Security | Record Governance | `/security/record-governance` |
+| Security | Login Protection | `/security/login-guard` |
 | System | Account Management | `/system/accounts` |
 | System | Permission Management | `/system/permissions` |
 | System | Tracing Config | `/tracing/management` |

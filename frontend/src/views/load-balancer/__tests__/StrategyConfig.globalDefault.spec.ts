@@ -8,6 +8,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
+import { createPinia } from 'pinia'
 
 const requestMock = vi.hoisted(() => ({ get: vi.fn() }))
 
@@ -19,7 +20,7 @@ vi.mock('element-plus', () => ({
 
 interface StrategyConfigVm {
   loadServiceConfigs: () => Promise<void>
-  serviceConfigs: Array<Record<string, unknown>>
+  rows: Array<Record<string, unknown>>
 }
 
 const i18n = createI18n({ legacy: false, locale: 'zh-CN', messages: { 'zh-CN': {}, 'en-US': {} } })
@@ -34,7 +35,7 @@ const stubs = Object.fromEntries([...elStubs.map(c => [c, true]), ['PageSkeleton
 // v-loading 是 Element Plus 的全局指令，单测未装 EP 插件时需要空实现
 const directives = { loading: { mounted() {}, updated() {}, unmounted() {} } }
 
-const mountOptions = { global: { plugins: [i18n], stubs, directives } }
+const mountOptions = { global: { plugins: [i18n, createPinia()], stubs, directives } }
 
 /** 逐 URL 返回不同响应；未列出的 URL 回 { success: false }，避免 onMounted 抛未处理拒绝 */
 const routeResponses = (table: Record<string, () => Promise<unknown>>) => {
@@ -100,8 +101,8 @@ describe('StrategyConfig 全局默认兜底（issue #575）', () => {
     const vm = wrapper.vm as unknown as StrategyConfigVm
     await vm.loadServiceConfigs()
 
-    expect(vm.serviceConfigs).toHaveLength(2)
-    const imggen = vm.serviceConfigs.find(c => c.serviceType === 'imggen')
+    expect(vm.rows).toHaveLength(2)
+    const imggen = vm.rows.find(c => c.serviceType === 'imggen')
     expect(imggen).toBeDefined()
     expect(imggen?.isGlobal).toBe(true)
     // 兜底值来自服务端全局配置，而不是组件里写死的本地默认值
@@ -109,7 +110,7 @@ describe('StrategyConfig 全局默认兜底（issue #575）', () => {
     expect(imggen?.hashAlgorithm).toBe('md5')
     expect(imggen?.virtualNodes).toBe(150)
     // 有专属配置的服务类型不能被兜底行替换
-    expect(vm.serviceConfigs.find(c => c.serviceType === 'chat')?.isGlobal).toBe(false)
+    expect(vm.rows.find(c => c.serviceType === 'chat')?.isGlobal).toBe(false)
   })
 
   it('500 时仍按原来的语义丢弃该行（只有 404 改道）', async () => {
@@ -124,8 +125,8 @@ describe('StrategyConfig 全局默认兜底（issue #575）', () => {
     const vm = wrapper.vm as unknown as StrategyConfigVm
     await vm.loadServiceConfigs()
 
-    expect(vm.serviceConfigs).toHaveLength(1)
-    expect(vm.serviceConfigs[0].serviceType).toBe('chat')
+    expect(vm.rows).toHaveLength(1)
+    expect(vm.rows[0].serviceType).toBe('chat')
     expect(errorSpy).toHaveBeenCalled()
     errorSpy.mockRestore()
   })

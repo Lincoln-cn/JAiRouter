@@ -177,6 +177,7 @@ describe('页面按钮权限门控', () => {
       ['security/SanitizationManagement.vue', 'security:sanitization:manage'],
       ['security/JwtTokenManagement.vue', 'security:jwttokens:manage'],
       ['security/BlacklistManagement.vue', 'security:blacklist:manage'],
+      ['security/LoginGuardManagement.vue', 'security:loginguard:manage'],
       ['security/JwtAccountManagement.vue', 'system:accounts:manage']
     ]
     const missing = expected

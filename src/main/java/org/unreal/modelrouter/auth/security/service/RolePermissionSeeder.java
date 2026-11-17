@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * {@link PermissionRule#permissionCode()}，使后续版本新增权限码并登记 URL 规则后，
  * 已初始化部署不再因种子跳过而静默失去访问（#144）。
  *
- * <p>角色模板（权限码共 72 个，以实现 {@link PermissionCodes} 为准）：
+ * <p>角色模板（权限码共 76 个，以实现 {@link PermissionCodes} 为准）：
  * <ul>
  *   <li>ADMIN：全量权限码（超集，兼容现有 ADMIN）</li>
  *   <li>OPERATOR：所有 :read + :write（排除 system:* / security:*:manage / actuator:*）</li>
@@ -77,20 +77,21 @@ public class RolePermissionSeeder implements ApplicationRunner {
      * {@link #operatorCodes()} 与 {@link #viewerCodes()}，若本字段在其后声明，读到的会是
      * {@code null}（静态初始化顺序陷阱）。
      */
-    private static final Map<String, String> MANAGE_PAIRED_READ_TO_WRITE = Map.of(
-            PermissionCodes.LB_CONFIG_READ, PermissionCodes.LB_CONFIG_WRITE,
-            PermissionCodes.TRACING_CONFIG_READ, PermissionCodes.TRACING_CONFIG_MANAGE,
-            PermissionCodes.SECURITY_APIKEYS_READ, PermissionCodes.SECURITY_APIKEYS_MANAGE,
-            PermissionCodes.SECURITY_JWTTOKENS_READ, PermissionCodes.SECURITY_JWTTOKENS_MANAGE,
-            PermissionCodes.SECURITY_BLACKLIST_READ, PermissionCodes.SECURITY_BLACKLIST_MANAGE,
-            PermissionCodes.SECURITY_SANITIZATION_READ, PermissionCodes.SECURITY_SANITIZATION_MANAGE,
-            PermissionCodes.SYSTEM_ACCOUNTS_READ, PermissionCodes.SYSTEM_ACCOUNTS_MANAGE,
-            PermissionCodes.SYSTEM_PERMISSIONS_READ, PermissionCodes.SYSTEM_PERMISSIONS_MANAGE,
-            PermissionCodes.MONITORING_CONFIG_READ, PermissionCodes.MONITORING_CONFIG_WRITE,
-            PermissionCodes.SYSTEM_SLA_READ, PermissionCodes.SYSTEM_SLA_MANAGE);
+    private static final Map<String, String> MANAGE_PAIRED_READ_TO_WRITE = Map.ofEntries(
+            Map.entry(PermissionCodes.LB_CONFIG_READ, PermissionCodes.LB_CONFIG_WRITE),
+            Map.entry(PermissionCodes.TRACING_CONFIG_READ, PermissionCodes.TRACING_CONFIG_MANAGE),
+            Map.entry(PermissionCodes.SECURITY_APIKEYS_READ, PermissionCodes.SECURITY_APIKEYS_MANAGE),
+            Map.entry(PermissionCodes.SECURITY_JWTTOKENS_READ, PermissionCodes.SECURITY_JWTTOKENS_MANAGE),
+            Map.entry(PermissionCodes.SECURITY_BLACKLIST_READ, PermissionCodes.SECURITY_BLACKLIST_MANAGE),
+            Map.entry(PermissionCodes.SECURITY_SANITIZATION_READ, PermissionCodes.SECURITY_SANITIZATION_MANAGE),
+            Map.entry(PermissionCodes.SYSTEM_ACCOUNTS_READ, PermissionCodes.SYSTEM_ACCOUNTS_MANAGE),
+            Map.entry(PermissionCodes.SYSTEM_PERMISSIONS_READ, PermissionCodes.SYSTEM_PERMISSIONS_MANAGE),
+            Map.entry(PermissionCodes.MONITORING_CONFIG_READ, PermissionCodes.MONITORING_CONFIG_WRITE),
+            Map.entry(PermissionCodes.SYSTEM_SLA_READ, PermissionCodes.SYSTEM_SLA_MANAGE),
+            Map.entry(PermissionCodes.SECURITY_LOGINGUARD_READ, PermissionCodes.SECURITY_LOGINGUARD_MANAGE));
 
     /**
-     * 上述 10 个 read 码的集合（{@link #MANAGE_PAIRED_READ_TO_WRITE} 的键集），只读角色需整体排除。
+     * 上述 11 个 read 码的集合（{@link #MANAGE_PAIRED_READ_TO_WRITE} 的键集），只读角色需整体排除。
      */
     private static final Set<String> MANAGE_PAIRED_READ_CODES = MANAGE_PAIRED_READ_TO_WRITE.keySet();
 

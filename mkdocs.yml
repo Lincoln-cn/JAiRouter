@@ -208,6 +208,7 @@ nav:
     - KV缓存: zh/configuration/kv-cache.md
     - 响应缓存: zh/configuration/response-cache.md
     - 配额配置: zh/configuration/quota.md
+    - 登录保护: zh/configuration/login-guard.md
   - 安全功能:
     - zh/security/index.md
     - API Key管理: zh/security/api-key-management.md

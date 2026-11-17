@@ -71,6 +71,12 @@
           :value="a"
         />
       </el-select>
+
+      <!-- 工具栏口径：筛选在前、刷新在后 -->
+      <el-button size="medium" class="refresh-button" :loading="loading" @click="handleRefresh">
+        <el-icon><Refresh /></el-icon>
+        {{ t('service.refresh') }}
+      </el-button>
     </template>
 
     <el-alert
@@ -167,23 +173,49 @@
                 {{ t('service.edit') }}
               </el-button>
 
-              <el-button
-                link
-                size="small"
-                v-permission="'config:services:write'"
-                @click="handleDelete(scope.row)"
+              <!-- 删除二次确认统一走 ConfirmAction（不再弹消息框），文案带对象名 -->
+              <ConfirmAction
+                :title="t('service.deleteDialog.message', { type: serviceTypeLabel(scope.row.type) })"
+                :width="280"
+                type="danger"
+                :confirm-text="t('service.confirm')"
+                :cancel-text="t('service.cancel')"
+                :loading="deletingType === scope.row.type"
+                :disabled="deletingType === scope.row.type"
+                @confirm="handleDelete(scope.row)"
               >
-                {{ t('service.delete') }}
-              </el-button>
+                <el-button
+                  link
+                  size="small"
+                  v-permission="'config:services:write'"
+                >
+                  {{ t('service.delete') }}
+                </el-button>
+              </ConfirmAction>
             </template>
           </el-table-column>
         </el-table>
 
-        <div v-if="filteredServices.length === 0 && !loading" class="empty-wrap">
-          <!-- 空态图用 Element Plus 自带的（随包打入产物）；此前这里挂的是
-               https://static-element.eleme.cn/... 的远程图，离线/内网部署会 404 并污染控制台。 -->
-          <el-empty :description="t('service.table.notFound')" />
-        </div>
+        <!-- 空态统一走 EmptyState（口径：集合页空态不得直写 el-empty） -->
+        <EmptyState
+          v-if="filteredServices.length === 0 && !loading"
+          icon="Files"
+          :title="hasActiveFilters ? t('service.table.notFound') : t('service.emptyTitle')"
+          :description="hasActiveFilters ? '' : t('service.emptyDescription')"
+        >
+          <template #actions>
+            <el-button
+              type="primary"
+              size="medium"
+              v-permission="'config:services:write'"
+              :disabled="availableTypes.length === 0"
+              @click="handleAddService"
+            >
+              <el-icon><Plus /></el-icon>
+              {{ t('service.addService') }}
+            </el-button>
+          </template>
+        </EmptyState>
       </template>
     </el-skeleton>
 
@@ -207,20 +239,33 @@
     </template>
   </PageSkeleton>
 
-  <!-- 添加/编辑服务对话框 -->
-  <el-dialog
+  <!-- 新建/编辑服务抽屉：单实例，mode 区分 create / edit（普通 520、字段多 640、窄屏 100%） -->
+  <el-drawer
     v-model="dialogVisible"
-    :title="dialogTitle"
-    width="600px"
-    :before-close="handleDialogClose"
-    class="service-dialog"
+    :title="drawerTitle"
+    :size="drawerSize"
+    direction="rtl"
+    :close-on-click-modal="false"
+    destroy-on-close
+    class="service-drawer"
   >
+    <!-- 提交失败的错误留在抽屉内展示，已填内容不清空 -->
+    <el-alert
+      v-if="submitError"
+      :title="submitError"
+      type="error"
+      show-icon
+      closable
+      class="drawer-error"
+      @close="submitError = ''"
+    />
+
     <el-form
       :model="form"
       label-width="140px"
       ref="formRef"
       :rules="rules"
-      v-loading="dialogLoading"
+      v-loading="configLoading"
     >
       <el-form-item :label="t('service.form.serviceType')" prop="type">
         <!-- 编辑时显示不可编辑的输入，添加时显示只包含未添加类型的下拉 -->
@@ -382,19 +427,28 @@
     </el-form>
 
     <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="handleDialogClose" size="large">{{ t('service.cancel') }}</el-button>
-        <el-button type="primary" v-permission="'config:services:write'" @click="handleSave" :loading="dialogLoading" size="large">{{ t('service.save') }}</el-button>
-      </span>
+      <div class="drawer-footer">
+        <el-button size="large" :disabled="submitting" @click="closeDrawer">{{ t('service.cancel') }}</el-button>
+        <el-button
+          type="primary"
+          size="large"
+          v-permission="'config:services:write'"
+          :loading="submitting"
+          :disabled="submitting"
+          @click="handleSave"
+        >
+          {{ t('service.save') }}
+        </el-button>
+      </div>
     </template>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
+import { ElMessage, ElNotification } from 'element-plus'
 import type { AdapterInfo } from '@/api/adapter'
 import type { ServiceConfigEntry } from '@/types/common'
 import { getErrorMessage } from '@/utils/error'
@@ -412,6 +466,9 @@ import {
   updateServiceRateLimit,
 } from '@/api/service'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { useViewport } from '@/composables/useViewport'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
 
 const route = useRoute()
@@ -471,10 +528,15 @@ interface ServiceForm {
 // 状态管理
 const services = ref<Service[]>([])
 const loading = ref(false)
-const dialogLoading = ref(false)
+// 抽屉内的配置拉取 loading 与提交 loading 分开：提交期间表单要保留已填内容
+const configLoading = ref(false)
+const submitting = ref(false)
 const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const isEdit = ref(false)
+// 单实例抽屉：create / edit 两态，标题由 drawerTitle 派生
+const drawerMode = ref<'create' | 'edit'>('create')
+const submitError = ref('')
+const deletingType = ref('')
+const isEdit = computed(() => drawerMode.value === 'edit')
 const errorMessage = ref('')
 const formRef = ref<FormInstance>()
 const searchQuery = ref('')
@@ -482,6 +544,20 @@ const filterLoadBalance = ref('')
 const filterAdapter = ref<string | undefined>(undefined)
 const currentPage = ref(1)
 const pageSize = ref(20)
+
+// 抽屉尺寸：普通 640（字段多：限流 + 熔断 + 粘性），窄屏 100%
+const { isNarrow } = useViewport()
+const drawerSize = computed(() => (isNarrow.value ? '100%' : '640px'))
+const drawerTitle = computed(() =>
+  drawerMode.value === 'create'
+    ? t('service.createTitle')
+    : t('service.editTitle', { type: serviceTypeLabel(form.type) })
+)
+
+// 空态文案：有筛选条件时说「未找到」，无筛选时说「还没有服务」
+const hasActiveFilters = computed(() =>
+  Boolean((searchQuery.value || '').trim() || filterLoadBalance.value || filterAdapter.value)
+)
 
 // 引导条关闭状态（老用户不再需要 4 步引导）：仅记在本地，默认展示
 const GUIDE_DISMISS_KEY = 'ja-services-guide-dismissed'
@@ -739,6 +815,18 @@ const fetchServices = async () => {
   }, 300) // 300ms防抖延迟
 }
 
+// 刷新：清掉列表缓存后重取（工具栏「筛选 → 刷新」口径）
+const handleRefresh = async () => {
+  delete serviceCache.value['services_data']
+  if (fetchTimer) {
+    clearTimeout(fetchTimer)
+    fetchTimer = null
+  }
+  await fetchServices()
+  ElMessage.success(t('service.messages.refreshed'))
+}
+
+// 打开抽屉：新建
 const handleAddService = () => {
   // 如果没有可添加类型，提示并返回（防止打开空选择框）
   if (availableTypes.value.length === 0) {
@@ -746,8 +834,8 @@ const handleAddService = () => {
     return
   }
 
-  dialogTitle.value = t('service.addService')
-  isEdit.value = false
+  drawerMode.value = 'create'
+  submitError.value = ''
   form.type = '' // 由下拉选择填入
   form.adapter = ''
   form.loadBalance.type = 'random'
@@ -757,10 +845,11 @@ const handleAddService = () => {
   dialogVisible.value = true
 }
 
+// 打开抽屉：编辑（先拉配置，成功才打开，避免出现半空的抽屉）
 const handleEdit = async (row: Service) => {
-  dialogTitle.value = t('service.editService')
-  isEdit.value = true
-  dialogLoading.value = true
+  drawerMode.value = 'edit'
+  submitError.value = ''
+  configLoading.value = true
   try {
     const response = await getServiceConfig(row.type)
     if (response.data?.success) {
@@ -812,115 +901,119 @@ const handleEdit = async (row: Service) => {
     console.error('获取服务配置失败:', error)
     ElMessage.error(getErrorMessage(error) || t('service.messages.networkError'))
   } finally {
-    dialogLoading.value = false
+    configLoading.value = false
   }
 }
 
-// 删除
-const handleDelete = (row: Service) => {
-  ElMessageBox.confirm(
-    t('service.deleteDialog.message', { type: row.type }),
-    t('service.deleteDialog.title'),
-    { confirmButtonText: t('service.confirm'), cancelButtonText: t('service.cancel'), type: 'warning' }
-  ).then(async () => {
-    try {
-      const response = await deleteService(row.type)
-      if (response.data?.success) {
-        ElMessage.success(t('service.messages.deleteSuccess'))
-        await fetchServices()
-      } else {
-        ElMessage.error(response.data?.message || t('service.messages.deleteFailed'))
-      }
-    } catch (error) {
-      console.error('删除服务失败:', error)
-      ElMessage.error(getErrorMessage(error) || t('service.messages.networkError'))
+// 删除（二次确认由 ConfirmAction 承担，此处只做「确认后」的提交）
+const handleDelete = async (row: Service) => {
+  deletingType.value = row.type
+  try {
+    const response = await deleteService(row.type)
+    if (response.data?.success) {
+      ElMessage.success(t('service.messages.deleteSuccess'))
+      await fetchServices()
+    } else {
+      ElMessage.error(response.data?.message || t('service.messages.deleteFailed'))
     }
-  }).catch(() => {
-    ElMessage.info(t('service.messages.deleteCancelled'))
-  })
+  } catch (error) {
+    console.error('删除服务失败:', error)
+    ElMessage.error(getErrorMessage(error) || t('service.messages.networkError'))
+  } finally {
+    deletingType.value = ''
+  }
 }
 
-const handleDialogClose = () => {
+// 关闭抽屉：提交中不允许关闭，避免请求还在飞就丢了上下文
+const closeDrawer = () => {
+  if (submitting.value) return
   dialogVisible.value = false
-  if (formRef.value) formRef.value.resetFields()
+  if (formRef.value) formRef.value.clearValidate()
 }
 
 const handleSave = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      dialogLoading.value = true
-      try {
-        const serviceConfig: ServiceConfigEntry = {
-          adapter: form.adapter || undefined,
-          loadBalance: form.loadBalance,
-          description: form.description || undefined,
-          // #1095：粘性开关；服务器缺省开启，所以这里始终显式提交当前状态
-          sticky: {
-            enabled: form.sticky.enabled,
-            affinityKeyScope: form.sticky.affinityKeyScope
-          },
-          // 添加服务级别的限流和熔断配置
-          rateLimit: form.rateLimit.enabled ? form.rateLimit : { enabled: false },
-          circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : { enabled: false }
-        }
-        let response
-        if (isEdit.value) response = await updateServiceConfig(form.type, serviceConfig)
-        else response = await createService(form.type, serviceConfig)
-
-        if (response.data?.success) {
-          // v2.8.8: 服务级限流配置持久化 + 热生效(独立端点,canonical 格式)
-          try {
-            const rateLimitPayload = form.rateLimit.enabled
-              ? {
-                  enabled: true,
-                  algorithm: form.rateLimit.algorithm,
-                  capacity: form.rateLimit.capacity,
-                  rate: form.rateLimit.rate,
-                  scope: form.rateLimit.scope,
-                  key: form.rateLimit.key
-                }
-              : { enabled: false }
-            await updateServiceRateLimit(form.type, rateLimitPayload)
-          } catch (rateLimitError) {
-            console.error('保存服务限流配置失败:', rateLimitError)
-            ElMessage.warning(getErrorMessage(rateLimitError) || t('service.messages.savedButRateLimitFailed'))
-          }
-          ElMessage.success(isEdit.value ? t('service.messages.editSuccess') : t('service.messages.addSuccess'))
-          dialogVisible.value = false
-          // 清除所有缓存，强制刷新数据
-          const cacheKey = 'services_data'
-          delete serviceCache.value[cacheKey]
-          const serviceCacheKey = `service_config_${form.type}`
-          delete serviceCache.value[serviceCacheKey]
-          // 立即刷新列表，不使用防抖
-          if (fetchTimer) {
-            clearTimeout(fetchTimer)
-            fetchTimer = null
-          }
-          await fetchServices()
-          // 如果是编辑，刷新后高亮显示
-          if (isEdit.value) {
-            setTimeout(() => {
-              const row = document.querySelector(`[data-type="${form.type}"]`)
-              if (row) {
-                row.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                row.classList.add('highlight-row')
-                setTimeout(() => row.classList.remove('highlight-row'), 2000)
-              }
-            }, 500)
-          }
-        } else {
-          ElMessage.error(response.data?.message || (isEdit.value ? t('service.messages.editFailed') : t('service.messages.addFailed')))
-        }
-      } catch (error) {
-        console.error(isEdit.value ? '编辑服务失败:' : '添加服务失败:', error)
-        ElMessage.error(getErrorMessage(error) || t('service.messages.networkError'))
-      } finally {
-        dialogLoading.value = false
-      }
+  if (!formRef.value || submitting.value) return
+  submitError.value = ''
+  // 校验通过才提交；校验失败只在抽屉内提示，不清空已填内容
+  try {
+    await formRef.value.validate()
+  } catch {
+    submitError.value = t('service.form.validationFailed')
+    return
+  }
+  submitting.value = true
+  try {
+    const serviceConfig: ServiceConfigEntry = {
+      adapter: form.adapter || undefined,
+      loadBalance: form.loadBalance,
+      description: form.description || undefined,
+      // #1095：粘性开关；服务器缺省开启，所以这里始终显式提交当前状态
+      sticky: {
+        enabled: form.sticky.enabled,
+        affinityKeyScope: form.sticky.affinityKeyScope
+      },
+      // 添加服务级别的限流和熔断配置
+      rateLimit: form.rateLimit.enabled ? form.rateLimit : { enabled: false },
+      circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : { enabled: false }
     }
-  })
+    let response
+    if (isEdit.value) response = await updateServiceConfig(form.type, serviceConfig)
+    else response = await createService(form.type, serviceConfig)
+
+    if (response.data?.success) {
+      // v2.8.8: 服务级限流配置持久化 + 热生效(独立端点,canonical 格式)
+      try {
+        const rateLimitPayload = form.rateLimit.enabled
+          ? {
+              enabled: true,
+              algorithm: form.rateLimit.algorithm,
+              capacity: form.rateLimit.capacity,
+              rate: form.rateLimit.rate,
+              scope: form.rateLimit.scope,
+              key: form.rateLimit.key
+            }
+          : { enabled: false }
+        await updateServiceRateLimit(form.type, rateLimitPayload)
+      } catch (rateLimitError) {
+        console.error('保存服务限流配置失败:', rateLimitError)
+        ElMessage.warning(getErrorMessage(rateLimitError) || t('service.messages.savedButRateLimitFailed'))
+      }
+      ElMessage.success(isEdit.value ? t('service.messages.editSuccess') : t('service.messages.addSuccess'))
+      dialogVisible.value = false
+      // 清除所有缓存，强制刷新数据
+      const cacheKey = 'services_data'
+      delete serviceCache.value[cacheKey]
+      const serviceCacheKey = `service_config_${form.type}`
+      delete serviceCache.value[serviceCacheKey]
+      // 立即刷新列表，不使用防抖
+      if (fetchTimer) {
+        clearTimeout(fetchTimer)
+        fetchTimer = null
+      }
+      await fetchServices()
+      // 如果是编辑，刷新后高亮显示
+      if (isEdit.value) {
+        setTimeout(() => {
+          const row = document.querySelector(`[data-type="${form.type}"]`)
+          if (row) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            row.classList.add('highlight-row')
+            setTimeout(() => row.classList.remove('highlight-row'), 2000)
+          }
+        }, 500)
+      }
+    } else {
+      // 失败信息展示在抽屉内，抽屉与已填内容保持不变
+      submitError.value =
+        response.data?.message ||
+        (isEdit.value ? t('service.messages.editFailed') : t('service.messages.addFailed'))
+    }
+  } catch (error) {
+    console.error(isEdit.value ? '编辑服务失败:' : '添加服务失败:', error)
+    submitError.value = getErrorMessage(error) || t('service.messages.networkError')
+  } finally {
+    submitting.value = false
+  }
 }
 
 const handleSizeChange = (size: number) => { pageSize.value = size; currentPage.value = 1 }
@@ -953,6 +1046,12 @@ onMounted(() => { fetchServices() })
 .adapter-filter {
   width: 180px;
   min-width: 140px;
+}
+
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .error-alert {
@@ -1037,45 +1136,43 @@ onMounted(() => { fetchServices() })
   align-items: center;
 }
 
-.empty-wrap {
-  padding: 40px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* 对话框 */
-.dialog-footer {
+/* 抽屉（新建/编辑服务） */
+.drawer-footer {
   display: flex;
   justify-content: flex-end;
   gap: 15px;
   padding: 10px 20px;
 }
 
-.service-dialog :deep(.el-dialog__header) {
+.drawer-error {
+  margin-bottom: 16px;
+}
+
+.service-drawer :deep(.el-drawer__header) {
+  margin-bottom: 0;
   background-color: var(--ja-main-bg);
   border-bottom: 1px solid var(--ja-border-light);
   padding: 14px 20px;
 }
 
-.service-dialog :deep(.el-dialog__title) {
+.service-drawer :deep(.el-drawer__title) {
   font-weight: 700;
   color: var(--ja-text-primary);
   font-size: 18px;
 }
 
-.service-dialog :deep(.el-dialog__body) {
+.service-drawer :deep(.el-drawer__body) {
   padding: 20px;
 }
 
-.service-dialog :deep(.el-form-item__label) {
+.service-drawer :deep(.el-form-item__label) {
   font-weight: 600;
   font-size: 14px;
   color: var(--ja-text-primary);
 }
 
-.service-dialog :deep(.el-input__inner),
-.service-dialog :deep(.el-select) {
+.service-drawer :deep(.el-input__inner),
+.service-drawer :deep(.el-select) {
   font-size: 14px;
 }
 </style>

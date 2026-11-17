@@ -1,34 +1,38 @@
 <template>
   <PageSkeleton :title="t('exception.statistics.title')">
-    <!-- 时间筛选 -->
-    <el-card class="filter-card" shadow="hover">
-      <el-form :inline="true" class="filter-form">
-        <el-form-item :label="t('exception.statistics.timeRange')">
-          <el-date-picker
-            v-model="dateRange"
-            type="datetimerange"
-            :range-separator="t('exception.statistics.dateRangeSeparator')"
-            :start-placeholder="t('exception.statistics.startTime')"
-            :end-placeholder="t('exception.statistics.endTime')"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            style="width: 400px"
-            @change="handleDateChange"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="Search" @click="loadData">{{ t('exception.statistics.query') }}</el-button>
-          <el-button icon="Refresh" @click="handleReset">{{ t('exception.statistics.reset') }}</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <!-- 工具栏顺序固定：时间范围 → 维度筛选（本页无）→ 刷新；重置紧随其后 -->
+    <template #toolbar>
+      <FilterBar :collapsible="false">
+        <el-form :inline="true" class="toolbar-form">
+          <el-form-item :label="t('exception.statistics.timeRange')">
+            <el-date-picker
+              v-model="dateRange"
+              type="datetimerange"
+              :range-separator="t('exception.statistics.dateRangeSeparator')"
+              :start-placeholder="t('exception.statistics.startTime')"
+              :end-placeholder="t('exception.statistics.endTime')"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              @change="handleDateChange"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :loading="refreshing" @click="loadData">
+              <el-icon><Refresh /></el-icon>
+              {{ t('exception.statistics.refresh') }}
+            </el-button>
+            <el-button @click="handleReset">{{ t('exception.statistics.reset') }}</el-button>
+          </el-form-item>
+        </el-form>
+      </FilterBar>
+    </template>
 
     <!-- 统计概览：中性指标条，异常总数 > 0 才上语义色 -->
-    <div class="stats-row">
+    <template #stats>
       <MetricStrip :items="metricItems" :columns="4" />
-    </div>
+    </template>
 
     <!-- 图表区域 -->
-    <el-row :gutter="20">
+    <el-row :gutter="16">
       <!-- 按类型统计 -->
       <el-col :span="12">
         <ChartCard
@@ -56,7 +60,7 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px;">
+    <el-row :gutter="16" class="row-gap-top">
       <!-- 按 HTTP 状态码统计 -->
       <el-col :span="12">
         <ChartCard
@@ -85,16 +89,22 @@
     </el-row>
 
     <!-- Top 客户端 IP -->
-    <el-card shadow="hover" style="margin-top: 20px;">
+    <el-card shadow="hover" class="row-gap-top">
       <template #header>
         <span class="chart-title">{{ t('exception.statistics.topClientIps') }}</span>
       </template>
       <el-table :data="topClientIps" border stripe :max-height="300">
+        <template #empty>
+          <EmptyState
+            :title="t('common.chartEmpty')"
+            :description="t('common.chartEmptyHint')"
+          />
+        </template>
         <el-table-column :label="t('exception.statistics.rank')" type="index" width="60" :index="indexMethod" />
         <el-table-column :label="t('exception.statistics.ipAddress')" prop="ip" min-width="200" />
         <el-table-column :label="t('exception.statistics.exceptionCount')" prop="count" width="120" align="right">
           <template #default="scope">
-            <el-tag type="info">{{ scope.row.count }}</el-tag>
+            <el-tag type="info">{{ formatNumber(scope.row.count) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column :label="t('exception.statistics.percentage')" prop="percentage" width="120" align="right">
@@ -109,7 +119,7 @@
     </el-card>
 
     <!-- 最近异常事件 -->
-    <el-card shadow="hover" style="margin-top: 20px;">
+    <el-card shadow="hover" class="row-gap-top">
       <template #header>
         <div class="card-header">
           <span class="chart-title">{{ t('exception.statistics.recentEvents') }}</span>
@@ -117,6 +127,12 @@
         </div>
       </template>
       <el-table :data="recentEvents" border stripe :max-height="300">
+        <template #empty>
+          <EmptyState
+            :title="t('common.chartEmpty')"
+            :description="t('common.chartEmptyHint')"
+          />
+        </template>
         <el-table-column :label="t('exception.statistics.eventId')" prop="eventId" width="200" show-overflow-tooltip />
         <el-table-column :label="t('exception.statistics.exceptionType')" prop="exceptionType" min-width="180" show-overflow-tooltip />
         <el-table-column :label="t('exception.statistics.errorCode')" prop="errorCode" width="100">
@@ -135,7 +151,7 @@
         </el-table-column>
         <el-table-column :label="t('exception.statistics.occurredAt')" prop="occurredAt" width="180">
           <template #default="scope">
-            {{ formatTime(scope.row.occurredAt) }}
+            <TimeText :value="scope.row.occurredAt" />
           </template>
         </el-table-column>
       </el-table>
@@ -144,10 +160,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
 import { getErrorMessage } from '@/utils/error'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
@@ -159,10 +176,13 @@ import type { ExceptionEvent, ExceptionStatistics } from '@/types/exception'
 import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import ChartCard from '@/components/ChartCard.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import FilterBar from '@/components/FilterBar.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import TimeText from '@/components/TimeText.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartSkin } from '@/composables/useChartSkin'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
-import { formatDateTime as formatDateTimeBase } from '@/utils/format'
+import { formatNumber } from '@/utils/format'
 
 const { getChartTheme } = useChartTheme()
 const { skin } = useChartSkin()
@@ -173,6 +193,9 @@ const router = useRouter()
 
 // 时间范围
 const dateRange = ref<[string, string] | null>(null)
+
+// 刷新中（仅工具栏按钮的加载态，不参与数据逻辑）
+const refreshing = ref(false)
 
 // 统计数据
 const statistics = ref<ExceptionStatistics>({
@@ -217,7 +240,8 @@ const successRate = computed(() => {
   if (total === 0) return 100
   // 这里假设非 5xx 错误都算成功
   const serverErrors = statistics.value.eventsByCategory?.['SERVER_ERROR'] || 0
-  return ((total - serverErrors) / total * 100).toFixed(1)
+  // 统一返回 number：另一条分支返回 100（number），若这里返回字符串会让 formatPercent 的参数变成联合类型
+  return Number((((total - serverErrors) / total) * 100).toFixed(1))
 })
 
 // Top 客户端 IP
@@ -233,24 +257,24 @@ const metricItems = computed<MetricStripItem[]>(() => {
     {
       key: 'total',
       label: t('exception.statistics.totalEventsLabel'),
-      value: s.totalEvents,
+      value: formatNumber(s.totalEvents, 0),
       tone: hasEvents ? 'danger' : 'default'
     },
     {
       key: 'types',
       label: t('exception.statistics.totalTypesLabel'),
-      value: s.totalTypes
+      value: formatNumber(s.totalTypes, 0)
     },
     {
       key: 'topType',
       label: t('exception.statistics.topErrorTypeLabel'),
-      value: topErrorType.value.count,
+      value: formatNumber(topErrorType.value.count, 0),
       hint: hasEvents ? topErrorType.value.type.split('.').pop() : undefined
     },
     {
       key: 'successRate',
       label: t('exception.statistics.successRateLabel'),
-      value: hasEvents ? `${successRate.value}%` : '—'
+      value: hasEvents ? formatPercent(successRate.value) : '—'
     }
   ]
 })
@@ -266,10 +290,10 @@ const hourlyEmpty = computed(() => (statistics.value.hourlyDistribution ?? []).l
 // 索引方法
 const indexMethod = (index: number) => index + 1
 
-// 格式化时间（委托共享 format.ts）
-const formatTime = (time?: string) => {
-  if (!time) return '-'
-  return formatDateTimeBase(time)
+/** 百分比一律保留 1 位；无事件时给「—」而不是 100% */
+const formatPercent = (value?: number | null): string => {
+  const num = Number(value)
+  return Number.isFinite(num) ? `${num.toFixed(1)}%` : '—'
 }
 
 // 获取错误标签类型
@@ -574,6 +598,7 @@ const updateHourlyChart = () => {
 
 // 加载数据
 const loadData = async () => {
+  refreshing.value = true
   try {
     let startTime: string | undefined
     let endTime: string | undefined
@@ -595,6 +620,8 @@ const loadData = async () => {
   } catch (error) {
     console.error('加载统计数据失败:', error)
     ElMessage.error(t('exception.statistics.loadFailed', { message: getErrorMessage(error) || t('exception.statistics.unknownError') }))
+  } finally {
+    refreshing.value = false
   }
 }
 
@@ -638,7 +665,6 @@ onMounted(() => {
 })
 
 // 组件卸载时清理
-import { onBeforeUnmount } from 'vue'
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   typeChart?.dispose()
@@ -649,17 +675,26 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.filter-card {
-  margin-bottom: 20px;
-}
-
-.filter-card .filter-form {
+/* 工具栏内联表单：与其它观测页同一套行内节奏 */
+.toolbar-form {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ja-space-2);
 }
 
-.stats-row {
-  margin-bottom: 20px;
+.toolbar-form :deep(.el-form-item) {
+  margin: 0;
+}
+
+/* 窄屏时时间范围选择器不撑破工具栏 */
+.toolbar-form :deep(.el-date-editor) {
+  max-width: 100%;
+}
+
+/* 图表行 / 明细卡之间的统一间距（原来是 20px 行内 style） */
+.row-gap-top {
+  margin-top: var(--ja-space-4);
 }
 
 .chart-container {
@@ -669,7 +704,7 @@ onBeforeUnmount(() => {
 
 .chart-title {
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .card-header {

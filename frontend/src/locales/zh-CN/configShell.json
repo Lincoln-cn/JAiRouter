@@ -1,0 +1,22 @@
+{
+  "configShell": {
+    "refresh": "刷新",
+    "refreshDirtyConfirm": "有 {count} 处未保存的修改，刷新会丢弃它们。继续？",
+    "refreshDirtyTitle": "丢弃未保存的修改",
+    "discardChanges": "放弃修改",
+    "discardConfirm": "放弃后回到上次保存的值，不会提交任何修改。确定？",
+    "unsavedCount": "未保存 {count} 处",
+    "allSaved": "已全部保存",
+    "saving": "正在保存",
+    "savingSection": "正在保存：{label}",
+    "saveSuccess": "已保存",
+    "saveFailed": "保存失败",
+    "restartRequired": "需重启",
+    "leaveTitle": "有未保存的修改",
+    "leaveMessage": "离开本页会丢弃 {count} 处未保存的修改。",
+    "leaveConfirm": "仍然离开",
+    "leaveCancel": "留在本页",
+    "loadFailed": "加载配置失败",
+    "readonlyHint": "当前账号只能查看，不能修改配置"
+  }
+}

@@ -11,17 +11,18 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
+import { createPinia } from 'pinia'
 
 /**
  * 组件实例的对外形状（#522：替代 `wrapper.vm as any`）。
  * 只声明本文件用例真正访问的成员；字段名写错会在编译期报错。
  */
 interface ManagementPageVm {
-  samplingConfig: {
+  samplingForm: {
     strategy: string
     adaptiveSampling: boolean
   }
-  handleSaveConfig: () => Promise<void>
+  handleSave: () => Promise<void>
 }
 
 
@@ -86,7 +87,7 @@ const stubs = Object.fromEntries([
   ['PageSkeleton', true]
 ])
 
-const mountPage = () => mount(Management, { global: { plugins: [i18n], stubs } })
+const mountPage = () => mount(Management, { global: { plugins: [i18n, createPinia()], stubs } })
 
 describe('tracing Management 采样配置（issue #224 P5）', () => {
   beforeEach(() => {
@@ -98,7 +99,7 @@ describe('tracing Management 采样配置（issue #224 P5）', () => {
     const wrapper = mountPage()
     await flushPromises()
 
-    expect((wrapper.vm as unknown as ManagementPageVm).samplingConfig.strategy).toBe('rule')
+    expect((wrapper.vm as unknown as ManagementPageVm).samplingForm.strategy).toBe('rule')
   })
 
   it('保存时应提交页面选中的 strategy 与服务端原本的 rules / adaptive 字段', async () => {
@@ -106,8 +107,8 @@ describe('tracing Management 采样配置（issue #224 P5）', () => {
     await flushPromises()
     const vm = wrapper.vm as unknown as ManagementPageVm
 
-    vm.samplingConfig.strategy = 'adaptive'
-    await vm.handleSaveConfig()
+    vm.samplingForm.strategy = 'adaptive'
+    await vm.handleSave()
     await flushPromises()
 
     expect(updateTracingConfig).toHaveBeenCalledTimes(1)
@@ -131,8 +132,8 @@ describe('tracing Management 采样配置（issue #224 P5）', () => {
     await flushPromises()
     const vm = wrapper.vm as unknown as ManagementPageVm
 
-    vm.samplingConfig.adaptiveSampling = false
-    await vm.handleSaveConfig()
+    vm.samplingForm.adaptiveSampling = false
+    await vm.handleSave()
     await flushPromises()
 
     const adaptive = updateTracingConfig.mock.calls[0][0].sampling.adaptive

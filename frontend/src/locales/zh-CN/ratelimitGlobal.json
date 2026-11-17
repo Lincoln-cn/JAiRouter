@@ -33,6 +33,8 @@
     "endUserCacheLabel": "终端用户级本地计数器容量",
     "fingerprintLabel": "标识摘要长度",
     "on": "已启用",
-    "off": "未启用"
+    "off": "未启用",
+    "immediateHint": "拨动即生效",
+    "thresholdInvalid": "阈值必须是不小于 1 的整数"
   }
 }

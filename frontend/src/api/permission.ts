@@ -96,7 +96,8 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       'security:sanitization:read', 'security:sanitization:manage',
       'security:jwttokens:read', 'security:jwttokens:manage',
       'security:blacklist:read', 'security:blacklist:manage',
-      'security:audit:read', 'security:audit:write'
+      'security:audit:read', 'security:audit:write',
+      'security:loginguard:read', 'security:loginguard:manage'
     ]
   },
   {

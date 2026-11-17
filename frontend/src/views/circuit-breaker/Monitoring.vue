@@ -1,11 +1,7 @@
 <template>
   <PageSkeleton :title="t('circuitBreaker.monitoring.pageTitle')">
     <template #actions>
-      <!-- 页头收敛为「1 个主操作 + 更多」：影响运行状态的操作（暂停监控）不再常驻首屏 -->
-      <el-button type="primary" :loading="refreshing" @click="refreshAll">
-        <el-icon><RefreshRight /></el-icon>
-        {{ t('circuitBreaker.monitoring.refreshAll') }}
-      </el-button>
+      <!-- 页头只保留「更多」：刷新已统一收进工具栏（工具栏是刷新/导出的唯一入口），避免两个刷新按钮并存 -->
       <el-dropdown trigger="click" @command="handleHeaderCommand">
         <el-button>
           {{ t('circuitBreaker.monitoring.moreActions') }}
@@ -13,14 +9,7 @@
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item v-if="canWrite" command="toggle-monitor">
-              {{ monitorStatus.paused ? t('circuitBreaker.monitoring.resumeMonitoring') : t('circuitBreaker.monitoring.pauseMonitoring') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="export-json" :divided="canWrite">
-              {{ t('circuitBreaker.monitoring.exportJson') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="export-csv">{{ t('circuitBreaker.monitoring.exportCsv') }}</el-dropdown-item>
-            <el-dropdown-item divided command="history">
+            <el-dropdown-item command="history">
               {{ t('circuitBreaker.monitoring.actions.history') }}
             </el-dropdown-item>
             <el-dropdown-item command="global-config">
@@ -31,11 +20,100 @@
       </el-dropdown>
     </template>
 
+    <template #stats>
+      <!-- 页面级统计：4 格状态分布（MetricStrip），点击即筛下方实例表；状态色只落在数值上。
+           原先是塞在实例表卡片里，按 P4「页面级指标 → #stats」上移，卡片内不再重复统计块 -->
+      <div class="summary-strip" role="group" :aria-label="t('circuitBreaker.monitoring.instancesTitle')">
+        <div
+          v-for="summary in stateSummary"
+          :key="summary.state"
+          class="summary-card"
+          :class="{ 'is-active': isStateSummaryActive(summary.state) }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="isStateSummaryActive(summary.state)"
+          @click="toggleStateFilter(summary.state)"
+          @keydown.enter.prevent="toggleStateFilter(summary.state)"
+          @keydown.space.prevent="toggleStateFilter(summary.state)"
+        >
+          <MetricStrip :items="[toMetricItem(summary)]" :columns="1" />
+        </div>
+      </div>
+    </template>
+
+    <template #toolbar>
+      <!-- 工具栏顺序（设计 §P4）：时间范围 → 维度筛选 → 刷新 → 导出。
+           本页三个接口都不接受时间区间，故时间范围位空缺，顺序为「维度筛选 → 刷新 → 导出」 -->
+      <el-select
+        v-model="filterServiceType"
+        :placeholder="t('circuitBreaker.monitoring.filterServiceType')"
+        clearable
+        style="width: 170px"
+      >
+        <el-option v-for="type in serviceTypes" :key="type" :label="type" :value="type" />
+      </el-select>
+      <el-select
+        v-model="filterState"
+        :placeholder="t('circuitBreaker.monitoring.filterState')"
+        clearable
+        style="width: 150px"
+      >
+        <el-option v-for="state in breakerStates" :key="state" :label="stateLabel(state)" :value="state" />
+      </el-select>
+      <el-input
+        v-model="keyword"
+        :placeholder="t('circuitBreaker.monitoring.searchPlaceholder')"
+        clearable
+        style="width: 240px"
+      >
+        <template #prefix><el-icon><Search /></el-icon></template>
+      </el-input>
+      <el-button v-if="hasActiveFilter" @click="clearFilters">
+        {{ t('circuitBreaker.monitoring.clearFilters') }}
+      </el-button>
+      <el-button type="primary" plain :loading="refreshing" @click="refreshAll">
+        {{ t('circuitBreaker.monitoring.refreshAll') }}
+      </el-button>
+      <!-- 工具栏末位：导出（json / csv），符合「…→ 刷新 → 导出」的顺序 -->
+      <el-dropdown @command="handleExport">
+        <el-button :loading="exporting">
+          {{ t('circuitBreaker.monitoring.export') }}
+          <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="json">{{ t('circuitBreaker.monitoring.exportJson') }}</el-dropdown-item>
+            <el-dropdown-item command="csv">{{ t('circuitBreaker.monitoring.exportCsv') }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </template>
+
     <!-- 监控控制面板 -->
     <el-card class="control-panel" shadow="never">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('circuitBreaker.monitoring.controlTitle') }}</span>
+          <!-- 暂停会停掉采样与事件记录 ⇒ 二次确认；恢复不拦。按钮常驻首个控制面板，不放进「更多」下拉 -->
+          <template v-if="canWrite">
+            <ConfirmAction
+              v-if="!monitorStatus.paused"
+              :title="t('circuitBreaker.monitoring.confirmations.pauseMonitorMessage')"
+              :width="300"
+              :confirm-text="t('circuitBreaker.monitoring.confirmations.confirmPause')"
+              :cancel-text="t('circuitBreaker.monitoring.confirmations.cancel')"
+              type="warning"
+              :loading="togglingMonitor"
+              @confirm="pauseMonitoring"
+            >
+              <el-button :loading="togglingMonitor">
+                {{ t('circuitBreaker.monitoring.pauseMonitoring') }}
+              </el-button>
+            </ConfirmAction>
+            <el-button v-else :loading="togglingMonitor" @click="resumeMonitoring">
+              {{ t('circuitBreaker.monitoring.resumeMonitoring') }}
+            </el-button>
+          </template>
         </div>
       </template>
 
@@ -84,78 +162,51 @@
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('circuitBreaker.monitoring.instancesTitle') }}</span>
-          <el-button plain size="small" :loading="loadingInstances" @click="loadInstances">
-            {{ t('circuitBreaker.monitoring.refreshStatus') }}
-          </el-button>
         </div>
       </template>
 
-      <!-- 4 张 ~110px 彩色统计卡 → 一行 MetricStrip；点击筛选能力由外层可点区保留 -->
-      <div class="summary-strip" role="group" :aria-label="t('circuitBreaker.monitoring.instancesTitle')">
-        <div
-          v-for="summary in stateSummary"
-          :key="summary.state"
-          class="summary-card"
-          :class="{ 'is-active': isStateSummaryActive(summary.state) }"
-          role="button"
-          tabindex="0"
-          :aria-pressed="isStateSummaryActive(summary.state)"
-          @click="toggleStateFilter(summary.state)"
-          @keydown.enter.prevent="toggleStateFilter(summary.state)"
-          @keydown.space.prevent="toggleStateFilter(summary.state)"
+      <!-- 批量重置属破坏性操作：二次确认由 ConfirmAction 承担，按钮文案与位置保持既有 E2E 口径 -->
+      <div v-if="canWrite" class="instance-actions">
+        <ConfirmAction
+          :title="t('circuitBreaker.monitoring.confirmations.resetSelectedMessage', { count: selectedInstances.length })"
+          :width="320"
+          :confirm-text="t('circuitBreaker.monitoring.confirmations.confirmReset')"
+          :cancel-text="t('circuitBreaker.monitoring.confirmations.cancel')"
+          type="danger"
+          :disabled="selectedInstances.length === 0"
+          :loading="resettingInstances"
+          @confirm="resetSelected"
         >
-          <MetricStrip :items="[toMetricItem(summary)]" :columns="1" />
-        </div>
-      </div>
-
-      <div class="instance-toolbar">
-        <el-select
-          v-model="filterServiceType"
-          :placeholder="t('circuitBreaker.monitoring.filterServiceType')"
-          clearable
-          style="width: 170px"
-        >
-          <el-option v-for="type in serviceTypes" :key="type" :label="type" :value="type" />
-        </el-select>
-        <el-select
-          v-model="filterState"
-          :placeholder="t('circuitBreaker.monitoring.filterState')"
-          clearable
-          style="width: 150px"
-        >
-          <el-option v-for="state in breakerStates" :key="state" :label="stateLabel(state)" :value="state" />
-        </el-select>
-        <el-input
-          v-model="keyword"
-          :placeholder="t('circuitBreaker.monitoring.searchPlaceholder')"
-          clearable
-          style="width: 240px"
-        >
-          <template #prefix><el-icon><Search /></el-icon></template>
-        </el-input>
-        <el-button v-if="hasActiveFilter" @click="clearFilters">
-          {{ t('circuitBreaker.monitoring.clearFilters') }}
-        </el-button>
-        <div class="toolbar-spacer" />
-        <template v-if="canWrite">
           <el-button
             plain
             :disabled="selectedInstances.length === 0"
             :loading="resettingInstances"
-            @click="resetSelected"
           >
             {{ t('circuitBreaker.monitoring.resetSelected', { count: selectedInstances.length }) }}
           </el-button>
+        </ConfirmAction>
+        <ConfirmAction
+          :title="t('circuitBreaker.monitoring.confirmations.resetFilteredMessage', {
+            count: filteredInstances.length,
+            scope: filterState ? stateLabel(filterState) : t('circuitBreaker.monitoring.states.all')
+          })"
+          :width="320"
+          :confirm-text="t('circuitBreaker.monitoring.confirmations.confirmReset')"
+          :cancel-text="t('circuitBreaker.monitoring.confirmations.cancel')"
+          type="danger"
+          :disabled="filteredInstances.length === 0"
+          :loading="resettingInstances"
+          @confirm="resetFiltered"
+        >
           <el-button
             type="danger"
             plain
             :disabled="filteredInstances.length === 0"
             :loading="resettingInstances"
-            @click="resetFiltered"
           >
             {{ t('circuitBreaker.monitoring.resetFiltered', { count: filteredInstances.length }) }}
           </el-button>
-        </template>
+        </ConfirmAction>
       </div>
 
       <el-table
@@ -208,9 +259,7 @@
         </el-table-column>
         <el-table-column :label="t('circuitBreaker.monitoring.columns.lastFailure')" width="150">
           <template #default="{ row }">
-            <el-tooltip v-if="row.lastFailureTime" :content="formatAbsoluteTime(row.lastFailureTime)" placement="top">
-              <span>{{ formatRelativeTime(row.lastFailureTime) }}</span>
-            </el-tooltip>
+            <TimeText v-if="row.lastFailureTime" :value="row.lastFailureTime" />
             <span v-else class="muted">{{ t('circuitBreaker.monitoring.neverFailed') }}</span>
           </template>
         </el-table-column>
@@ -219,24 +268,40 @@
             <el-button size="small" @click="openDetail(row)">
               {{ t('circuitBreaker.monitoring.actions.detail') }}
             </el-button>
-            <el-button
+            <ConfirmAction
               v-if="canWrite"
-              type="warning"
-              size="small"
-              :icon="RefreshRight"
-              @click="resetSingle(row)"
+              :title="t('circuitBreaker.monitoring.confirmations.resetSingleMessage', {
+                name: row.instanceName || row.instanceId,
+                state: stateLabel(row.state)
+              })"
+              :width="320"
+              :confirm-text="t('circuitBreaker.monitoring.confirmations.confirmReset')"
+              :cancel-text="t('circuitBreaker.monitoring.confirmations.cancel')"
+              type="danger"
+              :loading="resettingInstances"
+              @confirm="resetSingle(row)"
             >
-              {{ t('circuitBreaker.monitoring.reset') }}
-            </el-button>
+              <el-button type="warning" size="small" :icon="RefreshRight">
+                {{ t('circuitBreaker.monitoring.reset') }}
+              </el-button>
+            </ConfirmAction>
           </template>
         </el-table-column>
         <template #empty>
-          <div class="empty-state">
-            <p>{{ hasActiveFilter ? t('circuitBreaker.monitoring.messages.noMatchingInstances') : t('circuitBreaker.monitoring.messages.noInstances') }}</p>
-            <el-button v-if="hasActiveFilter" size="small" @click="clearFilters">
-              {{ t('circuitBreaker.monitoring.clearFilters') }}
-            </el-button>
-          </div>
+          <EmptyState
+            icon="SwitchButton"
+            :title="hasActiveFilter ? t('circuitBreaker.monitoring.emptySearchTitle') : t('circuitBreaker.monitoring.emptyTitle')"
+            :description="hasActiveFilter ? t('circuitBreaker.monitoring.emptySearchDescription') : t('circuitBreaker.monitoring.emptyDescription')"
+          >
+            <template #actions>
+              <el-button v-if="hasActiveFilter" size="small" @click="clearFilters">
+                {{ t('circuitBreaker.monitoring.clearFilters') }}
+              </el-button>
+              <el-button v-else size="small" @click="refreshAll">
+                {{ t('circuitBreaker.monitoring.refreshAll') }}
+              </el-button>
+            </template>
+          </EmptyState>
         </template>
       </el-table>
 
@@ -261,10 +326,21 @@
               <el-option :label="t('circuitBreaker.monitoring.eventTypes.success')" value="SUCCESS" />
               <el-option :label="t('circuitBreaker.monitoring.eventTypes.failure')" value="FAILURE" />
             </el-select>
-            <!-- 清空历史仍留在页面主区域（真实 button）：既有 E2E 按 `.layout-main button` 命中并验证二次确认 -->
-            <el-button v-if="canWrite" plain :loading="clearingHistory" @click="clearHistory">
-              {{ t('circuitBreaker.monitoring.clearHistory') }}
-            </el-button>
+            <!-- 清空历史不可恢复：二次确认由 ConfirmAction（danger）承担，按钮仍在页面主区域 -->
+            <ConfirmAction
+              v-if="canWrite"
+              :title="t('circuitBreaker.monitoring.confirmations.clearHistoryMessage')"
+              :width="300"
+              :confirm-text="t('circuitBreaker.monitoring.confirmations.confirmClear')"
+              :cancel-text="t('circuitBreaker.monitoring.confirmations.cancel')"
+              type="danger"
+              :loading="clearingHistory"
+              @confirm="clearHistory"
+            >
+              <el-button plain :loading="clearingHistory">
+                {{ t('circuitBreaker.monitoring.clearHistory') }}
+              </el-button>
+            </ConfirmAction>
           </div>
         </div>
       </template>
@@ -279,7 +355,7 @@
         >
         <el-table-column prop="timestamp" :label="t('circuitBreaker.monitoring.columns.time')" width="180">
           <template #default="{ row }">
-            {{ formatTimestamp(row.timestamp) }}
+            <TimeText :value="row.timestamp" mode="absolute" precision="second" />
           </template>
         </el-table-column>
         <el-table-column prop="instanceId" :label="t('circuitBreaker.monitoring.columns.instanceIdCompact')" min-width="200" show-overflow-tooltip>
@@ -325,6 +401,19 @@
             {{ row.triggerReason || '-' }}
           </template>
         </el-table-column>
+        <template #empty>
+          <EmptyState
+            icon="Bell"
+            :title="selectedEventType ? t('circuitBreaker.monitoring.eventsEmptySearchTitle') : t('circuitBreaker.monitoring.eventsEmptyTitle')"
+            :description="selectedEventType ? t('circuitBreaker.monitoring.eventsEmptySearchDescription') : t('circuitBreaker.monitoring.eventsEmptyDescription')"
+          >
+            <template #actions>
+              <el-button v-if="selectedEventType" size="small" @click="selectedEventType = ''">
+                {{ t('circuitBreaker.monitoring.clearFilters') }}
+              </el-button>
+            </template>
+          </EmptyState>
+        </template>
         </el-table>
       </div>
       <p class="scroll-hint">{{ t('circuitBreaker.monitoring.eventsScrollHint') }}</p>
@@ -360,21 +449,31 @@
             {{ detailRow.successCount }} / {{ detailRow.successThreshold }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('circuitBreaker.monitoring.drawer.timeout')">
-            {{ detailRow.timeoutMillis }} ms
+            {{ formatMilliseconds(detailRow.timeoutMillis) }} ms
           </el-descriptions-item>
           <el-descriptions-item :label="t('circuitBreaker.monitoring.columns.lastFailure')">
-            {{ detailRow.lastFailureTime ? formatAbsoluteTime(detailRow.lastFailureTime) : t('circuitBreaker.monitoring.neverFailed') }}
+            <TimeText v-if="detailRow.lastFailureTime" :value="detailRow.lastFailureTime" />
+            <span v-else>{{ t('circuitBreaker.monitoring.neverFailed') }}</span>
           </el-descriptions-item>
         </el-descriptions>
         <p class="drawer-hint">{{ t('circuitBreaker.monitoring.drawer.resetHint') }}</p>
-        <el-button
+        <ConfirmAction
           v-if="canWrite"
-          type="warning"
+          :title="t('circuitBreaker.monitoring.confirmations.resetSingleMessage', {
+            name: detailRow.instanceName || detailRow.instanceId,
+            state: stateLabel(detailRow.state)
+          })"
+          :width="320"
+          :confirm-text="t('circuitBreaker.monitoring.confirmations.confirmReset')"
+          :cancel-text="t('circuitBreaker.monitoring.confirmations.cancel')"
+          type="danger"
           :loading="resettingInstances"
-          @click="resetSingle(detailRow)"
+          @confirm="resetSingle(detailRow)"
         >
-          {{ t('circuitBreaker.monitoring.confirmations.resetSingleTitle') }}
-        </el-button>
+          <el-button type="warning" :loading="resettingInstances">
+            {{ t('circuitBreaker.monitoring.confirmations.resetSingleTitle') }}
+          </el-button>
+        </ConfirmAction>
       </template>
     </el-drawer>
   </PageSkeleton>
@@ -384,12 +483,15 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { ArrowDown, RefreshRight, Search } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import TimeText from '@/components/TimeText.vue'
 import { usePermission } from '@/composables/usePermission'
 import {
   getCircuitBreakerInstances,
@@ -424,7 +526,7 @@ interface StateSummary {
   count: number
 }
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const { hasPermission } = usePermission()
 
@@ -462,6 +564,7 @@ const detailRow = ref<CircuitBreakerInstance | null>(null)
 const wsConnected = ref(false)
 const togglingMonitor = ref(false)
 const refreshing = ref(false)
+const exporting = ref(false)
 const updatingConfig = ref(false)
 const clearingHistory = ref(false)
 const loadingEvents = ref(false)
@@ -539,27 +642,10 @@ const filteredEvents = computed(() => {
 
 const formatSampleRate = (val: number) => `${val}%`
 
-const formatTimestamp = (timestamp: string) => {
-  const date = new Date(timestamp)
-  return `${date.toLocaleTimeString(locale.value === 'en-US' ? 'en-US' : 'zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })}.${String(date.getMilliseconds()).padStart(3, '0')}`
-}
-
-const formatAbsoluteTime = (value: string) => new Date(value).toLocaleString(locale.value === 'en-US' ? 'en-US' : 'zh-CN')
-
-const formatRelativeTime = (value: string) => {
-  const diffMs = Date.now() - new Date(value).getTime()
-  const seconds = Math.max(0, Math.floor(diffMs / 1000))
-  if (seconds < 10) return t('circuitBreaker.monitoring.relative.justNow')
-  if (seconds < 60) return t('circuitBreaker.monitoring.relative.secondsAgo', { n: seconds })
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return t('circuitBreaker.monitoring.relative.minutesAgo', { n: minutes })
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return t('circuitBreaker.monitoring.relative.hoursAgo', { n: hours })
-  return t('circuitBreaker.monitoring.relative.daysAgo', { n: Math.floor(hours / 24) })
+/** 毫秒统一取整（同页数字口径：百分比 1 位、毫秒整数） */
+const formatMilliseconds = (value: number | null | undefined): number => {
+  const num = Number(value)
+  return Number.isFinite(num) ? Math.round(num) : 0
 }
 
 const getInstanceShortName = (instanceId: string) => {
@@ -782,15 +868,6 @@ const refreshAll = async () => {
 
 const handleHeaderCommand = (command: string) => {
   switch (command) {
-    case 'toggle-monitor':
-      void toggleMonitor()
-      break
-    case 'export-json':
-      void handleExport('json')
-      break
-    case 'export-csv':
-      void handleExport('csv')
-      break
     case 'history':
       router.push({ name: 'circuit-breaker-history' })
       break
@@ -800,35 +877,26 @@ const handleHeaderCommand = (command: string) => {
   }
 }
 
-const toggleMonitor = async () => {
-  // 暂停会停掉采样（影响运行面）⇒ 必须二次确认；恢复不拦。
-  if (!monitorStatus.value.paused) {
-    try {
-      await ElMessageBox.confirm(
-        t('circuitBreaker.monitoring.confirmations.pauseMonitorMessage'),
-        t('circuitBreaker.monitoring.confirmations.pauseMonitorTitle'),
-        {
-          confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmPause'),
-          cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
-          type: 'warning'
-        }
-      )
-    } catch {
-      return
-    }
-  }
+/**
+ * 暂停 / 恢复。
+ * 暂停会停掉采样与事件记录（影响运行面）⇒ 二次确认由模板里的 ConfirmAction 承担，
+ * 恢复不拦、直接执行。两者共用同一个请求体，仅 action 不同。
+ */
+const setMonitorPaused = async (paused: boolean) => {
   togglingMonitor.value = true
   try {
-    const action = monitorStatus.value.paused ? 'resume' : 'pause'
-    await request.post(`${apiBaseUrl}/${action}`)
-    monitorStatus.value.paused = !monitorStatus.value.paused
-    ElMessage.success(monitorStatus.value.paused ? t('circuitBreaker.monitoring.messages.paused') : t('circuitBreaker.monitoring.messages.resumed'))
+    await request.post(`${apiBaseUrl}/${paused ? 'pause' : 'resume'}`)
+    monitorStatus.value.paused = paused
+    ElMessage.success(paused ? t('circuitBreaker.monitoring.messages.paused') : t('circuitBreaker.monitoring.messages.resumed'))
   } catch (error) {
     ElMessage.error(t('circuitBreaker.monitoring.messages.operationFailed'))
   } finally {
     togglingMonitor.value = false
   }
 }
+
+const pauseMonitoring = () => setMonitorPaused(true)
+const resumeMonitoring = () => setMonitorPaused(false)
 
 const updateSampleRate = async (value: number) => {
   updatingConfig.value = true
@@ -862,34 +930,24 @@ const updateHistorySize = async (value: number) => {
   }
 }
 
-// 清空路由监控历史不可恢复 ⇒ 必须二次确认。
-// 审计 #460：本函数的确认被同文件里 reset 类操作的确认语句「掩盖」了——按文件看有确认，
-// 按调用点看没有（文件级规则查不出这类）。守卫见 05-traffic-governance.mjs 的 cb-clear-history:*。
-const clearHistory = () => {
-  ElMessageBox.confirm(
-    t('circuitBreaker.monitoring.confirmations.clearHistoryMessage'),
-    t('circuitBreaker.monitoring.confirmations.clearHistoryTitle'),
-    {
-      confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmClear'),
-      cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
-      type: 'warning'
-    }
-  ).then(async () => {
-    clearingHistory.value = true
-    try {
-      await request.delete(`${apiBaseUrl}/history`)
-      events.value = []
-      monitorStatus.value.totalSampledCount = 0
-      ElMessage.success(t('circuitBreaker.monitoring.messages.historyCleared'))
-    } catch (error) {
-      ElMessage.error(t('circuitBreaker.monitoring.messages.clearHistoryFailed'))
-    } finally {
-      clearingHistory.value = false
-    }
-  }).catch(() => { /* cancelled */ })
+// 清空监控历史不可恢复 ⇒ 二次确认由模板里的 ConfirmAction（danger）承担。
+// 守卫见 05-traffic-governance.mjs 的 cb-clear-history:*（其中「取消不发写请求」做过 A/B 反证）。
+const clearHistory = async () => {
+  clearingHistory.value = true
+  try {
+    await request.delete(`${apiBaseUrl}/history`)
+    events.value = []
+    monitorStatus.value.totalSampledCount = 0
+    ElMessage.success(t('circuitBreaker.monitoring.messages.historyCleared'))
+  } catch (error) {
+    ElMessage.error(t('circuitBreaker.monitoring.messages.clearHistoryFailed'))
+  } finally {
+    clearingHistory.value = false
+  }
 }
 
 const handleExport = async (command: string) => {
+  exporting.value = true
   try {
     const response = await request.get(`${apiBaseUrl}/export/${command}`, {
       params: { limit: 2000 },
@@ -909,99 +967,68 @@ const handleExport = async (command: string) => {
     ElMessage.success(t('circuitBreaker.monitoring.messages.exportSuccess', { format: command.toUpperCase() }))
   } catch (error) {
     ElMessage.error(t('circuitBreaker.monitoring.messages.exportFailed'))
+  } finally {
+    exporting.value = false
   }
 }
 
-const resetSingle = (row: CircuitBreakerInstance) => {
-  ElMessageBox.confirm(
-    t('circuitBreaker.monitoring.confirmations.resetSingleMessage', {
-      name: row.instanceName || row.instanceId,
-      state: stateLabel(row.state)
-    }),
-    t('circuitBreaker.monitoring.confirmations.resetSingleTitle'),
-    {
-      confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmReset'),
-      cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
-      type: 'warning'
+// 单个重置：确认由行内 ConfirmAction 承担，此函数只做「确认之后」的执行
+const resetSingle = async (row: CircuitBreakerInstance) => {
+  resettingInstances.value = true
+  try {
+    const response = await resetCircuitBreakerInstance(row.instanceId)
+    const result = response.data?.data
+    if (result?.persistedStateDeleted === false) {
+      ElMessage.warning(t('circuitBreaker.monitoring.messages.resetPersistWarning'))
+    } else {
+      ElMessage.success(t('circuitBreaker.monitoring.messages.resetSuccess', {
+        name: row.instanceName || row.instanceId,
+        from: stateLabel(result?.previousState || row.state),
+        to: stateLabel(result?.currentState || 'CLOSED')
+      }))
     }
-  ).then(async () => {
-    resettingInstances.value = true
-    try {
-      const response = await resetCircuitBreakerInstance(row.instanceId)
-      const result = response.data?.data
-      if (result?.persistedStateDeleted === false) {
-        ElMessage.warning(t('circuitBreaker.monitoring.messages.resetPersistWarning'))
-      } else {
-        ElMessage.success(t('circuitBreaker.monitoring.messages.resetSuccess', {
-          name: row.instanceName || row.instanceId,
-          from: stateLabel(result?.previousState || row.state),
-          to: stateLabel(result?.currentState || 'CLOSED')
-        }))
-      }
-      await Promise.all([loadInstances(), loadHistory()])
-    } catch (error) {
-      ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
-    } finally {
-      resettingInstances.value = false
-    }
-  }).catch(() => { /* cancelled */ })
+    await Promise.all([loadInstances(), loadHistory()])
+  } catch (error) {
+    ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
+  } finally {
+    resettingInstances.value = false
+  }
 }
 
-const resetSelected = () => {
+// 批量重置（按勾选）：确认由 ConfirmAction 承担
+const resetSelected = async () => {
   const ids = selectedInstances.value.map(item => item.instanceId)
-  ElMessageBox.confirm(
-    t('circuitBreaker.monitoring.confirmations.resetSelectedMessage', { count: ids.length }),
-    t('circuitBreaker.monitoring.confirmations.resetSelectedTitle'),
-    {
-      confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmReset'),
-      cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
-      type: 'warning'
-    }
-  ).then(async () => {
-    resettingInstances.value = true
-    try {
-      const response = await resetCircuitBreakerInstances({ instanceIds: ids })
-      const matched = response.data?.data?.matched ?? 0
-      ElMessage.success(t('circuitBreaker.monitoring.messages.batchResetSuccess', { count: matched }))
-      await Promise.all([loadInstances(), loadHistory()])
-    } catch (error) {
-      ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
-    } finally {
-      resettingInstances.value = false
-    }
-  }).catch(() => { /* cancelled */ })
+  resettingInstances.value = true
+  try {
+    const response = await resetCircuitBreakerInstances({ instanceIds: ids })
+    const matched = response.data?.data?.matched ?? 0
+    ElMessage.success(t('circuitBreaker.monitoring.messages.batchResetSuccess', { count: matched }))
+    await Promise.all([loadInstances(), loadHistory()])
+  } catch (error) {
+    ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
+  } finally {
+    resettingInstances.value = false
+  }
 }
 
-const resetFiltered = () => {
+// 批量重置（按筛选范围）：确认由 ConfirmAction 承担；payload 语义不变（空值不传）
+const resetFiltered = async () => {
   const payload = {
     serviceType: filterServiceType.value || undefined,
     states: filterState.value ? [filterState.value] : undefined
   }
-  ElMessageBox.confirm(
-    t('circuitBreaker.monitoring.confirmations.resetFilteredMessage', {
-      count: filteredInstances.value.length,
-      scope: filterState.value ? stateLabel(filterState.value) : t('circuitBreaker.monitoring.states.all')
-    }),
-    t('circuitBreaker.monitoring.confirmations.resetFilteredTitle'),
-    {
-      confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmReset'),
-      cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
-      type: 'warning'
-    }
-  ).then(async () => {
-    resettingInstances.value = true
-    try {
-      const response = await resetCircuitBreakerInstances(payload)
-      const matched = response.data?.data?.matched ?? 0
-      ElMessage.success(t('circuitBreaker.monitoring.messages.batchResetSuccess', { count: matched }))
-      selectedInstances.value = []
-      await Promise.all([loadInstances(), loadHistory()])
-    } catch (error) {
-      ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
-    } finally {
-      resettingInstances.value = false
-    }
-  }).catch(() => { /* cancelled */ })
+  resettingInstances.value = true
+  try {
+    const response = await resetCircuitBreakerInstances(payload)
+    const matched = response.data?.data?.matched ?? 0
+    ElMessage.success(t('circuitBreaker.monitoring.messages.batchResetSuccess', { count: matched }))
+    selectedInstances.value = []
+    await Promise.all([loadInstances(), loadHistory()])
+  } catch (error) {
+    ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
+  } finally {
+    resettingInstances.value = false
+  }
 }
 
 onMounted(() => {
@@ -1025,6 +1052,8 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .card-title {
@@ -1057,11 +1086,11 @@ onUnmounted(() => {
   color: var(--ja-text-secondary);
 }
 
-/* 摘要条：一行 4 格、中性容器；状态色只落在数值（MetricStrip tone），不再整块铺色 */
+/* 摘要条：一行 4 格、中性容器；状态色只落在数值（MetricStrip tone），不再整块铺色。
+   现位于页面级 #stats（PageSkeleton 自带下外边距），故不留 margin-bottom */
 .summary-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-bottom: 16px;
   border: 1px solid var(--ja-border);
   border-radius: var(--ja-radius-lg);
   background: var(--ja-paper);
@@ -1116,16 +1145,14 @@ onUnmounted(() => {
   }
 }
 
-.instance-toolbar {
+/* 批量重置操作行：筛选已迁到页面工具栏，这里只留破坏性操作并靠右 */
+.instance-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
   margin-bottom: 12px;
-}
-
-.toolbar-spacer {
-  flex: 1;
 }
 
 .instances-table {
@@ -1150,15 +1177,6 @@ onUnmounted(() => {
 
 .muted {
   color: var(--el-text-color-placeholder);
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 0;
-  color: var(--el-text-color-secondary);
 }
 
 .pagination {

@@ -80,7 +80,8 @@
       "permissions": "权限",
       "sla": "SLA 接入",
       "playground": "试验场",
-      "admin": "管理端点"
+      "admin": "管理端点",
+      "loginguard": "登录保护"
     },
     "actions": {
       "read": "查看",

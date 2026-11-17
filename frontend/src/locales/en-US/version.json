@@ -29,6 +29,8 @@
     "close": "Close",
     "none": "None",
     "unknownOperation": "Unknown Operation",
+    "emptyTitle": "No versions yet",
+    "emptyDescription": "Version records are created automatically when the configuration changes. You can review historical versions here and apply one.",
     "operationNames": {
       "systemInit": "System Initialization",
       "instanceChange": "Instance Change",
@@ -50,6 +52,11 @@
     "validateResultLoading": "Verifying the result...",
     "refreshConfigLoading": "Refreshing config state...",
     "applySuccess": "Version {version} applied successfully! The configuration has been updated and is now active.",
+    "confirmApplyTitle": "Apply version {version}? The current configuration will be replaced with this version's configuration; applying another version later rolls it back.",
+    "confirmApply": "Apply",
+    "confirmDeleteTitle": "Delete version {version}? Its configuration data will be permanently removed and cannot be recovered.",
+    "confirmDelete": "Delete",
+    "confirmCancel": "Cancel",
     "applyDialog": {
       "title": "Apply Config Version",
       "heading": "Version Apply Confirmation",
@@ -106,7 +113,8 @@
     "messages": {
       "invalidResponse": "Invalid API response format",
       "parseFailed": "Failed to parse response data",
-      "fetchFailed": "Failed to fetch version list: {message}"
+      "fetchFailed": "Failed to fetch version list: {message}",
+      "deleteFailed": "Failed to delete version: {message}"
     }
   }
 }

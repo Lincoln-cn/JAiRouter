@@ -22,85 +22,60 @@ export default {
     const hasGovernance = (await page.locator('.governance-card, .gov-section').count()) > 0
     check('overview-governance', hasGovernance)
 
+    // 概览页首屏会自己刷新一轮数据（Promise.all 拉多个统计），区块在数据回来后才稳定。
+    // 全量跑批时如果不等它，四个跳转里会随机某个「找不到按钮」——
+    // 这不是按钮没了，是那一刻 DOM 还没这块。
+    await page
+      .locator('.gov-section')
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 })
+      .catch(() => {})
+
     // 治理链路跳转：按钮文案是「查看/监控」，需按区块标签定位
     // 治理链路的四个跳转都用 waitForURL 等路由真正换掉：
     // 目标路由是懒加载 chunk，全量跑批时可能 >700ms 才落地，
     // 固定 sleep 会把「慢」误判成「跳转失败」（本轮全量实测 469/470 的唯一红项）。
-    const jumpTo = async (pathFragment) => {
-      await page
-        .waitForURL((u) => u.pathname.includes(pathFragment), { timeout: 5000 })
-        .catch(() => {})
-      await page.waitForTimeout(150)
-    }
 
-    const ruleJump = page
-      .locator('.gov-section')
-      .filter({ has: page.locator('.gov-label', { hasText: /规则|Rule/i }) })
-      .locator('.gov-jump')
-      .first()
-    if ((await ruleJump.count()) > 0) {
-      await ruleJump.click()
-      await jumpTo('/config/rules')
-      const path = currentPathname(page)
-      check('overview-jump-rules', path.includes('/config/rules'), path)
-      await gotoApp(page, '/dashboard/main', { waitMs: 400 })
-    } else {
-      check('overview-jump-rules', false, 'rule jump not found')
-    }
-
-    const rlJump = page
-      .locator('.gov-section')
-      .filter({ has: page.locator('.gov-label', { hasText: /限流|Rate/i }) })
-      .locator('.gov-jump')
-      .first()
-    if ((await rlJump.count()) > 0) {
-      await rlJump.click()
-      await jumpTo('/rate-limiters')
-      check('overview-jump-rl', currentPathname(page).includes('/rate-limiters'), page.url())
-    } else {
-      check('overview-jump-rl', false, 'rl jump not found')
-    }
-    await gotoApp(page, '/dashboard/main', { waitMs: 400 })
-
-    const cbJump = page
-      .locator('.gov-section')
-      .filter({ has: page.locator('.gov-label', { hasText: /熔断|Circuit/i }) })
-      .locator('.gov-jump')
-      .first()
-    if ((await cbJump.count()) > 0) {
-      await cbJump.click()
-      await jumpTo('/circuit-breakers')
-      check('overview-jump-cb', currentPathname(page).includes('/circuit-breakers'), page.url())
-    } else {
-      check('overview-jump-cb', false, 'cb jump not found')
-    }
-    await gotoApp(page, '/dashboard/main', { waitMs: 800 })
-
-    const lbJump = page
-      .locator('.gov-section')
-      .filter({ has: page.locator('.gov-label', { hasText: /负载|Load/i }) })
-      .locator('.gov-jump')
-      .first()
-    if ((await lbJump.count()) > 0) {
-      await lbJump.click()
-      await jumpTo('/load-balancers')
-      check('overview-jump-lb', currentPathname(page).includes('/load-balancers'), page.url())
-    } else {
-      // 页面可能仍在 hydrate，再等一次
-      await page.waitForTimeout(800)
-      const retry = page
-        .locator('.gov-section')
-        .filter({ has: page.locator('.gov-label', { hasText: /负载|Load/i }) })
-        .locator('.gov-jump')
-        .first()
-      if ((await retry.count()) > 0) {
-        await retry.click()
-        await jumpTo('/load-balancers')
-        check('overview-jump-lb', currentPathname(page).includes('/load-balancers'), page.url())
-      } else {
-        check('overview-jump-lb', false, 'lb jump not found')
+    // 治理链路四个跳转统一走这里：定位 → 点击 → 等 URL，失败重试一次。
+    // 概览页首屏会自己刷新统计数据并重渲染这几个按钮，点击偶尔落在被替换的节点上；
+    // 单次点击的偶发失败不该判成「页面坏了」，所以这里重试并把最终 URL 打进 detail。
+    const clickGovJump = async (labelRe, pathFragment) => {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const button = page
+          .locator('.gov-section')
+          .filter({ has: page.locator('.gov-label', { hasText: labelRe }) })
+          .locator('.gov-jump')
+          .first()
+        if ((await button.count()) === 0) {
+          await page.waitForTimeout(500)
+          continue
+        }
+        await button.click({ timeout: 5000 }).catch(() => {})
+        await page
+          .waitForURL((u) => u.pathname.includes(pathFragment), { timeout: 5000 })
+          .catch(() => {})
+        if (currentPathname(page).includes(pathFragment)) {
+          return true
+        }
+        await gotoApp(page, '/dashboard/main', { waitMs: 800 })
       }
+      return false
     }
+
+    const ruleOk = await clickGovJump(/规则|Rule/i, '/config/rules')
+    check('overview-jump-rules', ruleOk, page.url())
+    await gotoApp(page, '/dashboard/main', { waitMs: 600 })
+
+    const rlOk = await clickGovJump(/限流|Rate/i, '/rate-limiters')
+    check('overview-jump-rl', rlOk, page.url())
+    await gotoApp(page, '/dashboard/main', { waitMs: 600 })
+
+    const cbOk = await clickGovJump(/熔断|Circuit/i, '/circuit-breakers')
+    check('overview-jump-cb', cbOk, page.url())
+    await gotoApp(page, '/dashboard/main', { waitMs: 600 })
+
+    const lbOk = await clickGovJump(/负载|Load/i, '/load-balancers')
+    check('overview-jump-lb', lbOk, page.url())
 
     // 服务配置速览：页签必须能切换（页签曾做成 router-link，点一下整页跳走、表格不换 —— 用户 2026-10-21 反馈）
     await gotoApp(page, '/dashboard/main', { waitMs: 800 })

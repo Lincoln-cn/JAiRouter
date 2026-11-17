@@ -35,6 +35,12 @@
     "disabled": "Disabled",
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "createTitle": "Create Account",
+    "editTitle": "Edit Account: {username}",
+    "emptyTitle": "No accounts",
+    "emptyDescription": "There are no JWT accounts yet. Create the first one.",
+    "emptySearchTitle": "No matching accounts",
+    "emptySearchDescription": "No accounts match the current search. Clear the search and try again.",
     "validation": {
       "usernameRequired": "Please enter a username",
       "usernameLength": "Username must be 3-50 characters",

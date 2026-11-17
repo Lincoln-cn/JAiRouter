@@ -66,6 +66,12 @@
     "save": "Save",
     "reset": "Reset",
     "saved": "Saved. Later configuration changes will propagate to other replicas",
-    "saveFailed": "Save failed"
+    "saveFailed": "Save failed",
+    "immediateHint": "Applies immediately",
+    "readonlyTag": "Read-only",
+    "fieldsHint": "Configuration paths that take effect at runtime. Entries marked restart-required only change after a process restart.",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "invalidPollInterval": "Poll interval must be at least 1000 ms"
   }
 }

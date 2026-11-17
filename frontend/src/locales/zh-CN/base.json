@@ -107,7 +107,8 @@
     "loadBalancing": "负载均衡",
     "rateLimiting": "限流",
     "rateLimitingConfig": "限流配置",
-    "circuitBreaking": "熔断"
+    "circuitBreaking": "熔断",
+    "loginGuard": "登录保护"
   },
   "tabs": {
     "dashboard": "仪表板",
@@ -132,7 +133,8 @@
     "playgroundAudio": "语音服务",
     "playgroundImage": "图像服务",
     "monitoringRuntime": "运行时与应急",
-    "slaAccess": "SLA 接入"
+    "slaAccess": "SLA 接入",
+    "loginGuard": "登录保护"
   },
   "route": {
     "dashboard": "概览",
@@ -197,7 +199,8 @@
     "quotaUsageMonitoring": "配额用量监控",
     "tools": "开发者工具",
     "clientAccessGuide": "客户端接入指南",
-    "notFound": "页面不存在"
+    "notFound": "页面不存在",
+    "loginGuard": "登录保护"
   },
   "globalSearch": {
     "dialogLabel": "全局搜索",

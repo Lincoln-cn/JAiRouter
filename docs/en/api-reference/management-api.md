@@ -212,6 +212,42 @@ already-issued access tokens simply expire.
 
 Deletes the account together with its bootstrap tokens, refresh credentials and the corresponding `sla:<name>` principal in `jwt_accounts`.
 
+### Login Protection {#login-guard}
+
+After the failure threshold is exceeded the login endpoint returns `429` with `RATE_LIMITED_LOGIN`; these endpoints expose the thresholds, allow changing
+them, and release existing locks.
+
+#### Base path: `/api/security/login-guard`
+
+| Method | Path | Description | Permission |
+| --- | --- | --- | --- |
+| GET | `/api/security/login-guard` | Effective thresholds plus who changed them and when | `security:loginguard:read` |
+| PUT | `/api/security/login-guard` | Change the four thresholds (persisted + hot-applied + audited) | `security:loginguard:manage` |
+| GET | `/api/security/login-guard/locked` | Principals still inside the lock window | `security:loginguard:read` |
+| POST | `/api/security/login-guard/unlock` | Release locks (no body releases everything) | `security:loginguard:manage` |
+
+The PUT body must carry all four values:
+
+```json
+{
+  "maxFailuresPerPrincipal": 5,
+  "maxFailuresPerIp": 30,
+  "windowMinutes": 15,
+  "lockMinutes": 15
+}
+```
+
+**Where the values come from**: `jairouter.auth.login-bruteforce.*` in `config/auth/login-guard.yml` is only the initial value used when the table has no row yet
+(persisted at first startup with `updatedBy=system`). Once a row exists the database wins on every startup — the same rule as `jwt_accounts`. Editing the YAML
+therefore has no effect on an initialized deployment; change thresholds through this page or these endpoints.
+
+**Unlock semantics**: `{"username": "admin", "ip": "127.0.0.1"}` releases only that pair; `username` alone releases that user on every IP; `ip` alone releases
+that IP (including its cross-user `ip:` counter); an empty object clears everything. Responds with `{"data": {"cleared": 2}}`.
+
+**Locked principals live in instance memory**: with several replicas each one counts independently, so this page and `/locked` only reflect the current instance.
+Releasing a user everywhere requires calling each instance, or waiting for `lockMinutes` to elapse. Saving new thresholds does **not** unlock existing
+principals (relaxing a limit is not the same as granting access).
+
 ### API Key Management
 
 #### Base Path: `/api/config/ratelimit`

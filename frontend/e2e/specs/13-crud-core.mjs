@@ -50,7 +50,7 @@ export default {
       check('crud:account:dialog-open', opened)
       if (opened) {
         await waitForOverlay(page)
-        const inputs = page.locator('.el-dialog:visible .el-input__inner:visible')
+        const inputs = page.locator('.el-overlay:visible .el-input__inner:visible')
         const inputCount = await inputs.count()
         check('crud:account:dialog-inputs', inputCount >= 3, `inputs=${inputCount}`)
         await inputs.nth(0).fill(username)
@@ -58,7 +58,7 @@ export default {
         await inputs.nth(2).fill(password)
 
         const roleSelect = page
-          .locator('.el-dialog:visible .el-form-item')
+          .locator('.el-overlay:visible .el-form-item')
           .filter({ hasText: /角色|Roles/ })
           .locator('.el-select')
           .first()
@@ -76,7 +76,7 @@ export default {
         }
 
         const confirmBtn = page
-          .locator('.el-dialog:visible .el-dialog__footer button, .el-dialog:visible button')
+          .locator('.el-overlay:visible .el-dialog__footer button, .el-overlay:visible button')
           .filter({ hasText: /^确定$|^确认$|Create|创建$/ })
           .first()
         await confirmBtn.click()
@@ -88,7 +88,7 @@ export default {
           ? list.body.data.some(a => a.username === username)
           : false
         const msgs = await page.locator('.el-message').allInnerTexts().catch(() => [])
-        const errors = await page.locator('.el-dialog:visible .el-form-item__error').allInnerTexts().catch(() => [])
+        const errors = await page.locator('.el-overlay:visible .el-form-item__error').allInnerTexts().catch(() => [])
         check(
           'crud:account:create-ui',
           createdUi || found,
@@ -151,14 +151,14 @@ export default {
       check('crud:pool:dialog-open', opened)
       if (opened && firstInst) {
         await waitForOverlay(page)
-        const nameInput = page.locator('.el-dialog:visible .el-input__inner:visible').first()
+        const nameInput = page.locator('.el-overlay:visible .el-input__inner:visible').first()
         await nameInput.fill(poolName)
 
-        const selects = page.locator('.el-dialog:visible .el-select')
+        const selects = page.locator('.el-overlay:visible .el-select')
         await selectOption(page, selects.nth(0), /chat/)
         await page.waitForTimeout(500)
 
-        const memberSelect = page.locator('.el-dialog:visible .el-select').nth(2)
+        const memberSelect = page.locator('.el-overlay:visible .el-select').nth(2)
         if ((await memberSelect.count()) > 0) {
           await memberSelect.click()
           await page.waitForTimeout(400)
@@ -219,21 +219,21 @@ export default {
       if (opened) {
         await waitForOverlay(page, 10000)
         const keyInput = page
-          .locator('.el-dialog:visible .el-input__inner:visible')
+          .locator('.el-overlay:visible .el-input__inner:visible')
           .first()
         await keyInput.waitFor({ state: 'visible', timeout: 8000 })
         await keyInput.fill(keyId)
-        const desc = page.locator('.el-dialog:visible textarea:visible').first()
+        const desc = page.locator('.el-overlay:visible textarea:visible').first()
         if ((await desc.count()) > 0) await desc.fill(`e2e-created ${keyId}`)
 
         const chatCb = page
-          .locator('.el-dialog:visible .el-checkbox')
+          .locator('.el-overlay:visible .el-checkbox')
           .filter({ hasText: /chat|对话|聊天/i })
           .first()
         if ((await chatCb.count()) > 0) await chatCb.click().catch(() => {})
 
         const saveBtn = page
-          .locator('.el-dialog:visible button')
+          .locator('.el-overlay:visible button')
           .filter({ hasText: /^保存$|Save/ })
           .first()
         if ((await saveBtn.count()) > 0) {
@@ -244,7 +244,7 @@ export default {
         await page.waitForTimeout(1800)
 
         const keyDialog = await page
-          .locator('.el-dialog:visible')
+          .locator('.el-overlay:visible')
           .filter({ hasText: /密钥值|仅此一次|apiKeyCreated/ })
           .count()
           .catch(() => 0)
@@ -302,7 +302,7 @@ export default {
       if (opened) {
         await waitForOverlay(page)
         const deviceRadio = page
-          .locator('.el-dialog:visible .el-radio-button, .el-dialog:visible .el-radio')
+          .locator('.el-overlay:visible .el-radio-button, .el-overlay:visible .el-radio')
           .filter({ hasText: /DEVICE|设备/ })
           .first()
         if ((await deviceRadio.count()) > 0) {
@@ -310,7 +310,7 @@ export default {
           await page.waitForTimeout(400)
         }
 
-        const candidates = page.locator('.el-dialog:visible .el-input__inner:visible')
+        const candidates = page.locator('.el-overlay:visible .el-input__inner:visible')
         const n = await candidates.count()
         let filled = false
         for (let i = n - 1; i >= 0; i--) {

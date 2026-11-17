@@ -1,23 +1,9 @@
 <template>
   <PageSkeleton :title="t('accounts.title')">
     <template #actions>
-      <el-input
-        v-model="searchKeyword"
-        :placeholder="t('accounts.searchPlaceholder')"
-        clearable
-        style="width: 200px;"
-      >
-        <template #prefix>
-          <el-icon><Search /></el-icon>
-        </template>
-      </el-input>
-      <el-button v-permission="'system:accounts:manage'" type="primary" @click="showCreateDialog = true">
+      <el-button v-permission="'system:accounts:manage'" type="primary" @click="openCreateDrawer">
         <el-icon><Plus /></el-icon>
         {{ t('accounts.createAccount') }}
-      </el-button>
-      <el-button @click="refreshAccounts">
-        <el-icon><Refresh /></el-icon>
-        {{ t('accounts.refresh') }}
       </el-button>
     </template>
 
@@ -26,8 +12,33 @@
       <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
     </template>
 
+    <template #toolbar>
+      <!-- 工具栏顺序：筛选 → 刷新（P3 规范） -->
+      <el-input
+        v-model="searchKeyword"
+        :placeholder="t('accounts.searchPlaceholder')"
+        clearable
+        style="width: 220px;"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-button :loading="loading" @click="refreshAccounts">
+        <el-icon><Refresh /></el-icon>
+        {{ t('accounts.refresh') }}
+      </el-button>
+    </template>
+
     <!-- 账户列表 -->
-    <el-table :data="filteredAccounts" style="width: 100%" v-loading="loading" stripe border>
+    <el-table
+      v-show="loading || filteredAccounts.length > 0"
+      :data="filteredAccounts"
+      style="width: 100%"
+      v-loading="loading"
+      stripe
+      border
+    >
       <el-table-column prop="username" :label="t('accounts.username')" min-width="120" show-overflow-tooltip />
       <el-table-column :label="t('accounts.roles')" min-width="150">
         <template #default="scope">
@@ -76,31 +87,57 @@
             >
               <el-icon><Edit /></el-icon>
             </el-button>
-            <el-button
+            <!-- 删除二次确认统一走 ConfirmAction（气泡文案带对象名） -->
+            <ConfirmAction
               v-permission="'system:accounts:manage'"
-              link
+              :title="t('accounts.messages.deleteConfirmMessage', { username: scope.row.username })"
+              :confirm-text="t('accounts.messages.confirmDelete')"
+              :cancel-text="t('accounts.cancel')"
               type="danger"
-              size="small"
-              :title="t('accounts.messages.confirmDelete')"
-              :aria-label="t('accounts.messages.confirmDelete')"
               :disabled="scope.row.username === 'admin'"
-              @click="deleteAccount(scope.row)"
+              @confirm="deleteAccount(scope.row)"
             >
-              <el-icon><Delete /></el-icon>
-            </el-button>
+              <el-button
+                link
+                type="danger"
+                size="small"
+                :title="t('accounts.messages.confirmDelete')"
+                :aria-label="t('accounts.messages.confirmDelete')"
+                :disabled="scope.row.username === 'admin'"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </ConfirmAction>
           </span>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- 创建/编辑账户对话框 -->
-    <el-dialog
-      :title="editingAccount ? t('accounts.editAccount') : t('accounts.createAccount')"
-      v-model="showCreateDialog"
-      width="500px"
-      @close="resetForm"
-      destroy-on-close
+    <EmptyState
+      v-if="!loading && filteredAccounts.length === 0"
+      icon="User"
+      :title="searchKeyword ? t('accounts.emptySearchTitle') : t('accounts.emptyTitle')"
+      :description="searchKeyword ? t('accounts.emptySearchDescription') : t('accounts.emptyDescription')"
     >
+      <template #actions>
+        <el-button v-permission="'system:accounts:manage'" type="primary" @click="openCreateDrawer">
+          <el-icon><Plus /></el-icon>&nbsp;{{ t('accounts.createAccount') }}
+        </el-button>
+      </template>
+    </EmptyState>
+
+  </PageSkeleton>
+
+  <!-- 创建/编辑账户抽屉：整页只保留这一个实例，由 editingAccount 区分新建/编辑 -->
+  <el-drawer
+    v-model="showCreateDialog"
+    direction="rtl"
+    :title="drawerTitle"
+    :size="drawerSize"
+    :close-on-click-modal="false"
+    destroy-on-close
+    @closed="resetForm"
+  >
       <el-alert
         v-if="editingAccount"
         :title="t('accounts.editHintTitle')"
@@ -152,24 +189,26 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
+        <span class="drawer-footer">
           <el-button @click="showCreateDialog = false">{{ t('accounts.cancel') }}</el-button>
-          <el-button type="primary" @click="submitAccount">{{ t('accounts.confirm') }}</el-button>
+          <el-button type="primary" :loading="submitting" :disabled="submitting" @click="submitAccount">{{ t('accounts.confirm') }}</el-button>
         </span>
       </template>
-    </el-dialog>
-  </PageSkeleton>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Plus, Refresh, Search, Edit, Delete } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { useViewport } from '@/composables/useViewport'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import {
   getJwtAccounts,
@@ -188,6 +227,19 @@ const loading = ref(false)
 const showCreateDialog = ref(false)
 const editingAccount = ref<JwtAccount | null>(null)
 const searchKeyword = ref('')
+const submitting = ref(false)
+
+const { isNarrow } = useViewport()
+
+/** 抽屉宽度：常规 520px，窄屏占满 */
+const drawerSize = computed(() => (isNarrow.value ? '100%' : '520px'))
+
+/** 抽屉标题：新建用 createTitle，编辑用 editTitle 并带上对象名 */
+const drawerTitle = computed(() =>
+  editingAccount.value
+    ? t('accounts.editTitle', { username: editingAccount.value.username })
+    : t('accounts.createTitle')
+)
 
 // 表单数据
 const accountForm = reactive({
@@ -295,43 +347,49 @@ const refreshAccounts = () => {
 const submitAccount = async () => {
   if (!accountFormRef.value) return
 
-  await accountFormRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        if (editingAccount.value) {
-          // 更新账户 - 只传需要更新的字段
-          const updateData: Partial<JwtAccount> = {
-            roles: accountForm.roles,
-            enabled: accountForm.enabled
-          }
-          // 只有填写了密码才更新
-          if (accountForm.password && accountForm.password.trim()) {
-            updateData.password = accountForm.password
-          }
-          await updateJwtAccount(accountForm.username, updateData as JwtAccount)
-          ElMessage.success(t('accounts.messages.updateSuccess'))
-        } else {
-          // 创建账户
-          const createRequest: CreateJwtAccountRequest = {
-            username: accountForm.username,
-            password: accountForm.password,
-            roles: accountForm.roles,
-            enabled: accountForm.enabled
-          }
-          await createJwtAccount(createRequest)
-          ElMessage.success(t('accounts.messages.createSuccess'))
-        }
+  try {
+    await accountFormRef.value.validate()
+  } catch {
+    // 校验不通过：保持抽屉打开，错误由 el-form 就地提示
+    return
+  }
 
-        showCreateDialog.value = false
-        resetForm()
-        fetchAccounts()
-      } catch (error) {
-        console.error('操作失败:', error)
-        const errorMsg = getErrorMessage(error) || (editingAccount.value ? t('accounts.messages.updateFailed') : t('accounts.messages.createFailed'))
-        ElMessage.error(errorMsg)
+  submitting.value = true
+  try {
+    if (editingAccount.value) {
+      // 更新账户 - 只传需要更新的字段
+      const updateData: Partial<JwtAccount> = {
+        roles: accountForm.roles,
+        enabled: accountForm.enabled
       }
+      // 只有填写了密码才更新
+      if (accountForm.password && accountForm.password.trim()) {
+        updateData.password = accountForm.password
+      }
+      await updateJwtAccount(accountForm.username, updateData as JwtAccount)
+      ElMessage.success(t('accounts.messages.updateSuccess'))
+    } else {
+      // 创建账户
+      const createRequest: CreateJwtAccountRequest = {
+        username: accountForm.username,
+        password: accountForm.password,
+        roles: accountForm.roles,
+        enabled: accountForm.enabled
+      }
+      await createJwtAccount(createRequest)
+      ElMessage.success(t('accounts.messages.createSuccess'))
     }
-  })
+
+    showCreateDialog.value = false
+    resetForm()
+    fetchAccounts()
+  } catch (error) {
+    console.error('操作失败:', error)
+    const errorMsg = getErrorMessage(error) || (editingAccount.value ? t('accounts.messages.updateFailed') : t('accounts.messages.createFailed'))
+    ElMessage.error(errorMsg)
+  } finally {
+    submitting.value = false
+  }
 }
 
 // 编辑账户
@@ -364,36 +422,23 @@ const handleStatusChange = async (account: JwtAccount) => {
   }
 }
 
-// 删除账户
-const deleteAccount = (account: JwtAccount) => {
-  // 禁止删除 admin 账户
+// 删除账户（二次确认由行内 ConfirmAction 完成）
+const deleteAccount = async (account: JwtAccount) => {
+  // 兜底守卫：admin 行即使被误触也不发请求
   if (account.username === 'admin') {
     ElMessage.warning(t('accounts.messages.cannotDeleteAdmin'))
     return
   }
 
-  ElMessageBox.confirm(
-    t('accounts.messages.deleteConfirmMessage', { username: account.username }),
-    t('accounts.messages.deleteConfirmTitle'),
-    {
-      confirmButtonText: t('accounts.messages.confirmDelete'),
-      cancelButtonText: t('accounts.cancel'),
-      type: 'warning',
-      confirmButtonClass: 'el-button--danger'
-    }
-  ).then(async () => {
-    try {
-      await deleteJwtAccount(account.username)
-      ElMessage.success(t('accounts.messages.deleteSuccess'))
-      fetchAccounts()
-    } catch (error) {
-      console.error('删除失败:', error)
-      const errorMsg = getErrorMessage(error) || t('accounts.messages.deleteFailed')
-      ElMessage.error(errorMsg)
-    }
-  }).catch(() => {
-    // 用户取消删除
-  })
+  try {
+    await deleteJwtAccount(account.username)
+    ElMessage.success(t('accounts.messages.deleteSuccess'))
+    fetchAccounts()
+  } catch (error) {
+    console.error('删除失败:', error)
+    const errorMsg = getErrorMessage(error) || t('accounts.messages.deleteFailed')
+    ElMessage.error(errorMsg)
+  }
 }
 
 // 重置表单
@@ -409,6 +454,12 @@ const resetForm = () => {
   }
 }
 
+// 打开「新建账户」抽屉：先清空上一次编辑残留的表单值
+const openCreateDrawer = () => {
+  resetForm()
+  showCreateDialog.value = true
+}
+
 // 组件挂载时获取账户列表
 onMounted(() => {
   fetchAccounts()
@@ -416,8 +467,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.dialog-footer {
-  text-align: right;
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ja-space-2, 8px);
 }
 
 .form-hint {

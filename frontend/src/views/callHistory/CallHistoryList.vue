@@ -2,8 +2,8 @@
   <ListPageLayout
     :loading="loading"
     :empty="!loading && tableData.length === 0"
-    :empty-title="t('callHistory.list.emptyTitle')"
-    :empty-description="t('callHistory.list.emptyDescription')"
+    :empty-title="emptyTitle"
+    :empty-description="emptyDescription"
   >
     <template #header>
       <h2 class="page-title">{{ t('callHistory.list.pageTitle') }}</h2>
@@ -11,7 +11,7 @@
     </template>
 
     <template #filters>
-      <!-- 查询筛选区 -->
+      <!-- 工具栏顺序：时间范围 → 维度筛选（模型/服务类型/状态/状态码）→ 刷新 → 重置 -->
       <FilterBar>
         <el-form :inline="true" :model="queryForm" class="filter-form">
           <el-form-item :label="t('callHistory.common.timeRange')">
@@ -59,8 +59,8 @@
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="Search" @click="handleSearch">{{ t('callHistory.common.query') }}</el-button>
-            <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
+            <el-button type="primary" icon="Refresh" @click="handleSearch">{{ t('callHistory.common.refresh') }}</el-button>
+            <el-button @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
           </el-form-item>
         </el-form>
       </FilterBar>
@@ -227,9 +227,9 @@
       v-else
       :rows="tableData"
       row-key="requestId"
-      :aria-label="t('callHistory.cards.ariaLabel')"
-      :empty-title="t('callHistory.list.emptyTitle')"
-      :empty-description="t('callHistory.list.emptyDescription')"
+      :aria-label="t('callHistory.list.cards.ariaLabel')"
+      :empty-title="emptyTitle"
+      :empty-description="emptyDescription"
     >
       <template #default="{ row }">
         <div class="record-card">
@@ -411,7 +411,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
@@ -424,6 +424,7 @@ import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
 import TableCards from '@/components/TableCards.vue'
 import { useViewport } from '@/composables/useViewport'
+import { formatNumber as formatNumberBase } from '@/utils/format'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -488,11 +489,27 @@ const handleSaveConfig = async () => {
   }
 }
 
-// 格式化数字
+// 格式化数字（千分位，委托共享 format.ts，与其它调用历史页一致）
 const formatNumber = (num?: number): string => {
   if (!num && num !== 0) return '0'
-  return num.toLocaleString()
+  return formatNumberBase(num)
 }
+
+// 空态文案：区分「无数据」与「筛选无结果」——任一筛选条件生效即视为筛选
+const hasActiveFilter = computed(
+  () =>
+    !!dateRange.value ||
+    !!queryForm.modelName ||
+    !!queryForm.serviceType ||
+    typeof queryForm.isSuccess === 'boolean' ||
+    !!queryForm.httpStatusCode
+)
+const emptyTitle = computed(() =>
+  hasActiveFilter.value ? t('callHistory.list.emptyTitle') : t('callHistory.common.emptyNoDataTitle')
+)
+const emptyDescription = computed(() =>
+  hasActiveFilter.value ? t('callHistory.list.emptyDescription') : t('callHistory.common.emptyNoDataDescription')
+)
 
 // 格式化时间
 const formatTime = (time?: string) => {

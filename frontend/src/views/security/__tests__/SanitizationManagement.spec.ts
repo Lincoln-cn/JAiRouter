@@ -6,6 +6,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
+import { createPinia } from 'pinia'
+import { defineComponent } from 'vue'
 
 /**
  * 组件实例的对外形状（#525：替代 `wrapper.vm as any`）。
@@ -22,12 +24,16 @@ vi.mock('element-plus', () => ({
     success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn()
+  },
+  ElMessageBox: {
+    confirm: vi.fn().mockResolvedValue('confirm')
   }
 }))
 
 vi.mock('@element-plus/icons-vue', () => ({
   Refresh: { template: '<i />' },
-  Check: { template: '<i />' }
+  Check: { template: '<i />' },
+  WarningFilled: { template: '<i />' }
 }))
 
 vi.mock('@/api/sanitization', () => ({
@@ -128,6 +134,18 @@ const i18n = createI18n({
 })
 
 const stubs = {
+  ConfigPageShell: defineComponent({
+    props: { saving: { type: Boolean, default: false } },
+    emits: ['save', 'refresh', 'discard'],
+    template:
+      '<div class="shell"><slot /><button data-test="shell-save" @click="$emit(\'save\')">save</button>' +
+      '<span data-test="shell-saving">{{ String(saving) }}</span></div>'
+  }),
+  ConfigSectionCard: defineComponent({
+    props: { title: { type: String, default: '' }, description: { type: String, default: '' }, error: { type: String, default: '' } },
+    template: '<div class="section"><h3>{{ title }}</h3><p>{{ description }}</p><p class="err">{{ error }}</p><slot /><slot name="actions" /></div>'
+  }),
+  SettingsSwitch: defineComponent({ props: { modelValue: { type: Boolean, default: false } }, emits: ['update:modelValue'], template: '<span />' }),
   PageSkeleton: { template: '<div><slot /><slot name="stats" /><slot name="actions" /></div>' },
   StatCard: true,
   'el-alert': true,
@@ -149,7 +167,7 @@ describe('SanitizationManagement.vue', () => {
   it('挂载后根据配置同步响应侧表单（开关与掩码）', async () => {
     const wrapper = mount(SanitizationManagement, {
       global: {
-        plugins: [i18n],
+        plugins: [i18n, createPinia()],
         stubs
       }
     })
@@ -163,7 +181,7 @@ describe('SanitizationManagement.vue', () => {
   it('回显响应脱敏生效范围（模式/来源/规则）', async () => {
     const wrapper = mount(SanitizationManagement, {
       global: {
-        plugins: [i18n],
+        plugins: [i18n, createPinia()],
         stubs
       }
     })
@@ -180,7 +198,7 @@ describe('SanitizationManagement.vue', () => {
   it('不再渲染请求侧配置卡片与「未接入入站」提示', async () => {
     const wrapper = mount(SanitizationManagement, {
       global: {
-        plugins: [i18n],
+        plugins: [i18n, createPinia()],
         stubs: {
           ...stubs,
           'el-row': { template: '<div><slot /></div>' },
