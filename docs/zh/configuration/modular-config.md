@@ -35,7 +35,8 @@ config/
 │   ├── jwt.yml          # JWT 认证配置
 │   ├── api-key.yml      # API 密钥配置
 │   ├── audit.yml        # 审计配置
-│   └── sanitization.yml # 数据脱敏配置
+│   ├── sanitization.yml # 数据脱敏配置
+│   └── login-guard.yml  # 登录防爆破频控配置
 ├── monitor/             # 监控服务
 │   ├── slow-query-alerts.yml
 │   ├── error-tracking.yml
@@ -101,6 +102,7 @@ spring:
       - classpath:config/auth/api-key.yml
       - classpath:config/auth/audit.yml
       - classpath:config/auth/sanitization.yml
+      - classpath:config/auth/login-guard.yml
       - classpath:config/security/pii-reversible.yml
 
       # monitor 模块

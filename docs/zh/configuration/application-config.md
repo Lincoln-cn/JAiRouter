@@ -50,6 +50,7 @@ config/
 │   ├── api-key.yml      # API 密钥配置
 │   ├── audit.yml        # 审计配置
 │   ├── sanitization.yml # 数据脱敏配置
+│   └── login-guard.yml  # 登录防爆破频控
 ├── monitor/             # 监控服务
 │   ├── slow-query-alerts.yml
 │   ├── error-tracking.yml
@@ -102,6 +103,7 @@ spring:
       - classpath:config/auth/api-key.yml
       - classpath:config/auth/audit.yml
       - classpath:config/auth/sanitization.yml
+      - classpath:config/auth/login-guard.yml
 
       # monitor 模块
       - classpath:config/base/monitoring-base.yml

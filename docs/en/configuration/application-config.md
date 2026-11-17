@@ -50,6 +50,7 @@ config/
 │   ├── api-key.yml      # API key configuration
 │   ├── audit.yml        # Audit configuration
 │   ├── sanitization.yml # Data sanitization
+│   └── login-guard.yml  # Login brute-force rate limiting
 ├── monitor/             # Monitoring service
 │   ├── slow-query-alerts.yml
 │   ├── error-tracking.yml
@@ -102,6 +103,7 @@ spring:
       - classpath:config/auth/api-key.yml
       - classpath:config/auth/audit.yml
       - classpath:config/auth/sanitization.yml
+      - classpath:config/auth/login-guard.yml
 
       # monitor module
       - classpath:config/base/monitoring-base.yml
