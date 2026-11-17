@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "sla_service_accounts")
+@Table(name = "sla_service_accounts",
+       uniqueConstraints = @UniqueConstraint(
+               name = "uk_sla_service_accounts_name", columnNames = "name"))
 public class SlaServiceAccountEntity {
 
     /** 账号主键（UUID 字符串）。 */

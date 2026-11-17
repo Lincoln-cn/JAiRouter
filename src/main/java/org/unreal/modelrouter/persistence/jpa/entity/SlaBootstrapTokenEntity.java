@@ -3,7 +3,9 @@ package org.unreal.modelrouter.persistence.jpa.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +30,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "sla_bootstrap_tokens")
+@Table(name = "sla_bootstrap_tokens",
+       indexes = @Index(name = "idx_sla_bootstrap_tokens_account", columnList = "account_id"),
+       uniqueConstraints = @UniqueConstraint(
+               name = "uk_sla_bootstrap_tokens_hash", columnNames = "token_hash"))
 public class SlaBootstrapTokenEntity {
 
     /** 令牌主键（UUID 字符串）。 */

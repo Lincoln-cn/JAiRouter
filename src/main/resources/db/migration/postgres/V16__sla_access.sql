@@ -2,6 +2,10 @@
 --
 -- 背景与 H2 侧相同（见同版本 h2 迁移）：三张表 + security_audit.event_type 约束补到 31 个。
 -- PostgreSQL 的约束是具名 check（security_audit_event_type_check），先丢弃再重建。
+-- 唯一约束写在表内（constraint ... unique）而不是 create unique index：
+-- 实体的 @UniqueConstraint 会生成 UNIQUE 约束，而 unique index 不进 H2 的
+-- CONSTRAINTS 视图，两边 schema 比对会报「constraints 不一致」
+-- （H2BaselineMatchesEntityModelTest）。
 create table if not exists sla_service_accounts (
     account_id varchar(64) primary key,
     name varchar(64) not null,
@@ -9,10 +13,9 @@ create table if not exists sla_service_accounts (
     enabled boolean not null,
     created_by varchar(64),
     created_at timestamp(6) not null,
-    last_seen_at timestamp(6)
+    last_seen_at timestamp(6),
+    constraint uk_sla_service_accounts_name unique (name)
 );
-
-create unique index if not exists uk_sla_service_accounts_name on sla_service_accounts (name);
 
 create table if not exists sla_bootstrap_tokens (
     token_id varchar(64) primary key,
@@ -23,11 +26,11 @@ create table if not exists sla_bootstrap_tokens (
     allowed_ip varchar(64),
     created_by varchar(64),
     created_at timestamp(6) not null,
-    version bigint not null
+    version bigint not null,
+    constraint uk_sla_bootstrap_tokens_hash unique (token_hash)
 );
 
 create index if not exists idx_sla_bootstrap_tokens_account on sla_bootstrap_tokens (account_id);
-create unique index if not exists uk_sla_bootstrap_tokens_hash on sla_bootstrap_tokens (token_hash);
 
 create table if not exists sla_refresh_tokens (
     token_id varchar(64) primary key,
@@ -37,11 +40,11 @@ create table if not exists sla_refresh_tokens (
     expires_at timestamp(6) not null,
     revoked_at timestamp(6),
     last_used_at timestamp(6),
-    client_ip varchar(64)
+    client_ip varchar(64),
+    constraint uk_sla_refresh_tokens_hash unique (token_hash)
 );
 
 create index if not exists idx_sla_refresh_tokens_account on sla_refresh_tokens (account_id);
-create unique index if not exists uk_sla_refresh_tokens_hash on sla_refresh_tokens (token_hash);
 
 alter table security_audit drop constraint if exists security_audit_event_type_check;
 
