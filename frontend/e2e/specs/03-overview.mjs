@@ -35,12 +35,6 @@ export default {
     // 治理链路的四个跳转都用 waitForURL 等路由真正换掉：
     // 目标路由是懒加载 chunk，全量跑批时可能 >700ms 才落地，
     // 固定 sleep 会把「慢」误判成「跳转失败」（本轮全量实测 469/470 的唯一红项）。
-    const jumpTo = async (pathFragment) => {
-      await page
-        .waitForURL((u) => u.pathname.includes(pathFragment), { timeout: 5000 })
-        .catch(() => {})
-      await page.waitForTimeout(150)
-    }
 
     // 治理链路四个跳转统一走这里：定位 → 点击 → 等 URL，失败重试一次。
     // 概览页首屏会自己刷新统计数据并重渲染这几个按钮，点击偶尔落在被替换的节点上；
