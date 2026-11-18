@@ -1,45 +1,59 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# 构建并启动 JAiRouter（Linux / macOS / Windows MSYS Bash）
+#
+# 与 run-dev.ps1 同一套行为，修掉旧版三个缺陷：
+#   1. 默认端口 31080 → 8080；
+#   2. `java -jar -Dserver.port=$PORT` → JVM 参数置于 -jar 之后不生效；
+#   3. `-Pfast` 构建会跳过前端（frontend.build.skip=true），/admin/ 404。
+#
+# 用法：
+#   ./scripts/dev/run-dev.sh                     # 8080 + dev
+#   ./scripts/dev/run-dev.sh --port 8081
+#   ./scripts/dev/run-dev.sh --skip-build
+#   ./scripts/dev/run-dev.sh --skip-frontend
+set -euo pipefail
 
-# 快速构建并运行 JAiRouter 应用
-# 适用于 Linux/Unix 环境
+PORT=8080
+PROFILE=dev
+SKIP_BUILD=0
+SKIP_FRONTEND=0
+ADMIN_PASSWORD=""
 
-PORT=${1:-31080}
-PROFILE=${2:-fast}
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --port) PORT="${2:?--port 需要数值}"; shift 2 ;;
+    --profile) PROFILE="${2:?}"; shift 2 ;;
+    --skip-build) SKIP_BUILD=1; shift ;;
+    --skip-frontend) SKIP_FRONTEND=1; shift ;;
+    --admin-password) ADMIN_PASSWORD="${2:?}"; shift 2 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
+    *) echo "未知参数：$1" >&2; exit 2 ;;
+  esac
+done
 
-echo -e "\033[0;32m🚀 开始构建 JAiRouter 应用...\033[0m"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT"
 
-# 检查 Maven 是否安装
-if ! command -v mvn &> /dev/null; then
-    echo -e "\033[0;31m❌ 未找到 Maven，请先安装 Maven\033[0m"
-    exit 1
+if [ "$SKIP_BUILD" -eq 0 ]; then
+  command -v java >/dev/null || { echo "❌ 未找到 java（需要 JDK 17+）" >&2; exit 1; }
+  case "${OSTYPE:-}$(uname -s 2>/dev/null)" in
+    msys*|cygwin*|MINGW*) MVNW="./mvnw.cmd" ;;   # Windows：.cmd 版，避免 MSYS 参数转换
+    *) MVNW="./mvnw" ;;
+  esac
+  [ -f "$MVNW" ] || { echo "❌ 未找到 Maven Wrapper：$MVNW" >&2; exit 1; }
+  ARGS=(package -Pdev -DskipTests)
+  [ "$SKIP_FRONTEND" -eq 1 ] && ARGS+=(-Dfrontend.build.skip=true)
+  echo "🔨 构建中：mvnw ${ARGS[*]}"
+  $MVNW "${ARGS[@]}"
 fi
 
-echo -e "\033[0;32m✅ Maven 已安装\033[0m"
+JAR="$(ls -1t target/model-router-*.jar 2>/dev/null | grep -Ev -- '-(sources|javadoc|tests)\.jar$' | head -n1 || true)"
+[ -n "$JAR" ] || { echo "❌ target 下没有 model-router-*.jar，请去掉 --skip-build 先构建" >&2; exit 1; }
 
-# 执行 Maven 构建
-echo -e "\033[1;33m🔨 执行 mvn package -P$PROFILE ...\033[0m"
-mvn package -P$PROFILE
+[ -n "$ADMIN_PASSWORD" ] && export INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD"
 
-if [ $? -ne 0 ]; then
-    echo -e "\033[0;31m❌ 构建失败\033[0m"
-    exit 1
-fi
-
-echo -e "\033[0;32m✅ 构建成功完成\033[0m"
-
-# 查找构建好的 JAR 文件
-JAR_FILE=$(find target -name "model-router-*.jar" -type f | head -n 1)
-
-if [ -z "$JAR_FILE" ]; then
-    echo -e "\033[0;31m❌ 未找到构建好的 JAR 文件\033[0m"
-    exit 1
-fi
-
-echo -e "\033[0;32m📦 找到 JAR 文件: $(basename $JAR_FILE)\033[0m"
-
-# 运行应用
-echo -e "\033[1;33m🏃 运行应用，端口: $PORT\033[0m"
-echo -e "\033[0;36m🔗 访问地址: http://localhost:$PORT\033[0m"
-echo -e "\033[0;36m⏹️  按 Ctrl+C 停止应用\033[0m"
-
-java -jar -Dserver.port=$PORT "$JAR_FILE"
+echo "📦 $(basename "$JAR")"
+echo "🏃 java -jar … --server.port=$PORT --spring.profiles.active=$PROFILE"
+echo "🔗 控制台 http://localhost:$PORT/admin/  |  Swagger http://localhost:$PORT/swagger-ui.html"
+echo "⏹  Ctrl+C 停止"
+exec java -jar "$JAR" "--server.port=$PORT" "--spring.profiles.active=$PROFILE"

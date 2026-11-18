@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# ⚠ 历史一次性脚本（仅存档，不保证仍适用）：写于 JWT 安全修复验证那次，断言的是当时的错误体形状。
+# 口令已从写死的 admin123 改为 $DEV_ADMIN_PASSWORD（dev 默认是 INITIAL_ADMIN_PASSWORD 或
+# ChangeMeOnFirstStartup123456），否则必 401。
+
 
 # 快速测试JWT安全修复效果
 
@@ -17,7 +22,7 @@ login_response=$(curl --noproxy localhost -s -X POST "$BASE_URL/api/auth/jwt/log
     -H "Content-Type: application/json" \
     -H "X-Forwarded-For: 203.0.113.1, 192.168.1.100" \
     -H "X-Real-IP: 203.0.113.1" \
-    -d '{"username":"admin","password":"admin123"}' 2>/dev/null)
+    -d "{\"username\":\"admin\",\"password\":\"${DEV_ADMIN_PASSWORD:-ChangeMeOnFirstStartup123456}\"}" 2>/dev/null)
 
 if echo "$login_response" | grep -q '"success":true\|"token"'; then
     echo "✅ 服务正在运行（登录接口可访问）"
@@ -46,7 +51,7 @@ ip_test_response=$(curl --noproxy localhost -s -X POST "$BASE_URL/api/auth/jwt/l
     -H "X-Forwarded-For: 203.0.113.1, 192.168.1.100" \
     -H "X-Real-IP: 203.0.113.1" \
     -H "User-Agent: TestClient/1.0" \
-    -d '{"username":"admin","password":"admin123"}')
+    -d "{\"username\":\"admin\",\"password\":\"${DEV_ADMIN_PASSWORD:-ChangeMeOnFirstStartup123456}\"}")
 
 if echo "$ip_test_response" | grep -q '"success":true\|"success":false'; then
     echo "✅ 代理头请求成功处理"
