@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   menuGroups,
@@ -190,5 +192,39 @@ describe('menu.ts 角色声明（当前统一交给权限码）', () => {
     const tabs = menuGroups.flatMap(group => group.children).flatMap(item => item.tabs)
     const withRoles = tabs.filter(tab => (tab.roles?.length ?? 0) > 0)
     expect(withRoles.map(tab => tab.to)).toEqual([])
+  })
+})
+
+/**
+ * 组图标守卫（回归：模型与实例组曾写 `icon: 'cpu'` 而 Layout 的映射表没有 `cpu` 键，
+ * `<component :is="undefined" />` 渲染成空标签，侧栏该组就没有图标）。
+ *
+ * 这里用源码级读取，因为映射表是 Layout 内部的常量、没有对外导出；
+ * 与其为了可测性把它挪出去，不如直接断言「配置里的 icon 都能找到实现」。
+ */
+describe('menu.ts 组图标', () => {
+  const layoutSource = readFileSync(resolve(process.cwd(), 'src/views/Layout.vue'), 'utf-8')
+
+  const iconMapKeys = (): string[] => {
+    const start = layoutSource.indexOf('const groupIconMap')
+    expect(start, 'Layout.vue 里找不到 groupIconMap').toBeGreaterThan(-1)
+    const block = layoutSource.slice(start, layoutSource.indexOf('}', start))
+    return [...block.matchAll(/^\s{2}'?([a-zA-Z-]+)'?:\s*[A-Z]/gm)].map(match => match[1])
+  }
+
+  it('每个组的 icon 都能在 groupIconMap 里找到实现', () => {
+    const keys = iconMapKeys()
+    // 自证：解析不到键名时不能静默通过
+    expect(keys.length).toBeGreaterThanOrEqual(menuGroups.length)
+    const missing = menuGroups
+      .filter(group => !keys.includes(group.icon))
+      .map(group => `${group.index}:${group.icon}`)
+    expect(missing).toEqual([])
+  })
+
+  it('groupIconMap 没有拼错残留的键（多余键只允许 user 这类预留）', () => {
+    const used = new Set(menuGroups.map(group => group.icon))
+    const unused = iconMapKeys().filter(key => !used.has(key))
+    expect(unused.every(key => key === 'user')).toBe(true)
   })
 })
