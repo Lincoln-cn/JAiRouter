@@ -492,12 +492,15 @@ public class ApiKeyService {
                 continue;
             }
 
-            String trimmedPermission = permission.trim().toLowerCase();
+            String trimmedPermission = permission.trim();
 
-            // 检查是否是有效的服务类型
+            // 检查是否是有效的服务类型。比较不区分大小写（ServiceType.isValid 用 equalsIgnoreCase），
+            // 但**存库一律用枚举的权威值**：imgGen / imgEdit 是驼峰，早期这里 toLowerCase 会把它们
+            // 存成 imggen / imgedit，前端按 `apiKeys.permissions.imgGen` 查 i18n 查不到，
+            // 页面上就直接显示原始小写串（"图像生成" 变成 "imggen"）。
             if (ServiceTypeConstants.isValidServiceType(trimmedPermission)) {
-                validPermissions.add(trimmedPermission);
-            } else if (isLegacyPermission(trimmedPermission)) {
+                validPermissions.add(ServiceTypeConstants.toServiceType(trimmedPermission).getValue());
+            } else if (isLegacyPermission(trimmedPermission.toLowerCase())) {
                 // 处理旧权限格式，转换为全部服务类型权限
                 log.warn("检测到旧权限格式 '{}'，将自动转换为全部服务类型权限。"
                     + "请更新 API Key 权限配置为服务类型（chat, embedding, rerank, tts, stt, imgGen, imgEdit）",
