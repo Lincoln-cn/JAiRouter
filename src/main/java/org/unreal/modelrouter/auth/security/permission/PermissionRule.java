@@ -4,6 +4,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.server.PathContainer;
 import org.springframework.web.util.pattern.PathPattern;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -57,9 +60,13 @@ public record PermissionRule(Set<HttpMethod> methods, String pathPattern, Set<St
      *
      * <p>用于「全局读」与「本人读」并存的数据面：持 {@code callhistory:read} 的人看全部，
      * 持 {@code callhistory:self:read} 的人只能看自己的（数据层再按 scope 过滤）。
+     * <b>声明顺序有意义</b>：{@link #permissionCode()} 返回第一个码，主码写在前面。
      */
     public static PermissionRule getAny(final String pathPattern, final String... codes) {
-        return new PermissionRule(Set.of(HttpMethod.GET), pathPattern, Set.of(codes));
+        // 用 LinkedHashSet 保留声明顺序：Set.of(...) 的迭代顺序不保证，
+        // 曾导致 permissionCode() 在不同 JVM 上返回 different 码（CI 红、本地绿）。
+        return new PermissionRule(Set.of(HttpMethod.GET), pathPattern,
+                Collections.unmodifiableSet(new LinkedHashSet<>(List.of(codes))));
     }
 
     /**
