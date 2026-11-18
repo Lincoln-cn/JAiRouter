@@ -32,11 +32,11 @@ try {
         $mvnw = Join-Path $root 'mvnw.cmd'
         if (-not (Test-Path $mvnw)) { throw "未找到 Maven Wrapper：$mvnw" }
 
-        $args = @('package', '-Pdev', '-DskipTests')
-        if ($SkipFrontend) { $args += '-Dfrontend.build.skip=true' }
+        $mvnArgs = @('package', '-Pdev', '-DskipTests')
+        if ($SkipFrontend) { $mvnArgs += '-Dfrontend.build.skip=true' }
 
-        Write-Host "🔨 构建中：mvnw $($args -join ' ')" -ForegroundColor Yellow
-        & $mvnw @args
+        Write-Host "🔨 构建中：mvnw $($mvnArgs -join ' ')" -ForegroundColor Yellow
+        & $mvnw @mvnArgs
         if ($LASTEXITCODE -ne 0) { throw "构建失败（exit $LASTEXITCODE）" }
     }
 
