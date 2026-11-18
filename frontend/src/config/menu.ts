@@ -56,13 +56,45 @@ export const menuGroups: MenuGroup[] = [
     icon: 'house',
     children: [
       {
+        // 五个角色各有自己的落地页：同一组里互斥出现，任何角色只看到一项。
+        // AUDITOR 不在这里 —— 它的首页是「运行观测 → 审计」，不给概览位。
         path: '/dashboard/main',
         title: 'menu.dashboardMain',
         object: 'overview',
         permission: 'overview:dashboard:read',
-        audience: ['admin', 'maintainer', 'user', 'observer', 'auditor'],
+        audience: ['admin'],
         tabs: [
           { key: 'dashboard-main', labelKey: 'menu.dashboardMain', to: '/dashboard/main' },
+        ],
+      },
+      {
+        path: '/dashboard/operations',
+        title: 'menu.dashboardOps',
+        object: 'overview',
+        permission: 'overview:dashboard:read',
+        audience: ['maintainer'],
+        tabs: [
+          { key: 'dashboard-operations', labelKey: 'menu.dashboardOps', to: '/dashboard/operations' },
+        ],
+      },
+      {
+        path: '/dashboard/mine',
+        title: 'menu.dashboardMine',
+        object: 'overview',
+        permission: ['callhistory:self:read', 'callhistory:read'],
+        audience: ['user'],
+        tabs: [
+          { key: 'dashboard-mine', labelKey: 'menu.dashboardMine', to: '/dashboard/mine' },
+        ],
+      },
+      {
+        path: '/dashboard/trends',
+        title: 'menu.dashboardTrends',
+        object: 'overview',
+        permission: 'overview:dashboard:read',
+        audience: ['observer'],
+        tabs: [
+          { key: 'dashboard-trends', labelKey: 'menu.dashboardTrends', to: '/dashboard/trends' },
         ],
       },
     ],

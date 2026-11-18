@@ -40,6 +40,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { usePermission } from '@/composables/usePermission'
 import { useI18n } from 'vue-i18n'
 import { SwitchButton, Warning } from '@element-plus/icons-vue'
 import request from '@/utils/request'
@@ -59,6 +60,7 @@ interface ExceptionStatisticsView {
 
 const { t } = useI18n()
 const router = useRouter()
+const { hasAnyPermission } = usePermission()
 const { isNarrow } = useViewport()
 
 const openBreakers = ref<number | null>(null)
@@ -145,9 +147,27 @@ const load = async (): Promise<void> => {
     exceptions24h.value = null
     return
   }
+  // 顶栏读数是辅助信息：没有对应权限就不发请求。
+  // 发了只会拿到 403，浏览器仍会在控制台打一条「Failed to load resource」，
+  // 缺权限看起来像故障（AUDITOR 这类极窄角色首屏就两条红字）。
+  const canReadBreakers = hasAnyPermission(['cb:monitoring:read'])
+  const canReadExceptions = hasAnyPermission(['monitoring:exceptions:read'])
+  if (!canReadBreakers) {
+    openBreakers.value = null
+  }
+  if (!canReadExceptions) {
+    exceptions24h.value = null
+  }
   const current = new AbortController()
   controller = current
-  await Promise.allSettled([loadOpenBreakers(current.signal), loadExceptions(current.signal)])
+  const tasks: Promise<void>[] = []
+  if (canReadBreakers) {
+    tasks.push(loadOpenBreakers(current.signal))
+  }
+  if (canReadExceptions) {
+    tasks.push(loadExceptions(current.signal))
+  }
+  await Promise.allSettled(tasks)
 }
 
 const stopTimer = (): void => {

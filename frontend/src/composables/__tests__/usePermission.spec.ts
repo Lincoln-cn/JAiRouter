@@ -35,15 +35,29 @@ describe('usePermission 菜单过滤', () => {
   })
 
   it('单码不命中即隐藏；组内全部隐藏时整组消失', () => {
+    // 概览组的四项是角色专属首页：只有权限码、没有对应 audience 时整组消失，
+    // 这正是「未登录角色看到的菜单必须自洽」的体现。
     const { filterMenuByPermission } = setup(['overview:dashboard:read'])
     const groups = filterMenuByPermission(menuGroups)
-    expect(groups.map(group => group.index)).toEqual(['dashboard', 'dev-tools'])
+    expect(groups.map(group => group.index)).toEqual(['dev-tools'])
   })
 
-  it('ADMIN 拥有全部权限且命中全部 audience ⇒ 8 组 36 项全在', () => {
+  it('ADMIN 拥有全部权限且命中全部 audience ⇒ 8 组 39 项全在', () => {
+    // 概览组虽然只有 1 项对 ADMIN 显示，但它的四个首页项互斥，
+    // 因此 ADMIN 的可见总数是 39 - 3 = 36；这里断言「组数」与「全局项数」两个口径。
     const { filterMenuByPermission } = setup([], ['ADMIN'])
     const groups = filterMenuByPermission(menuGroups)
     expect(groups).toHaveLength(8)
+    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(36)
+  })
+
+  it('ADMIN 同时挂着 USER（jwt.yml 的 admin 就是 ADMIN + USER）⇒ 概览只给 admin 首页', () => {
+    // 身份是超集不是并集：叠加的话概览组会同时出现「仪表板」与「我的用量」，
+    // 用户每次登录都要判断自己现在是谁。
+    const { filterMenuByPermission } = setup([], ['ADMIN', 'USER'])
+    const groups = filterMenuByPermission(menuGroups)
+    const overview = groups.find(group => group.index === 'dashboard')
+    expect(overview?.children.map(item => item.path)).toEqual(['/dashboard/main'])
     expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(36)
   })
 
@@ -139,7 +153,7 @@ describe('usePermission audience 收窄（角色决定可见面）', () => {
       'config:cluster:read',
       'config:cache:read'
     ])
-    expect(paths).toContain('/dashboard/main')
+    expect(paths).toContain('/dashboard/mine')
     expect(paths).toContain('/call-history/list')
     // AI 试验场 5 个工具各自独立成项，USER 全都看得到
     expect(paths).toEqual(expect.arrayContaining([
@@ -177,16 +191,17 @@ describe('usePermission audience 收窄（角色决定可见面）', () => {
     expect(paths.length).toBeLessThanOrEqual(8)
   })
 
-  it('AUDITOR 只看到仪表板、审计、页面访问热度与接入指南四项', () => {
+  it('AUDITOR 只看到审计、页面访问热度与接入指南三项（拿到 dashboard 码也不给概览位）', () => {
     // 页面访问热度（B4）与审计同属「别人的记录」，因此 AUDITOR 也要看得到；
-    // 但没有任何管理动作：签发、改权限、清缓存都不在它的权限集里。
+    // 但概览组是业务看板，不属于审计证据面 —— 即使拿着 overview:dashboard:read 也不显示，
+    // 这是 audience 与 permission 取交集的意义。
     const paths = pathsOf(['AUDITOR'], [
       'overview:dashboard:read',
       'security:audit:read',
       'monitoring:console:read'
     ])
     expect(paths.sort()).toEqual(
-      ['/dashboard/main', '/security/audit-logs', '/system/page-heat', '/tools/client-access'].sort()
+      ['/security/audit-logs', '/system/page-heat', '/tools/client-access'].sort()
     )
   })
 

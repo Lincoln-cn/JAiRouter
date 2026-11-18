@@ -41,7 +41,7 @@ describe('isMenuItemView（点菜单是否原地不动）', () => {
 })
 
 describe('menu.ts 信息架构', () => {
-  it('8 组 36 项，组顺序与设计文档一致', () => {
+  it('8 组 39 项，组顺序与设计文档一致', () => {
     expect(menuGroups.map(g => g.index)).toEqual([
       'dashboard',
       'observability',
@@ -52,8 +52,8 @@ describe('menu.ts 信息架构', () => {
       'platform',
       'dev-tools'
     ])
-    expect(menuGroups.map(g => g.children.length)).toEqual([1, 6, 5, 3, 6, 4, 5, 6])
-    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(36)
+    expect(menuGroups.map(g => g.children.length)).toEqual([4, 6, 5, 3, 6, 4, 5, 6])
+    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(39)
   })
 
   it('每组 ≤8 项（数量预算，防止再次膨胀）', () => {
@@ -73,10 +73,10 @@ describe('menu.ts 信息架构', () => {
       }
     }
     const routes = items.flatMap(item => item.tabs.map(tab => tab.to))
-    // 36 个菜单项承载 50 个页面：同一对象的多视图合并为一项、AI 试验场 5 个工具各占一项，
-    // URL 一个都没少（改结构不能丢页面）。
-    expect(routes.length).toBe(50)
-    expect(items.length).toBe(36)
+    // 39 个菜单项承载 53 个页面：同一对象的多视图合并为一项、AI 试验场 5 个工具各占一项、
+    // 概览组按角色各占一项，URL 一个都没少（改结构不能丢页面）。
+    expect(routes.length).toBe(53)
+    expect(items.length).toBe(39)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -100,7 +100,7 @@ describe('menu.ts 信息架构', () => {
     expect(multi.map(item => item.path).sort()).toEqual(expectedMulti.sort())
     // 单视图项必须真的只有一个页面（防「为了少点一次把不相关页面塞进来」）
     const single = items.filter(item => item.tabs.length === 1)
-    expect(single.length).toBe(36 - expectedMulti.length)
+    expect(single.length).toBe(39 - expectedMulti.length)
     // AI 试验场是 5 个并列工具，不该被当成「一个对象的多个视图」
     expect(items.filter(item => item.path.startsWith('/playground/')).map(item => item.tabs.length)).toEqual([1, 1, 1, 1, 1])
   })
@@ -115,8 +115,15 @@ describe('menu.ts 信息架构', () => {
         expect(allowed, `${item.path} 的 audience`).toContain(audience)
       }
     }
-    // ADMIN 必须对每一项都可见（任何项漏掉 admin 都会让管理员看不到它）
+    // 概览组的四个首页是「角色专属」项，每个只对一个 audience 显示
+    // （ADMIN 治理指挥台 / OPERATOR 运营看板 / USER 我的用量 / VIEWER 趋势报表）；
+    // 其余每一项都必须对 ADMIN 可见，否则管理员会看不到自己该管的东西。
+    const roleHomePaths = ['/dashboard/main', '/dashboard/operations', '/dashboard/mine', '/dashboard/trends']
     for (const item of menuGroups.flatMap(g => g.children)) {
+      if (roleHomePaths.includes(item.path)) {
+        expect(item.audience, item.path).toHaveLength(1)
+        continue
+      }
       expect(item.audience, item.path).toContain('admin')
     }
   })
@@ -129,7 +136,7 @@ describe('menu.ts 信息架构', () => {
         }
       }
     }
-    expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(50)
+    expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(53)
   })
 
   it('深链未命中回退 route.path；异常详情归到异常；合并页归到所属项', () => {
@@ -142,10 +149,10 @@ describe('menu.ts 信息架构', () => {
     expect(findMenuEntry('/monitoring/quota')?.item.title).toBe('menu.usage')
   })
 
-  it('50 个页面全部能从菜单反查到所属项（合并后不漏页）', () => {
+  it('53 个页面全部能从菜单反查到所属项（合并后不漏页）', () => {
     const items = menuGroups.flatMap(group => group.children)
     const allTabs = items.flatMap(item => item.tabs.map(tab => tab.to))
-    expect(allTabs).toHaveLength(50)
+    expect(allTabs).toHaveLength(53)
     for (const to of allTabs) {
       expect(findMenuEntry(to), to).toBeTruthy()
       expect(ROUTE_TO_MENU[to], to).toBeTruthy()

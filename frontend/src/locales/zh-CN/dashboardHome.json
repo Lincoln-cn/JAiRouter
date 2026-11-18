@@ -1,0 +1,56 @@
+{
+  "dashboardHome": {
+    "refresh": "刷新",
+    "range": {
+      "today": "最近 24 小时",
+      "7d": "最近 7 天",
+      "30d": "最近 30 天",
+      "90d": "最近 90 天"
+    },
+    "loadFailed": "统计接口没有返回数据，可能是后端未就绪或该时间范围过大，稍后再试一次。",
+    "chartEmpty": "所选时间范围内没有调用记录",
+    "ops": {
+      "title": "运营看板",
+      "subtitle": "服务健康与流量分布的日常巡检视图：只看运行结果，配置调整在「流量治理」与「模型与实例」里做。",
+      "metricRequests": "请求数",
+      "metricSuccessRate": "成功率",
+      "metricFailed": "失败数",
+      "metricLatency": "平均延迟",
+      "chartService": "服务类型请求量",
+      "chartStatus": "状态码分布",
+      "errorTitle": "错误码分布",
+      "errorHint": "按出现次数排序，用来判断失败是集中在某一类上游还是普遍现象。",
+      "errorCode": "错误码",
+      "errorCount": "次数",
+      "noErrors": "所选时间范围内没有失败调用"
+    },
+    "mine": {
+      "title": "我的用量",
+      "subtitle": "只统计你本人的调用：你自己的登录会话，以及你自己创建的 API 密钥发起的请求。",
+      "metricRequests": "我的请求数",
+      "metricTokens": "我的 Token",
+      "metricSuccessRate": "成功率",
+      "metricLatency": "平均延迟",
+      "chartDaily": "按天请求量",
+      "modelTitle": "按模型明细",
+      "modelHint": "Token 消耗与延迟按模型归集，用来判断哪条链路的成本最高。",
+      "modelName": "模型",
+      "modelRequests": "请求数",
+      "modelTokens": "Token",
+      "modelLatency": "平均延迟",
+      "emptyHint": "还没有调用记录：拿到 API 密钥后按「客户端接入指南」发一次请求，这里就有数据了。"
+    },
+    "trends": {
+      "title": "趋势报表",
+      "subtitle": "聚合视图：看整体走势与结构占比，不含单条调用明细。",
+      "metricRequests": "总请求数",
+      "metricSuccessRate": "成功率",
+      "metricDailyAvg": "日均请求",
+      "metricLatency": "平均延迟",
+      "chartDaily": "请求量与 Token 走势",
+      "chartHourly": "按小时分布",
+      "seriesRequests": "请求数",
+      "seriesTokens": "Token"
+    }
+  }
+}

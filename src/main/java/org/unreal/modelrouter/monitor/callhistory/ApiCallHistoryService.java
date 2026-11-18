@@ -276,8 +276,109 @@ public class ApiCallHistoryService {
      */
     @Transactional(readOnly = true)
     public CallHistoryStatisticsDTO getStatistics(LocalDateTime startTime, LocalDateTime endTime) {
-        return getStatistics(startTime, endTime, DataScope.unrestricted());
+        return statisticsUnrestricted(startTime, endTime);
     }
+
+    /**
+     * 无归属限制的统计（8 条聚合查询）。
+     *
+     * <p>抽成私有方法是为了避免重载互相委托形成递归：曾经 2 参重载委托 3 参、
+     * 3 参在 unrestricted 时又委托回 2 参，于是任何一次统计都会 StackOverflowError。</p>
+     */
+    private CallHistoryStatisticsDTO statisticsUnrestricted(final LocalDateTime startTime,
+                                                            final LocalDateTime endTime) {
+        // 默认查询最近7天
+        LocalDateTime effectiveStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
+        LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
+
+        // 构建统计 DTO
+        CallHistoryStatisticsDTO dto = CallHistoryStatisticsDTO.builder()
+                .startTime(effectiveStartTime.format(FORMATTER))
+                .endTime(effectiveEndTime.format(FORMATTER))
+                .build();
+
+        // 汇总统计 - 使用独立查询避免 H2 Object[] 映射问题
+        try {
+            long totalReqs = repository.countAllInRange(effectiveStartTime, effectiveEndTime);
+            long totalToks = repository.sumTokensInRange(effectiveStartTime, effectiveEndTime);
+            double avgResp = repository.avgResponseTimeInRange(effectiveStartTime, effectiveEndTime);
+            long successReqs = repository.countSuccessInRange(effectiveStartTime, effectiveEndTime);
+
+            dto.setTotalRequests(totalReqs);
+            dto.setTotalTokens(totalToks);
+            dto.setAvgResponseTimeMs(avgResp);
+            dto.setSuccessfulRequests(successReqs);
+
+            if (totalReqs > 0) {
+                dto.setSuccessRate((double) successReqs / totalReqs * 100);
+                dto.setFailedRequests(totalReqs - successReqs);
+                dto.setAvgTokensPerRequest((double) totalToks / totalReqs);
+            } else {
+                dto.setSuccessRate(0.0);
+                dto.setFailedRequests(0L);
+                dto.setAvgTokensPerRequest(0.0);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get summary statistics: {}", e.getMessage());
+        }
+
+        // 按模型统计
+        try {
+            List<Object[]> byModel = repository.countByModel(effectiveStartTime, effectiveEndTime);
+            dto.setByModel(ApiCallHistoryStatisticsMapper.mapByModel(byModel));
+        } catch (Exception e) {
+            log.warn("Failed to get model statistics: {}", e.getMessage());
+            dto.setByModel(new ArrayList<>());
+        }
+
+        // 按服务类型统计
+        try {
+            List<Object[]> byServiceType = repository.countByServiceType(effectiveStartTime, effectiveEndTime);
+            dto.setByServiceType(ApiCallHistoryStatisticsMapper.mapByServiceType(byServiceType));
+        } catch (Exception e) {
+            log.warn("Failed to get service type statistics: {}", e.getMessage());
+            dto.setByServiceType(new ArrayList<>());
+        }
+
+        // 按日期统计
+        try {
+            List<Object[]> byDay = repository.countByDay(effectiveStartTime, effectiveEndTime);
+            dto.setByDay(ApiCallHistoryStatisticsMapper.mapByDay(byDay));
+        } catch (Exception e) {
+            log.warn("Failed to get daily statistics: {}", e.getMessage());
+            dto.setByDay(new ArrayList<>());
+        }
+
+        // 按小时统计（今天）
+        try {
+            List<Object[]> byHour = repository.countByHour(effectiveEndTime.toLocalDate().toString());
+            dto.setByHour(ApiCallHistoryStatisticsMapper.mapByHour(byHour));
+        } catch (Exception e) {
+            log.warn("Failed to get hourly statistics: {}", e.getMessage());
+            dto.setByHour(new ArrayList<>());
+        }
+
+        // HTTP 状态码分布
+        try {
+            List<Object[]> byStatusCode = repository.countByStatusCode(effectiveStartTime, effectiveEndTime);
+            dto.setByStatusCode(ApiCallHistoryStatisticsMapper.mapByStatusCode(byStatusCode));
+        } catch (Exception e) {
+            log.warn("Failed to get status code statistics: {}", e.getMessage());
+            dto.setByStatusCode(new ArrayList<>());
+        }
+
+        // 错误码分布
+        try {
+            List<Object[]> byErrorCode = repository.countByErrorCode(effectiveStartTime, effectiveEndTime);
+            dto.setByErrorCode(ApiCallHistoryStatisticsMapper.mapByErrorCode(byErrorCode));
+        } catch (Exception e) {
+            log.warn("Failed to get error code statistics: {}", e.getMessage());
+            dto.setByErrorCode(new ArrayList<>());
+        }
+
+        return dto;
+    }
+
 
     /**
      * 统计信息，带数据面归属范围。
@@ -296,7 +397,7 @@ public class ApiCallHistoryService {
                                                   final LocalDateTime endTime,
                                                   final DataScope scope) {
         if (!scope.restricted()) {
-            return getStatistics(startTime, endTime);
+            return statisticsUnrestricted(startTime, endTime);
         }
         final LocalDateTime effectiveStart = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         final LocalDateTime effectiveEnd = endTime != null ? endTime : LocalDateTime.now();

@@ -126,10 +126,16 @@ export const useUserStore = defineStore('user', () => {
    * 该角色只会看到「未声明 audience」的菜单项（概览、客户端接入）。
    */
   const audiences = computed<Audience[]>(() => {
-    const roles = userInfo.value?.roles ?? []
+    const roles = (userInfo.value?.roles ?? []).map(role => role.trim().toUpperCase())
+    // ADMIN 是权限超集，也是「身份超集」：jwt.yml 里的 admin 账号同时挂了 USER，
+    // 若按角色逐个累加，概览组会同时给出「仪表板」和「我的用量」两套首页，
+    // 用户每次登录都要判断自己现在是谁。这里让 ADMIN 只保留 admin 身份。
+    if (roles.includes('ADMIN')) {
+      return ['admin']
+    }
     const set = new Set<Audience>()
     roles.forEach(role => {
-      const audience = AUDIENCE_BY_ROLE[role.trim().toUpperCase()]
+      const audience = AUDIENCE_BY_ROLE[role]
       if (audience) set.add(audience)
     })
     return Array.from(set)
