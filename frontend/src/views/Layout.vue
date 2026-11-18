@@ -58,17 +58,6 @@
             </el-breadcrumb-item>
           </el-breadcrumb>
         </div>
-        <!-- 视图切换条放在头部中间列：面包屑长短不一时切换条位置不漂移（grid 三列） -->
-        <div v-if="currentTabs.length > 1" class="header-center">
-          <div class="nav-tabs" role="tablist">
-            <span class="nav-tabs__label">{{ t('layout.viewSwitch') }}</span>
-            <button v-for="tab in currentTabs" :key="tab.key" type="button" role="tab" class="nav-tab"
-              :class="{ active: tab.to === route.path }" :aria-selected="tab.to === route.path"
-              @click="handleTabSelect(tab.to)">
-              {{ displayTitle(tab.labelKey) }}
-            </button>
-          </div>
-        </div>
         <div class="header-right">
           <StatusBar />
           <GlobalSearch ref="globalSearchRef" />
@@ -95,6 +84,18 @@
       </el-header>
 
       <el-main class="layout-main">
+        <!-- 视图切换条：同一对象的多个视图（调用/熔断/部署…）。
+             放在内容区顶部而不是页头 —— 页头只有 60px 高，塞 3~5 段会和右侧操作区抢空间。 -->
+        <div v-if="currentTabs.length > 1" class="view-switch-bar">
+          <span class="view-switch-label">{{ t('layout.viewSwitch') }}</span>
+          <div class="nav-tabs" role="tablist">
+            <button v-for="tab in currentTabs" :key="tab.key" type="button" role="tab" class="nav-tab"
+              :class="{ active: tab.to === route.path }" :aria-selected="tab.to === route.path"
+              @click="handleTabSelect(tab.to)">
+              {{ displayTitle(tab.labelKey) }}
+            </button>
+          </div>
+        </div>
         <router-view :key="route.fullPath" />
       </el-main>
     </el-container>
@@ -580,12 +581,11 @@ const handleUserCommand = async (command: string) => {
   display: block;
 }
 
-/* 三列 grid：面包屑 | 视图切换条 | 操作区。
-   切换条必须相对整条头部居中 —— 之前跟在面包屑后面，面包屑一长（如「平台设置 / 部署 / 状态持久化」）
-   就把切换条挤走，用户会觉得「选项卡一直在动」。 */
+/* 两列 grid：面包屑 | 操作区。视图切换条已下移到内容区顶部（见 .view-switch-bar），
+   页头只留全局操作，任何页面都不会被多段切换条撑满。 */
 .layout-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 16px;
   background-color: var(--ja-bg-page);
@@ -608,18 +608,31 @@ const handleUserCommand = async (command: string) => {
   overflow: hidden;
 }
 
-.header-center {
-  grid-column: 2;
+/* 内容区顶部的视图切换条：铺满内容区宽度、滚动时吸顶 */
+.view-switch-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
   display: flex;
-  justify-content: center;
-  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  margin: 0 -20px 16px;
+  padding: 12px 20px;
+  background: var(--ja-main-bg);
+  border-bottom: 1px solid var(--ja-border);
+}
+
+.view-switch-label {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--ja-ink-3);
 }
 
 /* 右侧操作区：语言 / 主题 / 账户三项固定不换行，窄屏时由左侧 tab 让位 */
 /* 显式指定第 3 列：单视图页没有中间列（v-if 不渲染），
    若靠 grid 自动排布，右侧操作区会掉进第 2 列贴着面包屑，右半边空一大块。 */
 .header-right {
-  grid-column: 3;
+  grid-column: 2;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -631,9 +644,15 @@ const handleUserCommand = async (command: string) => {
    语言/主题/账户区，这里只保留 tab 切换条；路由位置由 tab 与侧栏高亮表达。 */
 @media (max-width: 767px) {
   .layout-header {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 0 12px;
     column-gap: 8px;
+  }
+
+  .view-switch-bar {
+    margin: 0 -12px 12px;
+    padding: 10px 12px;
+    overflow-x: auto;
   }
 
   .header-left :deep(.el-breadcrumb) {
@@ -673,15 +692,6 @@ const handleUserCommand = async (command: string) => {
   display: none;
 }
 
-.nav-tabs__label {
-  flex: 0 0 auto;
-  padding: 0 6px 0 7px;
-  color: var(--ja-ink-3);
-  font-size: 12px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
 .nav-tab {
   flex: 0 0 auto;
   border: 1px solid transparent;
@@ -711,13 +721,6 @@ const handleUserCommand = async (command: string) => {
   box-shadow: var(--ja-shadow-sm);
   color: var(--ja-ink);
   font-weight: 600;
-}
-
-/* 窄屏放不下前缀，保留分段本身的可发现性即可 */
-@media (max-width: 1200px) {
-  .nav-tabs__label {
-    display: none;
-  }
 }
 
 .sidebar-toggle {

@@ -40,11 +40,11 @@ describe('usePermission 菜单过滤', () => {
     expect(groups.map(group => group.index)).toEqual(['dashboard', 'dev-tools'])
   })
 
-  it('ADMIN 拥有全部权限且命中全部 audience ⇒ 8 组 31 项全在', () => {
+  it('ADMIN 拥有全部权限且命中全部 audience ⇒ 8 组 35 项全在', () => {
     const { filterMenuByPermission } = setup([], ['ADMIN'])
     const groups = filterMenuByPermission(menuGroups)
     expect(groups).toHaveLength(8)
-    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(31)
+    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(35)
   })
 
   it('无 permission 声明的菜单项（客户端接入）对所有已登录用户可见', () => {
@@ -141,11 +141,19 @@ describe('usePermission audience 收窄（角色决定可见面）', () => {
     ])
     expect(paths).toContain('/dashboard/main')
     expect(paths).toContain('/call-history/list')
-    expect(paths).toContain('/playground/chat')
+    // AI 试验场 5 个工具各自独立成项，USER 全都看得到
+    expect(paths).toEqual(expect.arrayContaining([
+      '/playground/chat',
+      '/playground/embedding',
+      '/playground/rerank',
+      '/playground/audio',
+      '/playground/image'
+    ]))
     expect(paths).not.toContain('/system/cluster')
     expect(paths).not.toContain('/config/cache')
     expect(paths).not.toContain('/config/services')
-    expect(paths.length).toBeLessThanOrEqual(8)
+    // 3 个观测项 + 仪表板 + 5 个试验场工具 + 客户端接入指南
+    expect(paths.length).toBeLessThanOrEqual(12)
   })
 
   it('VIEWER 看到趋势与审计，但看不到配置与模型管理', () => {

@@ -41,7 +41,7 @@ describe('isMenuItemView（点菜单是否原地不动）', () => {
 })
 
 describe('menu.ts 信息架构', () => {
-  it('8 组 31 项，组顺序与设计文档一致', () => {
+  it('8 组 35 项，组顺序与设计文档一致', () => {
     expect(menuGroups.map(g => g.index)).toEqual([
       'dashboard',
       'observability',
@@ -52,8 +52,8 @@ describe('menu.ts 信息架构', () => {
       'platform',
       'dev-tools'
     ])
-    expect(menuGroups.map(g => g.children.length)).toEqual([1, 6, 5, 3, 6, 3, 5, 2])
-    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(31)
+    expect(menuGroups.map(g => g.children.length)).toEqual([1, 6, 5, 3, 6, 3, 5, 6])
+    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(35)
   })
 
   it('每组 ≤8 项（数量预算，防止再次膨胀）', () => {
@@ -73,9 +73,10 @@ describe('menu.ts 信息架构', () => {
       }
     }
     const routes = items.flatMap(item => item.tabs.map(tab => tab.to))
-    // 31 个菜单项承载 49 个页面：同一对象的多视图合并为一项，URL 一个都没少。
+    // 35 个菜单项承载 49 个页面：同一对象的多视图合并为一项、AI 试验场 5 个工具各占一项，
+    // URL 一个都没少（改结构不能丢页面）。
     expect(routes.length).toBe(49)
-    expect(items.length).toBe(31)
+    expect(items.length).toBe(35)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -94,13 +95,14 @@ describe('menu.ts 信息架构', () => {
       '/circuit-breakers/monitoring',
       '/config/services',
       '/monitoring/config',
-      '/config/state-persistence',
-      '/playground/chat'
+      '/config/state-persistence'
     ]
     expect(multi.map(item => item.path).sort()).toEqual(expectedMulti.sort())
     // 单视图项必须真的只有一个页面（防「为了少点一次把不相关页面塞进来」）
     const single = items.filter(item => item.tabs.length === 1)
-    expect(single.length).toBe(31 - expectedMulti.length)
+    expect(single.length).toBe(35 - expectedMulti.length)
+    // AI 试验场是 5 个并列工具，不该被当成「一个对象的多个视图」
+    expect(items.filter(item => item.path.startsWith('/playground/')).map(item => item.tabs.length)).toEqual([1, 1, 1, 1, 1])
   })
 
   it('每项都声明 object 与合法 audience；audience 只允许五种取值', () => {

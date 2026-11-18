@@ -2,7 +2,7 @@
  * 控制台菜单结构（单一数据源）。
  *
  * 设计规则（2026-11-18 信息架构治理）：
- * - 一个菜单项 = 一个对象；同一对象的不同视图用页内分段，URL 各自独立；
+ * - 一个菜单项 = 一个对象；同一对象的不同视图用页内分段（放在内容区顶部），URL 各自独立；
  * - 每组 ≤8 项（menu.spec.ts 有预算测试守住）；
  * - audience 与 permission 是「且」关系：角色不对或权限码不足都不显示；
  * - audience 取值 admin / maintainer / user / observer / auditor，与后端角色模板一一对应；
@@ -425,18 +425,56 @@ export const menuGroups: MenuGroup[] = [
     title: 'menu.devTools',
     icon: 'tools',
     children: [
+      // AI 试验场：5 个并列工具，不是一个对象的 5 个视图。
+      // 合并成一项时头部要挤 5 连段（与右侧操作区抢空间），且用户「想直接点图像服务」的诉求落空，
+      // 因此拆回独立菜单项；组内 6 项仍在「每组 ≤8 项」预算内。
       {
         path: '/playground/chat',
-        title: 'menu.playground',
-        object: 'playground',
-        section: 'menu.sections.playground',
+        title: 'menu.playgroundChat',
+        object: 'playground-chat',
         permission: 'ai:playground:use',
         audience: ['admin', 'maintainer', 'user'],
         tabs: [
           { key: 'playground-chat', labelKey: 'menu.playgroundChat', to: '/playground/chat' },
+        ],
+      },
+      {
+        path: '/playground/embedding',
+        title: 'menu.playgroundEmbedding',
+        object: 'playground-embedding',
+        permission: 'ai:playground:use',
+        audience: ['admin', 'maintainer', 'user'],
+        tabs: [
           { key: 'playground-embedding', labelKey: 'menu.playgroundEmbedding', to: '/playground/embedding' },
+        ],
+      },
+      {
+        path: '/playground/rerank',
+        title: 'menu.playgroundRerank',
+        object: 'playground-rerank',
+        permission: 'ai:playground:use',
+        audience: ['admin', 'maintainer', 'user'],
+        tabs: [
           { key: 'playground-rerank', labelKey: 'menu.playgroundRerank', to: '/playground/rerank' },
+        ],
+      },
+      {
+        path: '/playground/audio',
+        title: 'menu.playgroundAudio',
+        object: 'playground-audio',
+        permission: 'ai:playground:use',
+        audience: ['admin', 'maintainer', 'user'],
+        tabs: [
           { key: 'playground-audio', labelKey: 'menu.playgroundAudio', to: '/playground/audio' },
+        ],
+      },
+      {
+        path: '/playground/image',
+        title: 'menu.playgroundImage',
+        object: 'playground-image',
+        permission: 'ai:playground:use',
+        audience: ['admin', 'maintainer', 'user'],
+        tabs: [
           { key: 'playground-image', labelKey: 'menu.playgroundImage', to: '/playground/image' },
         ],
       },
