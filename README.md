@@ -101,6 +101,88 @@ restarting the process.
 | Logs and metrics scattered per backend | Central metrics, tracing, call history |
 | Restart required for config changes | Hot reload from the console |
 
+## What you can do with it
+
+Grouped by the job you are trying to do. Everything below is implemented and exercised by the test
+suite; the technical list, including what is deliberately not implemented, is in
+[Feature inventory](#feature-inventory).
+
+**Route model traffic**
+
+- **One endpoint, many backends** — Ollama, vLLM, GPUStack, Xinference, LocalAI, OpenAI, Anthropic
+  (native), Gemini (native), and any OpenAI-compatible server. Point a client's `base_url` here; its
+  code stays unchanged.
+- **Eight load-balancing strategies** — round-robin, weighted, least-connections, IP hash, consistent
+  hash, EWMA latency-aware, random, and session stickiness.
+- **Conditional routing rules** — choose an instance by model, service type, header, client IP, weight
+  or instance tag; rules record hit counts and are edited visually in the console.
+- **Seven service types** — chat, embedding, rerank, speech synthesis, speech recognition, image
+  generation, image editing.
+
+**Keep serving when a backend is not**
+
+- **Per-instance circuit breaker** — open / half-open / closed with configurable thresholds; the
+  console lists the instances that are open right now.
+- **Request-level failover** — a failed instance is retried against a different healthy one instead of
+  returning an error.
+- **Four rate limiters** — token bucket, leaky bucket, sliding window, and a Redis sliding window for
+  multi-replica deployments; enforced per client IP, per API key (per minute) or per service type.
+- **Response cache** — deterministic requests can be served from cache with tenant-isolated keys.
+- **Multi-dimensional quota** — a minute / hour / day / month ledger with distributed counting, so one
+  key or tenant cannot exhaust a shared downstream.
+- **State tiers** — circuit-breaker, load-balancer and rate-limiter state can live in Redis, H2 or
+  files, and be switched at runtime.
+
+**Hide what should not leave the building**
+
+- **PII sanitization** — regex and keyword rules on outbound HTTP (including `/v1` JSON and SSE
+  streams) and on stored call history; per-user whitelist and configurable mask character.
+- **Record governance** — choose what is retained: metadata only, desensitized summary, or
+  AES-256-GCM encrypted full content; decrypting full content is a separate ADMIN-only endpoint.
+- **API keys** — per-key IP allowlist, expiry, rotation and permission subset, so one key can be
+  limited to some service types.
+- **Blacklist** — deny by IP, account or device identifier before the request reaches a model.
+- **SLA access** — a one-time bootstrap token exchanged for a long-lived refresh credential, so an
+  external SLA checker never stores an admin password.
+
+**See what happened**
+
+- **Call history at three levels** — metadata, desensitized summary, or encrypted full content,
+  searchable in the console.
+- **Statistics** — requests, tokens and latency by model, service type, day, hour and status code;
+  slow-call analysis, token usage and quota usage.
+- **Tracing** — span search plus per-service p95 / p99 summaries over OpenTelemetry data.
+- **Exceptions and slow SQL** — grouped error statistics and the slowest statements with call sites.
+- **Audit log and operations log** — every privileged action with actor, target, result and reason;
+  page access heat shows who opened which console page.
+- **Metrics and logs** — Prometheus exposition plus structured logs; alert push channels
+  (email / webhook / IM) are deliberately not implemented.
+
+**Give each person the right view**
+
+- **Seven built-in roles** — ADMIN, OPERATOR, USER, VIEWER, AUDITOR, plus SLA_READONLY and
+  SLA_OPERATOR for machine accounts.
+- **Seventy-nine permission codes** — `resource:action` pairs; anything not explicitly granted is
+  denied.
+- **A landing page per role** — command center, operations board, my usage, trends, or audit log.
+- **Server-side self scoping** — a token carrying only the `:self:` read codes is filtered to the
+  caller's own calls and keys.
+- **Login protection** — failure thresholds per account + IP and per IP, lockout window, and online
+  unlock from the console.
+
+**Operate it**
+
+- **Storage** — H2 by default; PostgreSQL via `DATABASE_URL` with versioned Flyway migrations; Redis
+  for shared state.
+- **Multi-replica** — cross-replica event broadcast, shared counters and a distributed lock for
+  scheduled tasks.
+- **Settings that apply without a restart** — monitoring, tracing, cache, quota, cluster and
+  health-probe settings take effect on save; the ones that need a restart say so on the page.
+- **Production startup gate** — a weak JWT secret or the factory-default admin password refuses to
+  start outside the dev profile.
+- **Console** — 53 pages, one task per page, zh-CN and EN, light and dark, plus an AI playground
+  (chat, embeddings, rerank, speech, image) and a client access guide you can hand to a team.
+
 ## Quick start
 
 ### 5-minute demo — no model service needed
