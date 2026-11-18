@@ -32,7 +32,8 @@
     "home": "首页",
     "profile": "个人资料",
     "logout": "退出登录",
-    "admin": "管理员"
+    "admin": "管理员",
+    "viewSwitch": "切换视图"
   },
   "login": {
     "title": "JAiRouter 管理后台",

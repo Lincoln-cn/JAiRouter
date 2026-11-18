@@ -57,8 +57,11 @@
               <span v-else>{{ displayTitle(item.title) }}</span>
             </el-breadcrumb-item>
           </el-breadcrumb>
-          <!-- 多 tab 菜单项的切换条：40 → 28 后被收起的页面在这里进入，URL 不变 -->
-          <div v-if="currentTabs.length > 1" class="nav-tabs" role="tablist">
+        </div>
+        <!-- 视图切换条放在头部中间列：面包屑长短不一时切换条位置不漂移（grid 三列） -->
+        <div v-if="currentTabs.length > 1" class="header-center">
+          <div class="nav-tabs" role="tablist">
+            <span class="nav-tabs__label">{{ t('layout.viewSwitch') }}</span>
             <button v-for="tab in currentTabs" :key="tab.key" type="button" role="tab" class="nav-tab"
               :class="{ active: tab.to === route.path }" :aria-selected="tab.to === route.path"
               @click="handleTabSelect(tab.to)">
@@ -568,20 +571,36 @@ const handleUserCommand = async (command: string) => {
   display: block;
 }
 
+/* 三列 grid：面包屑 | 视图切换条 | 操作区。
+   切换条必须相对整条头部居中 —— 之前跟在面包屑后面，面包屑一长（如「平台设置 / 部署 / 状态持久化」）
+   就把切换条挤走，用户会觉得「选项卡一直在动」。 */
 .layout-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
+  column-gap: 16px;
   background-color: var(--ja-bg-page);
   border-bottom: 1px solid var(--ja-border);
   padding: 0 20px;
 }
 
-/* 面包屑 + tab 切换条同排：多 tab 项才出现切换条，单 tab 项视觉不变 */
+/* 面包屑：单行不换行，超长时裁切，避免把中间列挤偏 */
 .header-left {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header-left :deep(.el-breadcrumb) {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.header-center {
+  display: flex;
+  justify-content: center;
   min-width: 0;
 }
 
@@ -590,6 +609,7 @@ const handleUserCommand = async (command: string) => {
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-self: end;
   flex: 0 0 auto;
 }
 
@@ -597,8 +617,9 @@ const handleUserCommand = async (command: string) => {
    语言/主题/账户区，这里只保留 tab 切换条；路由位置由 tab 与侧栏高亮表达。 */
 @media (max-width: 767px) {
   .layout-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
     padding: 0 12px;
-    gap: 8px;
+    column-gap: 8px;
   }
 
   .header-left :deep(.el-breadcrumb) {
@@ -611,18 +632,26 @@ const handleUserCommand = async (command: string) => {
   }
 
   .nav-tabs {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    min-width: 0;
   }
 }
 
-/* 视图分段：同一对象的多视图（记录 / 统计）在这里切换，形态保持安静——
-   文字 + 选中下划线，不用胶囊、不用填充块，避免和面包屑抢注意力。 */
+/* 视图切换（分段控件）：一个菜单项下的多视图（调用记录 / 调用统计、部署三视图）
+   在这里切换。第一版做成「文字 + 下划线」太安静，运维第一次几乎发现不了它，
+   所以改成看得见的分段槽：容器有底与边框，选中项抬成一张小卡片，
+   并在左侧用「切换视图」说明它不是二级导航。 */
 .nav-tabs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 18px;
+  gap: 2px;
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 3px;
+  background: var(--ja-surface-2);
+  border: 1px solid var(--ja-border);
+  border-radius: 8px;
   overflow-x: auto;
-  margin-left: 4px;
   scrollbar-width: none;
 }
 
@@ -630,36 +659,51 @@ const handleUserCommand = async (command: string) => {
   display: none;
 }
 
-.nav-tab {
-  position: relative;
+.nav-tabs__label {
   flex: 0 0 auto;
-  border: none;
+  padding: 0 6px 0 7px;
+  color: var(--ja-ink-3);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.nav-tab {
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: transparent;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
   font-size: 13px;
   line-height: 1;
-  padding: 6px 0;
+  padding: 5px 12px;
   cursor: pointer;
-  transition: color 0.15s;
+  white-space: nowrap;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
 }
 
 .nav-tab:hover {
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
+}
+
+.nav-tab:focus-visible {
+  outline: 2px solid var(--ja-accent);
+  outline-offset: 1px;
 }
 
 .nav-tab.active {
-  color: var(--ja-text-primary);
+  background: var(--ja-segment-active);
+  border-color: var(--ja-border);
+  box-shadow: var(--ja-shadow-sm);
+  color: var(--ja-ink);
+  font-weight: 600;
 }
 
-.nav-tab.active::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--ja-accent);
-  border-radius: 1px;
+/* 窄屏放不下前缀，保留分段本身的可发现性即可 */
+@media (max-width: 1200px) {
+  .nav-tabs__label {
+    display: none;
+  }
 }
 
 .sidebar-toggle {

@@ -32,7 +32,8 @@
     "home": "Home",
     "profile": "Profile",
     "logout": "Log Out",
-    "admin": "Administrator"
+    "admin": "Administrator",
+    "viewSwitch": "Switch view"
   },
   "login": {
     "title": "JAiRouter Admin",
