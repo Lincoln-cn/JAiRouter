@@ -298,7 +298,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.CALLHISTORY_SELF_READ,
                 PermissionCodes.MONITORING_METRICS_READ,
                 PermissionCodes.MONITORING_SLOWQUERY_READ,
-                PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ,
+                PermissionCodes.MONITORING_TOKENUSAGE_READ,
                 PermissionCodes.MONITORING_MODELSTATS_READ,
                 PermissionCodes.MONITORING_ROUTING_READ,
                 PermissionCodes.TRACING_DASHBOARD_READ,
@@ -309,7 +309,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.CONFIG_CLUSTER_READ,
                 PermissionCodes.CONFIG_HEALTH_READ,
                 PermissionCodes.MONITORING_QUOTA_READ,
-                PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ,
+                PermissionCodes.MONITORING_EXCEPTIONS_READ,
                 PermissionCodes.MONITORING_CONSOLE_READ
         );
     }

@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.auth.security.permission.DataScope;
+import org.unreal.modelrouter.auth.security.permission.DataScopeResolver;
 import org.unreal.modelrouter.auth.security.permission.PermissionChecks;
 import org.unreal.modelrouter.auth.security.permission.PermissionCodes;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
@@ -37,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import reactor.core.publisher.Mono;
 import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
@@ -60,6 +63,33 @@ public class ApiCallHistoryController {
     private final ApiCallHistoryService callHistoryService;
     private final ApiCallHistoryRecorder callHistoryRecorder;
     private final SecurityAuditService securityAuditService;
+    private final DataScopeResolver dataScopeResolver;
+
+
+    /**
+     * 解析当前请求的数据面范围。
+     *
+     * <p>持 {@code callhistory:read} ⇒ 不受限；只持 {@code callhistory:self:read} ⇒ 按并集过滤
+     * （userId 命中或密钥属于本人）；两者都不持时 URL 规则已 403，这里按不受限兜底。</p>
+     */
+    private Mono<DataScope> scopeOf(final Authentication authentication) {
+        return dataScopeResolver.resolveWithKeys(authentication,
+                PermissionCodes.CALLHISTORY_READ, PermissionCodes.CALLHISTORY_SELF_READ);
+    }
+
+    /**
+     * 单条记录是否落在当前范围内。
+     */
+    private static boolean inScope(final ApiCallHistoryEntity entity, final DataScope scope) {
+        if (!scope.restricted()) {
+            return true;
+        }
+        if (scope.filterByUser() && scope.userId().equals(entity.getUserId())) {
+            return true;
+        }
+        return scope.filterByKeys() && entity.getApiKeyId() != null
+                && scope.apiKeyIds().contains(entity.getApiKeyId());
+    }
 
     /**
      * 记录调用历史（手动）
@@ -119,18 +149,17 @@ public class ApiCallHistoryController {
      */
     @GetMapping
     @Operation(summary = "分页查询调用历史", description = "根据条件分页查询 API 调用历史")
-    public ResponseEntity<RouterResponse<Page<ApiCallHistoryEntity>>> query(
+    public Mono<ResponseEntity<RouterResponse<Page<ApiCallHistoryEntity>>>> query(
             @Parameter(description = "查询参数")
-            @ModelAttribute CallHistoryQueryDTO query,
+            @ModelAttribute final CallHistoryQueryDTO query,
             final Authentication authentication) {
 
-        if (query == null) {
-            query = new CallHistoryQueryDTO();
-        }
-
-        Page<ApiCallHistoryEntity> result = callHistoryService.query(query);
-        redactBodies(authentication, result.getContent());
-        return ResponseEntity.ok(RouterResponse.success(result));
+        final CallHistoryQueryDTO effective = query == null ? new CallHistoryQueryDTO() : query;
+        return scopeOf(authentication).map(scope -> {
+            final Page<ApiCallHistoryEntity> result = callHistoryService.query(effective, scope);
+            redactBodies(authentication, result.getContent());
+            return ResponseEntity.ok(RouterResponse.success(result));
+        });
     }
 
     /**
@@ -138,14 +167,18 @@ public class ApiCallHistoryController {
      */
     @GetMapping("/trace/{traceId}")
     @Operation(summary = "根据 traceId 查询调用链路", description = "查询同一 traceId 下的所有调用记录")
-    public ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>> findByTraceId(
+    public Mono<ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>>> findByTraceId(
             @Parameter(description = "追踪 ID")
-            @PathVariable String traceId,
+            @PathVariable final String traceId,
             final Authentication authentication) {
 
-        List<ApiCallHistoryEntity> records = callHistoryService.findByTraceId(traceId);
-        redactBodies(authentication, records);
-        return ResponseEntity.ok(RouterResponse.success(records));
+        return scopeOf(authentication).map(scope -> {
+            final List<ApiCallHistoryEntity> records = callHistoryService.findByTraceId(traceId).stream()
+                    .filter(record -> inScope(record, scope))
+                    .toList();
+            redactBodies(authentication, new java.util.ArrayList<>(records));
+            return ResponseEntity.ok(RouterResponse.success(records));
+        });
     }
 
     /**
@@ -158,15 +191,17 @@ public class ApiCallHistoryController {
     @GetMapping("/{id}/detail")
     @Operation(summary = "查询记录详情", description = "根据 ID 查询单条调用历史记录；"
             + "持 callhistory:full-content 时自动解密正文，否则只返回摘要")
-    public ResponseEntity<RouterResponse<ApiCallHistoryEntity>> getDetail(
+    public Mono<ResponseEntity<RouterResponse<ApiCallHistoryEntity>>> getDetail(
             @Parameter(description = "记录 ID")
-            @PathVariable Long id,
+            @PathVariable final Long id,
             final Authentication authentication) {
 
         final boolean fullContent = PermissionChecks.hasPermission(
                 authentication, PermissionCodes.CALLHISTORY_FULL_CONTENT);
 
-        return callHistoryService.findById(id)
+        return scopeOf(authentication).map(scope -> callHistoryService.findById(id)
+                // 不在范围内一律按「不存在」处理：返回 403 会泄露「这条记录确实存在」这一信息
+                .filter(entity -> inScope(entity, scope))
                 .map(entity -> {
                     if (fullContent) {
                         // 解密查看 FULL 级别正文前先落审计，口径与拆码前一致
@@ -181,7 +216,7 @@ public class ApiCallHistoryController {
                 })
                 .orElseGet(() -> ResponseEntity
                         .status(ApiException.resolveStatus(ErrorCode.NOT_FOUND.code()))
-                        .body(RouterResponse.error("记录不存在: id=" + id, ErrorCode.NOT_FOUND.code())));
+                        .body(RouterResponse.error("记录不存在: id=" + id, ErrorCode.NOT_FOUND.code()))));
     }
 
     /**
@@ -189,14 +224,16 @@ public class ApiCallHistoryController {
      */
     @GetMapping("/recent")
     @Operation(summary = "获取最近的调用记录", description = "获取最近发生的 API 调用记录")
-    public ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>> findRecent(
+    public Mono<ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>>> findRecent(
             @Parameter(description = "最大数量")
-            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "20") final int limit,
             final Authentication authentication) {
 
-        List<ApiCallHistoryEntity> records = callHistoryService.findRecent(limit);
-        redactBodies(authentication, records);
-        return ResponseEntity.ok(RouterResponse.success(records));
+        return scopeOf(authentication).map(scope -> {
+            final List<ApiCallHistoryEntity> records = callHistoryService.findRecent(limit, scope);
+            redactBodies(authentication, new java.util.ArrayList<>(records));
+            return ResponseEntity.ok(RouterResponse.success(records));
+        });
     }
 
     /**
@@ -204,7 +241,7 @@ public class ApiCallHistoryController {
      */
     @GetMapping("/errors")
     @Operation(summary = "查询错误调用", description = "查询失败的 API 调用记录")
-    public ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>> findErrors(
+    public Mono<ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>>> findErrors(
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
@@ -214,12 +251,14 @@ public class ApiCallHistoryController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
 
             @Parameter(description = "最大数量")
-            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "50") final int limit,
             final Authentication authentication) {
 
-        List<ApiCallHistoryEntity> records = callHistoryService.findErrors(startTime, endTime, limit);
-        redactBodies(authentication, records);
-        return ResponseEntity.ok(RouterResponse.success(records));
+        return scopeOf(authentication).map(scope -> {
+            final List<ApiCallHistoryEntity> records = callHistoryService.findErrors(startTime, endTime, limit, scope);
+            redactBodies(authentication, new java.util.ArrayList<>(records));
+            return ResponseEntity.ok(RouterResponse.success(records));
+        });
     }
 
     /**
@@ -227,7 +266,7 @@ public class ApiCallHistoryController {
      */
     @GetMapping("/slow")
     @Operation(summary = "查询慢调用", description = "查询响应时间超过阈值的 API 调用记录")
-    public ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>> findSlowCalls(
+    public Mono<ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>>> findSlowCalls(
             @Parameter(description = "慢调用阈值 (毫秒)")
             @RequestParam(required = false) Long threshold,
 
@@ -240,12 +279,15 @@ public class ApiCallHistoryController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
 
             @Parameter(description = "最大数量")
-            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "50") final int limit,
             final Authentication authentication) {
 
-        List<ApiCallHistoryEntity> records = callHistoryService.findSlowCalls(threshold, startTime, endTime, limit);
-        redactBodies(authentication, records);
-        return ResponseEntity.ok(RouterResponse.success(records));
+        return scopeOf(authentication).map(scope -> {
+            final List<ApiCallHistoryEntity> records =
+                    callHistoryService.findSlowCalls(threshold, startTime, endTime, limit, scope);
+            redactBodies(authentication, new java.util.ArrayList<>(records));
+            return ResponseEntity.ok(RouterResponse.success(records));
+        });
     }
 
     /**
@@ -253,17 +295,19 @@ public class ApiCallHistoryController {
      */
     @GetMapping("/statistics")
     @Operation(summary = "获取统计信息", description = "获取 API 调用历史的多维度统计信息")
-    public ResponseEntity<RouterResponse<CallHistoryStatisticsDTO>> getStatistics(
+    public Mono<ResponseEntity<RouterResponse<CallHistoryStatisticsDTO>>> getStatistics(
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime startTime,
 
             @Parameter(description = "结束时间 (ISO-8601)")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endTime,
 
-        CallHistoryStatisticsDTO statistics = callHistoryService.getStatistics(startTime, endTime);
-        return ResponseEntity.ok(RouterResponse.success(statistics));
+            final Authentication authentication) {
+
+        return scopeOf(authentication).map(scope -> ResponseEntity.ok(
+                RouterResponse.success(callHistoryService.getStatistics(startTime, endTime, scope))));
     }
 
     /**
@@ -271,7 +315,7 @@ public class ApiCallHistoryController {
      */
     @GetMapping("/dashboard")
     @Operation(summary = "获取仪表盘数据", description = "获取调用历史仪表盘所需的核心数据")
-    public ResponseEntity<RouterResponse<Map<String, Object>>> getDashboard(
+    public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> getDashboard(
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
@@ -282,24 +326,25 @@ public class ApiCallHistoryController {
 
             final Authentication authentication) {
 
-        // 统计信息
-        CallHistoryStatisticsDTO statistics = callHistoryService.getStatistics(startTime, endTime);
+        return scopeOf(authentication).map(scope -> {
+            // 统计信息（本人读时按并集过滤后聚合）
+            final CallHistoryStatisticsDTO statistics = callHistoryService.getStatistics(startTime, endTime, scope);
 
-        // 最近调用
-        List<ApiCallHistoryEntity> recentCalls = callHistoryService.findRecent(10);
-        redactBodies(authentication, recentCalls);
+            // 最近调用（同样按范围过滤）
+            final List<ApiCallHistoryEntity> recentCalls = callHistoryService.findRecent(10, scope);
+            redactBodies(authentication, new java.util.ArrayList<>(recentCalls));
 
-        // 构建仪表盘数据
-        Map<String, Object> dashboard = new HashMap<>();
-        dashboard.put("statistics", statistics);
-        dashboard.put("recentCalls", recentCalls);
-        dashboard.put("recorderStats", Map.of(
-                "bufferSize", callHistoryRecorder.getBufferSize(),
-                "totalRecords", callHistoryRecorder.getTotalRecords(),
-                "droppedRecords", callHistoryRecorder.getDroppedRecords()
-        ));
-
-        return ResponseEntity.ok(RouterResponse.success(dashboard));
+            // 构建仪表盘数据
+            final Map<String, Object> dashboard = new HashMap<>();
+            dashboard.put("statistics", statistics);
+            dashboard.put("recentCalls", recentCalls);
+            dashboard.put("recorderStats", Map.of(
+                    "bufferSize", callHistoryRecorder.getBufferSize(),
+                    "totalRecords", callHistoryRecorder.getTotalRecords(),
+                    "droppedRecords", callHistoryRecorder.getDroppedRecords()
+            ));
+            return ResponseEntity.ok(RouterResponse.success(dashboard));
+        });
     }
 
     /**

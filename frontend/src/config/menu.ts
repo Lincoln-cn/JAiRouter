@@ -77,7 +77,8 @@ export const menuGroups: MenuGroup[] = [
         title: 'menu.callRecords',
         object: 'call',
         section: 'menu.sections.calls',
-        permission: 'callhistory:read',
+        // 或语义：运维/观察者持全局读码，普通用户持本人读码（服务端按 userId 与密钥并集过滤）
+        permission: ['callhistory:read', 'callhistory:self:read'],
         audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
           { key: 'call-history-list', labelKey: 'menu.callRecords', to: '/call-history/list' },

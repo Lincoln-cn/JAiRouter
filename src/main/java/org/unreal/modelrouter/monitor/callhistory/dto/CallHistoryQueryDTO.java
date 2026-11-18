@@ -45,6 +45,11 @@ public final class CallHistoryQueryDTO {
     /**
      * 是否成功（true/false/null 表示全部）
      */
+    /**
+     * 归属账号（管理员显式筛选；本人读时由服务端强制覆盖，前端传值无效）。
+     */
+    private String userId;
+
     private Boolean isSuccess;
 
     /**
