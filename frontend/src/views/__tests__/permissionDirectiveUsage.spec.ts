@@ -167,7 +167,7 @@ describe('页面按钮权限门控', () => {
       // 2026-11-16 第三轮：写 API 扫描发现这两页会调用 updateCallHistoryConfig，
       // 但保存按钮对只持 read 的角色（USER/OPERATOR/VIEWER 都能进记录治理页）仍可见
       ['security/RecordGovernance.vue', 'config:callhistory:write'],
-      ['callHistory/CallHistoryList.vue', 'config:callhistory:write'],
+      // 记录治理的保存按钮已拆到 /security/record-governance，本页只读
       // 2026-11-16 第四轮：撤掉 /security、/system 父路由的角色门控后，这两组页面对
       // 「只勾了 read 码的自定义角色」可达，写按钮必须自己挂码，否则点击才 403
       ['security/ApiKeyManagement.vue', 'security:apikeys:manage'],

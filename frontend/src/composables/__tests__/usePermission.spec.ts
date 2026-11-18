@@ -32,12 +32,13 @@ describe('filterMenuByPermission', () => {
   })
 
   it('数组权限为「或」：命中任一码即保留菜单项', () => {
-    setup(['monitoring:quota:read'])
-    const observability = findGroup('observability')
-    const usage = observability?.children.find(item => item.path === '/call-history/token-usage')
-    expect(usage).toBeTruthy()
+    // 负载均衡策略的权限是 ['lb:config:read', 'lb:config:write']，只持写码也应看到入口
+    setup(['lb:config:write'])
+    const traffic = findGroup('traffic')
+    const strategy = traffic?.children.find(item => item.path === '/load-balancers/strategy-config')
+    expect(strategy).toBeTruthy()
     // 同一组内没有命中的项仍被移除
-    expect(observability?.children.some(item => item.path === '/call-history/list')).toBe(false)
+    expect(traffic?.children.some(item => item.path === '/load-balancers/monitoring')).toBe(false)
   })
 
   it('单码不命中即隐藏；组内全部隐藏时整组消失', () => {
@@ -48,12 +49,12 @@ describe('filterMenuByPermission', () => {
     expect(groups.map(group => group.index)).toEqual(['dashboard', 'dev-tools'])
   })
 
-  it('ADMIN 拥有全部权限 ⇒ 7 组 35 项全在', () => {
+  it('ADMIN 拥有全部权限 ⇒ 8 组 49 项全在', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
-    expect(groups).toHaveLength(7)
-    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(35)
+    expect(groups).toHaveLength(8)
+    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(49)
   })
 
   it('无 permission 声明的菜单项（客户端接入）对所有已登录用户可见', () => {
@@ -68,44 +69,50 @@ describe('resolveLandingPath / getAccessibleTabs', () => {
     setActivePinia(createPinia())
   })
 
-  it('落地页 = 第一个当前用户有权限的 tab（跳过无权限的 tab[0]）', () => {
+  it('单 tab 菜单项的落地页就是它自己', () => {
     setup(['monitoring:quota:read'])
     const item = menuGroups
       .find(group => group.index === 'observability')!
-      .children.find(child => child.path === '/call-history/token-usage')!
+      .children.find(child => child.path === '/monitoring/quota')!
     const { resolveLandingPath, getAccessibleTabs } = usePermission()
+    // 一页一事之后「配额使用」是独立菜单项，不再需要「跳过无权限的 tab[0]」
     expect(getAccessibleTabs(item).map(tab => tab.key)).toEqual(['quota'])
     expect(resolveLandingPath(item)).toBe('/monitoring/quota')
   })
 
-  it('全部 tab 无权限时回退第一个 tab（不留空导航）', () => {
+  it('无权限的菜单项被整项过滤；resolveLandingPath 仍回退 tabs[0]（不留空导航）', () => {
     setup(['overview:dashboard:read'])
     const item = menuGroups
       .find(group => group.index === 'observability')!
       .children.find(child => child.path === '/call-history/list')!
-    const { resolveLandingPath, getAccessibleTabs } = usePermission()
+    const { filterMenuByPermission, resolveLandingPath, getAccessibleTabs } = usePermission()
     expect(getAccessibleTabs(item)).toHaveLength(0)
     expect(resolveLandingPath(item)).toBe('/call-history/list')
+    const paths = filterMenuByPermission(menuGroups).flatMap(group =>
+      group.children.map(child => child.path)
+    )
+    expect(paths).not.toContain('/call-history/list')
   })
 
-  it('tab 未声明权限时沿用菜单项权限', () => {
+  it('tab 未声明权限时沿用菜单项权限（单 tab 项只应判定一次）', () => {
     setup(['ai:playground:use'])
     const item = menuGroups
       .find(group => group.index === 'dev-tools')!
       .children.find(child => child.path === '/playground/chat')!
     const { getAccessibleTabs } = usePermission()
-    expect(getAccessibleTabs(item)).toHaveLength(5)
+    // 试验场 5 个 tab 已平铺为 5 个独立菜单项，每项只判定自己的权限
+    expect(getAccessibleTabs(item)).toHaveLength(1)
   })
 
-  it('只要有一个 tab 可进，菜单项就显示，且落地页落在可进的那个 tab', () => {
-    // 只有熔断历史码的用户：monitoring / global-config 两个 tab 都进不去，
-    // 但菜单项必须仍然可见，且点击后要直接落到 history（不能落到首个 tab）
+  it('熔断三个页面平铺后，只有 cb:history:read 时只看到「熔断历史」一项', () => {
     setup(['cb:history:read'])
     const { filterMenuByPermission, resolveLandingPath } = usePermission()
-    const item = filterMenuByPermission(menuGroups)
-      .find(group => group.index === 'traffic')!
-      .children.find(child => child.path === '/circuit-breakers/monitoring')!
-    expect(item, '有一个可进 tab 就应当可见').toBeDefined()
+    const traffic = filterMenuByPermission(menuGroups).find(group => group.index === 'traffic')!
+    const paths = traffic.children.map(child => child.path)
+    expect(paths).toContain('/circuit-breakers/history')
+    expect(paths).not.toContain('/circuit-breakers/monitoring')
+    expect(paths).not.toContain('/circuit-breakers/global-config')
+    const item = traffic.children.find(child => child.path === '/circuit-breakers/history')!
     expect(resolveLandingPath(item)).toBe('/circuit-breakers/history')
   })
 
@@ -139,28 +146,26 @@ describe('菜单可见性：权限码是唯一门控', () => {
     setActivePinia(createPinia())
   })
 
-  it('OPERATOR 持审计/集群/健康/操作记录/监控配置码时，安全与系统组只显示有码的项', () => {
+  it('OPERATOR 持审计/集群/健康/操作记录/监控配置码时，安全与平台设置组只显示有码的项', () => {
     setup(
       ['security:audit:read', 'config:cluster:read', 'config:health:read', 'monitoring:console:read', 'config:callhistory:read', 'config:persistence:read', 'monitoring:config:read', 'monitoring:config:write'],
       ['OPERATOR']
     )
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
-    // 安全组：API Key / PII 脱敏 / JWT 令牌 / 黑名单 需要各自的 read 码（OPERATOR 不持有）
+    // 安全组：API Key / PII 脱敏 / JWT 令牌 / 黑名单 / 登录保护 都需要各自的 read 码（OPERATOR 不持有）；
+    // 审计日志已于 2026-11-18 移到运行观测组，所以这里只剩记录治理。
     const security = groups.find(group => group.index === 'security')
-    expect(security?.children.map(item => item.path)).toEqual([
-      '/security/audit-logs',
-      '/security/record-governance'
-    ])
-    // 系统组：accounts/permissions 需要 system:* 码；追踪配置需要 tracing:config:* ⇒ 都不显示；
-    // 「监控配置」与「状态持久化」都是运行时配置面，OPERATOR 持相应写码/读码即可见。
-    const system = groups.find(group => group.index === 'system')
-    expect(system?.children.map(item => item.path)).toEqual([
+    expect(security?.children.map(item => item.path)).toEqual(['/security/record-governance'])
+    // 平台设置组（index 仍是 system）：accounts/permissions/sla 需要 system:* 码，追踪配置需要
+    // tracing:config:*，响应缓存与配额运行时需要 config:cache|quota 码 ⇒ 本用例的授权里都没有。
+    const platform = groups.find(group => group.index === 'platform')
+    expect(platform?.children.map(item => item.path)).toEqual([
       '/monitoring/config',
+      '/monitoring/config/runtime',
       '/config/state-persistence',
       '/system/cluster',
-      '/system/health',
-      '/system/console-operations'
+      '/system/health'
     ])
   })
 
@@ -169,26 +174,30 @@ describe('菜单可见性：权限码是唯一门控', () => {
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
     expect(groups.find(group => group.index === 'security')).toBeUndefined()
-    const system = groups.find(group => group.index === 'system')
-    expect(system?.children.map(item => item.path)).toEqual([
+    const platform = groups.find(group => group.index === 'platform')
+    expect(platform?.children.map(item => item.path)).toEqual([
       '/config/state-persistence',
       '/system/cluster'
     ])
   })
 
-  it('VIEWER 持 security:audit:read 时看得到「审计日志」（与后端接口一致）', () => {
+  it('VIEWER 持 security:audit:read 时在「运行观测」组看到审计日志（与后端接口一致）', () => {
     setup(['security:audit:read'], ['VIEWER'])
     const { filterMenuByPermission } = usePermission()
-    const security = filterMenuByPermission(menuGroups).find(group => group.index === 'security')
-    expect(security?.children.map(item => item.path)).toEqual(['/security/audit-logs'])
+    const groups = filterMenuByPermission(menuGroups)
+    const observability = groups.find(group => group.index === 'observability')
+    expect(observability?.children.map(item => item.path)).toEqual(['/security/audit-logs'])
+    // 安全组里不再有审计日志，VIEWER 也没有其它安全码 ⇒ 整组隐藏
+    expect(groups.find(group => group.index === 'security')).toBeUndefined()
   })
 
-  it('ADMIN 不受影响（安全组 7 项、系统组 9 项都在）', () => {
+  it('ADMIN 不受影响（安全 6 项、访问与身份 3 项、平台设置 8 项都在）', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
-    expect(groups.find(group => group.index === 'security')?.children).toHaveLength(7)
-    expect(groups.find(group => group.index === 'system')?.children).toHaveLength(9)
+    expect(groups.find(group => group.index === 'security')?.children).toHaveLength(6)
+    expect(groups.find(group => group.index === 'access')?.children).toHaveLength(3)
+    expect(groups.find(group => group.index === 'platform')?.children).toHaveLength(8)
   })
 
   it('调用历史拆码：callhistory:read 给运维（可见），USER/VIEWER 不可见', () => {

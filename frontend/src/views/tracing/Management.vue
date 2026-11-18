@@ -12,9 +12,8 @@
     @save="handleSave"
     @discard="resetForms"
   >
-    <el-tabs v-model="activeTab">
-      <!-- 配置 Tab：运行状态 + 采样 / 导出器 / 性能与数据管理 -->
-      <el-tab-pane :label="t('tracing.management.tabs.config')" name="config">
+        <section class="config-group">
+      <h3 class="config-group-title">{{ t('tracing.management.tabs.config') }}</h3>
         <ConfigSectionCard :title="t('tracing.management.tracingStatus')">
           <template #actions>
             <el-tag size="small" type="info" effect="plain">{{ t('tracing.management.readonlyTag') }}</el-tag>
@@ -263,10 +262,10 @@
             </div>
           </div>
         </ConfigSectionCard>
-      </el-tab-pane>
+    </section>
 
-      <!-- 服务配置 Tab：服务级采样率表格 -->
-      <el-tab-pane :label="t('tracing.management.tabs.services')" name="services">
+    <section class="config-group">
+      <h3 class="config-group-title">{{ t('tracing.management.tabs.services') }}</h3>
         <ConfigSectionCard
           :title="t('tracing.management.serviceConfigsTitle')"
           :description="t('tracing.management.servicesHint')"
@@ -308,8 +307,7 @@
             {{ t('tracing.management.addServiceConfig') }}
           </el-button>
         </ConfigSectionCard>
-      </el-tab-pane>
-    </el-tabs>
+    </section>
   </ConfigPageShell>
 </template>
 
@@ -361,7 +359,6 @@ const asStringArray = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 
 const loading = ref(false)
-const activeTab = ref('config')
 const clearingCache = ref(false)
 const cleaningUp = ref(false)
 const retentionHours = ref(24)

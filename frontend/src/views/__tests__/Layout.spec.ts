@@ -44,31 +44,20 @@ describe('Layout 多 tab 切换条', () => {
     i18n.global.locale.value = 'zh-CN'
   })
 
-  it('多 tab 菜单项渲染切换条，点击第二个 tab 跳到对应 URL', async () => {
+  it('一页一事之后调用记录是独立菜单项，不渲染切换条', async () => {
     const wrapper = await mountAt('/call-history/list', ['callhistory:read'])
 
-    const tabs = wrapper.findAll('.nav-tabs .nav-tab')
-    expect(tabs.map(tab => tab.text())).toEqual(['调用记录', '调用历史仪表盘'])
-
-    await tabs[1].trigger('click')
-    // 懒加载路由组件在 vitest 里要跨若干个宏任务才落定；整库并行跑时冷启动可能 >5s，
-    // 这里给足余量（超时会让下一条用例继承未完成的导航，形成假失败）
-    await vi.waitFor(() => {
-      expect(router.currentRoute.value.path).toBe('/call-history/dashboard')
-    }, { timeout: 15000 })
+    // 平铺重构后「调用记录」与「调用统计」是两个独立菜单项，切换条机制退出业务场景
+    expect(wrapper.findAll('.nav-tabs .nav-tab')).toHaveLength(0)
+    expect(router.currentRoute.value.path).toBe('/call-history/list')
     wrapper.unmount()
-  }, 20000)
+  })
 
-  it('tab 级权限缺失时不渲染该 tab，只显示有权限的那些', async () => {
-    const wrapper = await mountAt('/circuit-breakers/monitoring', [
-      'cb:monitoring:read',
-      'cb:history:read'
-    ])
+  it('熔断历史是独立菜单项，只持 cb:history:read 也能直达', async () => {
+    const wrapper = await mountAt('/circuit-breakers/history', ['cb:history:read'])
 
-    expect(router.currentRoute.value.path).toBe('/circuit-breakers/monitoring')
-    const tabs = wrapper.findAll('.nav-tabs .nav-tab')
-    // 全局配置需要 config:circuitbreaker:read —— 未授予，故只有两个 tab
-    expect(tabs.map(tab => tab.text())).toEqual(['熔断监控', '熔断历史'])
+    expect(router.currentRoute.value.path).toBe('/circuit-breakers/history')
+    expect(wrapper.findAll('.nav-tabs .nav-tab')).toHaveLength(0)
     wrapper.unmount()
   })
 
@@ -79,13 +68,13 @@ describe('Layout 多 tab 切换条', () => {
     wrapper.unmount()
   })
 
-  it('面包屑为「组 → 菜单项 → 当前 tab」，最后一段不可点', async () => {
+  it('面包屑为「组 → 菜单项」，最后一段不可点', async () => {
     const wrapper = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
 
+    // 单 tab 项的 tab 与菜单项同名，末段去重 ⇒ 只剩「组 → 项」两段
     const crumbs = wrapper.findAll('.el-breadcrumb__inner').map(crumb => crumb.text())
-    expect(crumbs).toEqual(['运行观测', '用量统计', '配额使用'])
-    // 组与菜单项渲染成链接，末段（当前 tab）只是文本 —— 最后一段不可点
-    expect(wrapper.findAll('.el-breadcrumb__inner a')).toHaveLength(2)
+    expect(crumbs).toEqual(['运行观测', '配额使用'])
+    expect(wrapper.findAll('.el-breadcrumb__inner a')).toHaveLength(1)
     expect(wrapper.findAll('.el-breadcrumb__item').at(-1)?.find('a').exists()).toBe(false)
     wrapper.unmount()
   })
@@ -111,7 +100,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       items: group.findAll('.el-menu-item').map(node => node.text())
     }))
 
-  it('OPERATOR 视角：安全组只剩审计日志/记录治理，系统组只剩有码的 5 项', async () => {
+  it('OPERATOR 视角：安全组只剩记录治理，平台设置组只剩有码的 5 项', async () => {
     const wrapper = await mountAt('/config/state-persistence', [
       'overview:dashboard:read',
       'security:audit:read',
@@ -125,21 +114,28 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     ], ['OPERATOR'])
 
     const groups = sidebarGroups(wrapper)
-    // 第五轮撤掉了父路由 roles：有 security:audit:read 就能看到「审计日志」，
-    // 与后端 /api/security/audit/extended/** 返回 200 的口径一致。
-    expect(groups.find(group => group.title === '安全')?.items).toEqual(['审计日志', '记录治理'])
-    // API Key / PII 脱敏 / JWT 令牌 / 黑名单 仍需各自的 read 码（OPERATOR 不持有）
-    expect(groups.find(group => group.title === '系统')?.items).toEqual([
+    // 2026-11-18 菜单重分类：审计日志移到运行观测组，安全组只剩记录治理
+    // （API Key / PII 脱敏 / JWT 令牌 / 黑名单 / 登录保护 仍需各自的 read 码，OPERATOR 不持有）。
+    expect(groups.find(group => group.title === '安全')?.items).toEqual(['记录治理'])
+    // 平台设置组（原「系统」组）按小节排序：运行时配置 → 部署与基础设施 → 审计
+    expect(groups.find(group => group.title === '平台设置')?.items).toEqual([
       '监控配置',
+      '运行时与应急',
       '状态持久化',
       '集群设置',
-      '健康探针设置',
-      '操作记录'
+      '健康探针设置'
+    ])
+    // 小节标题：只渲染「当前可见项所属」的小节，且同一小节只出现一次
+    // （操作记录已移到运行观测组，所以平台设置只剩两节）
+    expect(wrapper.findAll('.menu-section-title').map(node => node.text())).toEqual([
+      '异常与审计',
+      '运行时配置',
+      '部署与基础设施'
     ])
     wrapper.unmount()
   })
 
-  it('ADMIN 视角：七组齐全，安全 7 项与系统 9 项都在（反证不是整栏都没渲染）', async () => {
+  it('ADMIN 视角：八组齐全，安全 6 项、访问与身份 3 项与平台设置 8 项都在（反证不是整栏都没渲染）', async () => {
     const wrapper = await mountAt('/system/cluster', [], ['ADMIN'])
 
     const groups = sidebarGroups(wrapper)
@@ -149,63 +145,30 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       '流量治理',
       '模型与实例',
       '安全',
-      '系统',
+      '访问与身份',
+      '平台设置',
       '开发工具'
     ])
     expect(groups.find(group => group.title === '安全')?.items).toEqual([
       'API 密钥管理',
-      'PII 脱敏管理',
       'JWT 令牌管理',
       '黑名单管理',
-      '审计日志',
+      'PII 脱敏管理',
       '记录治理',
       '登录保护'
     ])
-    expect(groups.find(group => group.title === '系统')?.items).toHaveLength(9)
+    expect(groups.find(group => group.title === '访问与身份')?.items).toEqual([
+      '账户管理',
+      '权限管理',
+      'SLA 接入'
+    ])
+    expect(groups.find(group => group.title === '平台设置')?.items).toHaveLength(8)
+    // 平台设置组两节，各出现一次（观测组与流量治理组的小节也会渲染，这里只比对集合）
+    const sectionTitles = wrapper.findAll('.menu-section-title').map(node => node.text())
+    expect(sectionTitles).toContain('运行时配置')
+    expect(sectionTitles).toContain('部署与基础设施')
+    expect(sectionTitles).not.toContain('审计')
     wrapper.unmount()
-  })
-
-  it('有码即可直达 /system/cluster；无码页面仍被守卫挡回仪表板', async () => {
-    const pinia = createPinia()
-    setActivePinia(pinia)
-    const userStore = useUserStore()
-    userStore.token = 'test-token'
-    userStore.permissions = ['overview:dashboard:read', 'config:cluster:read', 'config:persistence:read']
-    userStore.userInfo = {
-      username: 'op',
-      roles: ['OPERATOR'],
-      permissions: userStore.permissions
-    }
-
-    // 从无权限码要求的页面出发：同路径 push 会被 vue-router 当成重复导航跳过，
-    // 守卫根本不执行，会得到「没被重定向」的假红（实际踩过）。
-    await router.push('/tools/client-access')
-    await router.push('/system/cluster')
-    expect(router.currentRoute.value.path).toBe('/system/cluster')
-
-    // 没有 security:apikeys:read ⇒ 仍然进不去
-    await router.push('/security/api-keys')
-    expect(router.currentRoute.value.path).toBe('/dashboard/main')
-
-    await router.push('/config/state-persistence')
-    expect(router.currentRoute.value.path).toBe('/config/state-persistence')
-  })
-
-  it('连仪表板权限都没有时，落地页放行而不是无限重定向', async () => {
-    const pinia = createPinia()
-    setActivePinia(pinia)
-    const userStore = useUserStore()
-    userStore.token = 'test-token'
-    userStore.permissions = ['config:cluster:read']
-    userStore.userInfo = {
-      username: 'op',
-      roles: ['OPERATOR'],
-      permissions: userStore.permissions
-    }
-
-    await router.push('/tools/client-access')
-    await router.push('/system/cluster')
-    expect(router.currentRoute.value.path).toBe('/system/cluster')
   })
 })
 

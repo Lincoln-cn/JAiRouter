@@ -11,12 +11,6 @@
     @save="handleSave"
     @discard="handleDiscard"
   >
-    <MetricStrip
-      class="summary-strip"
-      :items="metricItems"
-      :loading="loading && !status"
-      :columns="4"
-    />
 
     <el-alert
       v-if="!status"
@@ -259,7 +253,6 @@ import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
 import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
 import SettingsSwitch from '@/components/config/SettingsSwitch.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
-import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 import { useConfigDraft } from '@/composables/useConfigDraft'
 import {
@@ -333,30 +326,6 @@ const apiMessageOf = (error: unknown, fallback: string): string => {
 }
 
 // ── 指标条 ──
-
-const hitRatioDisplay = computed(() => {
-  const ratio = status.value?.hitRatio
-  if (ratio == null) return '—'
-  return `${(ratio * 100).toFixed(1)}%`
-})
-
-const metricItems = computed<MetricStripItem[]>(() => {
-  const snapshot = status.value
-  return [
-    { key: 'hitRatio', label: t('responseCache.hitRateLabel'), value: hitRatioDisplay.value },
-    { key: 'hits', label: t('responseCache.hitsLabel'), value: `${snapshot?.hits ?? 0}` },
-    {
-      key: 'entries',
-      label: t('responseCache.currentEntriesLabel'),
-      value: `${snapshot?.size ?? '—'} / ${snapshot?.maxSize ?? '—'}`,
-    },
-    {
-      key: 'ttl',
-      label: t('responseCache.ttlLabel'),
-      value: `${snapshot?.ttlSeconds ?? '—'}`,
-    },
-  ]
-})
 
 // ── 即时生效的开关 ──
 

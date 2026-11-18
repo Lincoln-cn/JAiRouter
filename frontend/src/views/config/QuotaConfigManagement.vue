@@ -12,12 +12,6 @@
     @discard="handleDiscard"
   >
     <!-- 顶部状态指标条（P2-1：四张彩卡压成一行中性指标，语义色只落在「降级放行」为真时） -->
-    <MetricStrip
-      :items="summaryItems"
-      :loading="loading && !config"
-      :columns="4"
-      class="summary-strip"
-    />
 
     <!-- 页头提示：区分「即时生效」与「需重启」两类配置 -->
     <template #toolbar>
@@ -110,7 +104,6 @@ import { InfoFilled } from '@element-plus/icons-vue'
 import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
 import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
 import SettingsSwitch from '@/components/config/SettingsSwitch.vue'
-import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 import { useConfigDraft } from '@/composables/useConfigDraft'
 import { getQuotaConfig, updateQuotaConfig, type QuotaConfig } from '@/api/quota'
@@ -127,37 +120,6 @@ const loading = ref(false)
 const config = ref<QuotaConfig | null>(null)
 /** 即时开关提交失败的分区级错误（草稿错误由 useConfigDraft 写在 errors 上） */
 const switchError = ref('')
-
-/** 顶部指标条：只呈现后端已返回的运行时状态，不新增统计口径 */
-const summaryItems = computed<MetricStripItem[]>(() => {
-  const c = config.value
-  return [
-    {
-      key: 'enabled',
-      label: t('quotaConfig.enabledLabel'),
-      value: c ? (c.enabled ? t('quotaConfig.enabled') : t('quotaConfig.disabled')) : '—',
-    },
-    {
-      key: 'backend',
-      label: t('quotaConfig.backendLabel'),
-      value: c?.backendName ?? '—',
-    },
-    {
-      key: 'failOpen',
-      label: t('quotaConfig.failOpenLabel'),
-      value: c ? (c.failOpen ? t('quotaConfig.failOpenEnabled') : t('quotaConfig.failOpenDisabled')) : '—',
-      tone: c?.failOpen ? 'warning' : 'default',
-    },
-    {
-      key: 'flushInterval',
-      label: t('quotaConfig.flushIntervalLabel'),
-      value:
-        c?.flushIntervalSeconds != null
-          ? `${c.flushIntervalSeconds} ${t('quotaConfig.flushIntervalUnit')}`
-          : '—',
-    },
-  ]
-})
 
 const windowOptions = ['MINUTE', 'HOUR', 'DAY', 'MONTH']
 

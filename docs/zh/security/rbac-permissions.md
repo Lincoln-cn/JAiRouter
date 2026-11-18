@@ -337,27 +337,28 @@ ADMIN 直接返回全量 76 码；其他角色返回其 JWT `permissions` claim 
 
 ## 权限管理 UI
 
-「系统 → 权限管理」页面（路由 `/system/permissions`，需 `system:permissions:manage`）提供图形化权限配置：
+「访问与身份 → 权限管理」页面（路由 `/system/permissions`，需 `system:permissions:manage`）提供图形化权限配置：
 
 1. **角色下拉**：选择 ADMIN / OPERATOR / USER / VIEWER，自动加载该角色当前权限码并回显勾选。
 2. **权限码树**：76 个权限码按模块分组的树形勾选（叶子为权限码，父节点自动联动）。
 3. **保存权限**：点击「保存权限」调用 `PUT /api/security/permissions/roles/{roleName}`，整体替换该角色权限。
 4. **生效说明**：保存成功后提示「权限变更后需重新登录方可生效」——权限内嵌于 JWT；服务端角色权限缓存约 5 分钟过期（仅影响后续登录的令牌签发）。
 
-> 权限管理页入口位于系统菜单组；账户（YAML 静态账户 / Web 账户管理创建的数据库账户）由「系统 → 账户管理」维护。
+> 权限管理页入口位于访问与身份菜单组；账户（YAML 静态账户 / Web 账户管理创建的数据库账户）由「访问与身份 → 账户管理」维护。
 
 ## 菜单与路由
 
-当前（P0-3 信息架构重构）前端菜单为 **7 组 35 项 / 49 个 tab**，由 `menu.ts` 数据驱动 + 权限过滤。v2.9.8 的「11 组 → 8 组 34 项」是历史形态，已被本次收敛取代：
+当前（2026-11-18 组内重分类后）前端菜单为 **8 组 35 项 / 49 个 tab**，由 `menu.ts` 数据驱动 + 权限过滤；重分类只调整归属与顺序（审计日志归入运行观测、全局配置收拢到平台设置、访问与身份独立成组），URL、权限码与页面数量都没变。v2.9.8 的「11 组 → 8 组 34 项」是历史形态，已被本次收敛取代：
 
 | 菜单组 | 菜单项数 | 菜单项（括号内为 tab，`｜` 分隔；附权限码） |
 |--------|:-------:|---------------------------------------------|
 | 概览 | 1 | 仪表板（`overview:dashboard:read`） |
-| 运行观测 | 5 | 调用历史（调用记录 ｜ 调用历史仪表盘，`callhistory:read`）/ 链路追踪（链路搜索 `tracing:search:read` ｜ 追踪仪表盘 `tracing:dashboard:read`）/ 异常管理（异常列表 ｜ 统计分析，`monitoring:exceptions:read`）/ 慢请求（慢调用 ｜ 慢 SQL，`monitoring:slowquery:read`）/ 用量统计（Token 用量 `monitoring:tokenusage:read` ｜ 配额使用 `monitoring:quota:read`） |
-| 流量治理 | 7 | 路由规则（`config:rules:read`）/ 负载均衡（实时监控 `lb:monitoring:read` ｜ 策略配置 `lb:config:read` / `lb:config:write`）/ 限流（限流监控 `rl:monitoring:read` ｜ 限流配置 `config:ratelimit:read`）/ 熔断（熔断监控 `cb:monitoring:read` ｜ 熔断历史 `cb:history:read` ｜ 全局配置 `config:circuitbreaker:read`）/ 响应缓存管理（`config:cache:read` / `config:cache:write`）/ 配额运行时配置（`config:quota:read`）/ 资源池（`config:pools:read`） |
+| 运行观测 | 6 | 调用历史（调用记录 ｜ 调用历史仪表盘，`callhistory:read`）/ 链路追踪（链路搜索 `tracing:search:read` ｜ 追踪仪表盘 `tracing:dashboard:read`）/ 异常管理（异常列表 ｜ 统计分析，`monitoring:exceptions:read`）/ 慢请求（慢调用 ｜ 慢 SQL，`monitoring:slowquery:read`）/ 用量统计（Token 用量 `monitoring:tokenusage:read` ｜ 配额使用 `monitoring:quota:read`）/ 审计日志（`security:audit:read`） |
+| 流量治理 | 5 | 路由规则（`config:rules:read`）/ 负载均衡（实时监控 `lb:monitoring:read` ｜ 策略配置 `lb:config:read` / `lb:config:write`）/ 限流（限流监控 `rl:monitoring:read` ｜ 限流配置 `config:ratelimit:read`）/ 熔断（熔断监控 `cb:monitoring:read` ｜ 熔断历史 `cb:history:read` ｜ 全局配置 `config:circuitbreaker:read`）/ 资源池（`config:pools:read`） |
 | 模型与实例 | 4 | 适配器管理 / 服务管理 / 实例管理 / 版本管理（对应 `config:adapters|services|instances|versions:read`） |
-| 安全 | 7 | API 密钥管理（`security:apikeys:read` / `security:apikeys:manage`）/ PII 脱敏管理（`security:sanitization:read` / `security:sanitization:manage`）/ JWT 令牌管理（`security:jwttokens:read` / `security:jwttokens:manage`）/ 黑名单管理（`security:blacklist:read` / `security:blacklist:manage`）/ 审计日志（`security:audit:read`）/ 记录治理（`config:callhistory:read` / `config:callhistory:write`）/ 登录保护（`security:loginguard:read` / `security:loginguard:manage`） |
-| 系统 | 9 | 账户管理（`system:accounts:read` / `system:accounts:manage`）/ 权限管理（`system:permissions:read` / `system:permissions:manage`）/ 追踪配置（`tracing:config:read` / `tracing:config:manage`）/ 监控配置（监控配置 ｜ 运行时与应急，`monitoring:config:read`；写按钮另挂 `monitoring:config:write`）/ 状态持久化（`config:persistence:read`）/ 集群设置（`config:cluster:read` / `config:cluster:write`）/ 健康探针设置（`config:health:read` / `config:health:write`）/ 操作记录（`monitoring:console:read`/ SLA 接入（`system:sla:read`；签发/吊销按钮另挂 `system:sla:manage`） |
+| 安全 | 6 | API 密钥管理（`security:apikeys:read` / `security:apikeys:manage`）/ JWT 令牌管理（`security:jwttokens:read` / `security:jwttokens:manage`）/ 黑名单管理（`security:blacklist:read` / `security:blacklist:manage`）/ PII 脱敏管理（`security:sanitization:read` / `security:sanitization:manage`）/ 记录治理（`config:callhistory:read` / `config:callhistory:write`）/ 登录保护（`security:loginguard:read` / `security:loginguard:manage`） |
+| 访问与身份 | 3 | 账户管理（`system:accounts:read` / `system:accounts:manage`）/ 权限管理（`system:permissions:read` / `system:permissions:manage`）/ SLA 接入（`system:sla:read`；签发/吊销按钮另挂 `system:sla:manage`） |
+| 平台设置 | 8 | **运行时配置**：监控配置（监控配置 ｜ 运行时与应急，`monitoring:config:read`；写按钮另挂 `monitoring:config:write`）、追踪配置（`tracing:config:read` / `tracing:config:manage`）、响应缓存管理（`config:cache:read` / `config:cache:write`）、配额运行时配置（`config:quota:read`）；**部署与基础设施**：状态持久化（`config:persistence:read`）、集群设置（`config:cluster:read` / `config:cluster:write`）、健康探针设置（`config:health:read` / `config:health:write`）；**审计**：操作记录（`monitoring:console:read`） |
 | 开发工具 | 2 | AI 试验场（对话测试 / 向量生成 / 重排序 / 语音服务 / 图像服务，均为 `ai:playground:use`）/ 客户端接入指南（无权限码，所有已登录用户可见） |
 
 可见性控制机制：

@@ -61,7 +61,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 2.1 左侧导航
 
-控制台左侧为可折叠侧边栏，包含 **7 个菜单分组**、**35 个菜单项**、**49 个页面（tab）**。同一菜单项下的多个页面收为 **tab**（如「调用历史」下的「调用记录 / 调用历史仪表盘」），tab 按固定顺序排列，可点击切换。
+控制台左侧为可折叠侧边栏，包含 **8 个菜单分组**、**35 个菜单项**、**49 个页面（tab）**。同一菜单项下的多个页面收为 **tab**（如「调用历史」下的「调用记录 / 调用历史仪表盘」），tab 按固定顺序排列，可点击切换。
 
 菜单可见性由权限码控制：缺少对应权限码的分组/菜单项不会显示；**tab 逐项单独校验**——只拥有部分 tab 权限时，该菜单项仍显示，但落地页取「第一个有权限的 tab」。
 
@@ -70,12 +70,13 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | # | 分组（zh） | 分组（en） | 菜单项（括号内为 tab，按顺序，`｜` 分隔） |
 |---|-----------|-----------|------------------------------------------|
 | 1 | 概览 | Overview | 仪表板 |
-| 2 | 运行观测 | Observability | 调用历史（调用记录 ｜ 调用历史仪表盘）、链路追踪（链路搜索 ｜ 追踪仪表盘）、异常管理（异常列表 ｜ 统计分析）、慢请求（慢调用 ｜ 慢 SQL）、用量统计（Token 用量 ｜ 配额使用） |
-| 3 | 流量治理 | Traffic Governance | 路由规则、负载均衡（实时监控 ｜ 策略配置）、限流（限流监控）、熔断（熔断监控 ｜ 熔断历史 ｜ 全局配置）、响应缓存管理、配额运行时配置、资源池 |
+| 2 | 运行观测 | Observability | 调用历史（调用记录 ｜ 调用历史仪表盘）、链路追踪（链路搜索 ｜ 追踪仪表盘）、异常管理（异常列表 ｜ 统计分析）、慢请求（慢调用 ｜ 慢 SQL）、用量统计（Token 用量 ｜ 配额使用）、审计日志 |
+| 3 | 流量治理 | Traffic Governance | 路由规则、负载均衡（实时监控 ｜ 策略配置）、限流（限流监控 ｜ 限流配置）、熔断（熔断监控 ｜ 熔断历史 ｜ 全局配置）、资源池 |
 | 4 | 模型与实例 | Model & Instances | 适配器管理、服务管理、实例管理、版本管理 |
-| 5 | 安全 | Security | API 密钥管理、PII 脱敏管理、JWT 令牌管理、黑名单管理、审计日志、记录治理、登录保护 |
-| 6 | 系统 | System | 账户管理、权限管理、追踪配置、监控配置（监控配置 ｜ 运行时与应急）、状态持久化、集群设置、健康探针设置、操作记录、SLA 接入 |
-| 7 | 开发工具 | Developer Tools | AI 试验场（对话测试 ｜ 向量生成 ｜ 重排序 ｜ 语音服务 ｜ 图像服务）、客户端接入指南 |
+| 5 | 安全 | Security | API 密钥管理、JWT 令牌管理、黑名单管理、PII 脱敏管理、记录治理、登录保护 |
+| 6 | 访问与身份 | Access & Identity | 账户管理、权限管理、SLA 接入 |
+| 7 | 平台设置 | Platform Settings | **运行时配置**：监控配置（监控配置 ｜ 运行时与应急）、追踪配置、响应缓存管理、配额运行时配置；**部署与基础设施**：状态持久化、集群设置、健康探针设置；**审计**：操作记录 |
+| 8 | 开发工具 | Developer Tools | AI 试验场（对话测试 ｜ 向量生成 ｜ 重排序 ｜ 语音服务 ｜ 图像服务）、客户端接入指南 |
 
 > 本次信息架构（IA）由 9 组 40 项收敛为 7 组 28 项；此后陆续增补至 7 组 35 项 / 49 个页面（v3.5.1 记录治理、v3.8.6 集群设置、v3.8.7 健康探针设置、v3.8.8 操作记录与监控配置、SLA 接入、登录保护）：12 个入口降级为同组菜单项的 tab，**URL 一律不变**，深链、书签与本文附录里的路径全部继续有效，只是不再单独占用侧栏一行。
 
@@ -247,7 +248,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 |------|------|-------------|
 | 追踪仪表盘 | `/tracing/dashboard` | 追踪量趋势、延迟分布、错误率趋势、吞吐量 |
 | 追踪搜索 | `/tracing/search` | 按 Trace ID / 服务名 / 时间范围定位具体请求链路 |
-| 追踪配置 | `/tracing/management` | 追踪开关、采样率、导出器配置（Logging / OTLP / Jaeger）；已迁入「系统」分组 |
+| 追踪配置 | `/tracing/management` | 追踪开关、采样率、导出器配置（Logging / OTLP / Jaeger）；已迁入「平台设置」分组 |
 
 ### 5.3 仪表板总览
 
@@ -337,7 +338,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 **处理**：
 
-- 用 `admin` 账号登录，进入「系统 → 权限管理」为对应角色补充权限码；
+- 用 `admin` 账号登录，进入「访问与身份 → 权限管理」为对应角色补充权限码；
 - 参考 [RBAC 权限管理](../security/rbac-permissions.md) 文档了解权限码体系。
 
 ### 8.3 看不到某些菜单页
@@ -400,8 +401,6 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | 流量治理 | 负载均衡 | 实时监控 `/load-balancers/monitoring` ｜ 策略配置 `/load-balancers/strategy-config` |
 | 流量治理 | 限流 | 限流监控 `/rate-limiters/monitoring` |
 | 流量治理 | 熔断 | 熔断监控 `/circuit-breakers/monitoring` ｜ 熔断历史 `/circuit-breakers/history` ｜ 全局配置 `/circuit-breakers/global-config` |
-| 流量治理 | 响应缓存管理 | `/config/cache` |
-| 流量治理 | 配额运行时配置 | `/config/quota` |
 | 流量治理 | 资源池 | `/config/pools` |
 | 模型与实例 | 适配器管理 | `/config/adapters` |
 | 模型与实例 | 服务管理 | `/config/services` |
@@ -411,17 +410,19 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | 安全 | PII 脱敏管理 | `/security/sanitization` |
 | 安全 | JWT 令牌管理 | `/security/jwt-tokens` |
 | 安全 | 黑名单管理 | `/security/blacklist` |
-| 安全 | 审计日志 | `/security/audit-logs` |
+| 运行观测 | 审计日志 | `/security/audit-logs` |
 | 安全 | 记录治理 | `/security/record-governance` |
 | 安全 | 登录保护 | `/security/login-guard` |
-| 系统 | 账户管理 | `/system/accounts` |
-| 系统 | 权限管理 | `/system/permissions` |
-| 系统 | 追踪配置 | `/tracing/management` |
-| 系统 | 监控配置 | 监控配置 `/monitoring/config` ｜ 运行时与应急 `/monitoring/config/runtime` |
-| 系统 | 状态持久化 | `/config/state-persistence` |
-| 系统 | 集群设置 | `/system/cluster` |
-| 系统 | 健康探针设置 | `/system/health` |
-| 系统 | 操作记录 | `/system/console-operations` |
+| 平台设置 | 账户管理 | `/system/accounts` |
+| 平台设置 | 权限管理 | `/system/permissions` |
+| 平台设置 | 追踪配置 | `/tracing/management` |
+| 平台设置 | 监控配置 | 监控配置 `/monitoring/config` ｜ 运行时与应急 `/monitoring/config/runtime` |
+| 平台设置 | 响应缓存管理 | `/config/cache` |
+| 平台设置 | 配额运行时配置 | `/config/quota` |
+| 平台设置 | 状态持久化 | `/config/state-persistence` |
+| 平台设置 | 集群设置 | `/system/cluster` |
+| 平台设置 | 健康探针设置 | `/system/health` |
+| 平台设置 | 操作记录 | `/system/console-operations` |
 | 开发工具 | AI 试验场 | 对话测试 `/playground/chat` ｜ 向量生成 `/playground/embedding` ｜ 重排序 `/playground/rerank` ｜ 语音服务 `/playground/audio` ｜ 图像服务 `/playground/image` |
 | 开发工具 | 客户端接入指南 | `/tools/client-access` |
 

@@ -8,9 +8,8 @@
     :show-actions="false"
     @refresh="loadAll"
   >
-    <el-tabs v-model="activeTab" class="page-tabs">
-      <!-- 配置 tab：当前存储层（只读）+ 切换存储层（需要二次确认的写操作） -->
-      <el-tab-pane :label="t('statePersistence.tabConfig')" name="config">
+        <section class="config-group">
+      <h3 class="config-group-title">{{ t('statePersistence.tabConfig') }}</h3>
         <ConfigSectionCard
           :title="t('statePersistence.currentTierTitle')"
           :description="t('statePersistence.currentTierDesc')"
@@ -67,10 +66,10 @@
             </ConfirmAction>
           </div>
         </ConfigSectionCard>
-      </el-tab-pane>
+    </section>
 
-      <!-- 操作与详情 tab：全是即时操作与只读展示，没有草稿可保存 -->
-      <el-tab-pane :label="t('statePersistence.tabOperations')" name="operations">
+    <section class="config-group">
+      <h3 class="config-group-title">{{ t('statePersistence.tabOperations') }}</h3>
         <ConfigSectionCard
           :title="t('statePersistence.tierCardTitle')"
           :description="t('statePersistence.tiersDesc')"
@@ -186,7 +185,6 @@
             <el-tag type="info" size="small">{{ t('statePersistence.totalCount', { count: stateDetails.length }) }}</el-tag>
           </template>
 
-          <MetricStrip :items="summaryItems" :columns="4" class="summary-strip" />
 
           <el-table :data="stateDetails" stripe v-loading="loadingDetails" class="flex-table">
             <el-table-column prop="instanceId" :label="t('statePersistence.instanceId')" min-width="180">
@@ -226,8 +224,7 @@
             </el-table-column>
           </el-table>
         </ConfigSectionCard>
-      </el-tab-pane>
-    </el-tabs>
+    </section>
 
     <!-- 状态详情对话框 -->
     <el-dialog
@@ -258,7 +255,6 @@ import { Refresh, RefreshRight, Switch, Upload, View } from '@element-plus/icons
 import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
 import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
-import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 import {
   getPersistenceStatus,
@@ -285,7 +281,6 @@ const canWrite = computed(() => hasPermission('config:persistence:write'))
  * （重算健康 / 恢复 / 同步 / 切换存储层），所以拆成「配置」与「操作与详情」两个 tab，
  * 且外壳只保留状态行（:show-actions="false"），不提供永远禁用的保存按钮。
  */
-const activeTab = ref('config')
 
 const loading = ref(false)
 const currentTier = ref('h2')
@@ -303,19 +298,6 @@ const stats = ref<PersistenceStats>({
   pendingSync: 0
 })
 const stateDetails = ref<StateDetail[]>([])
-
-const summaryItems = computed<MetricStripItem[]>(() => [
-  { key: 'circuitBreaker', label: t('statePersistence.cbStatLabel'), value: stats.value.circuitBreakerCount },
-  { key: 'loadBalancer', label: t('statePersistence.lbStatLabel'), value: stats.value.loadBalancerCount },
-  { key: 'rateLimiter', label: t('statePersistence.rlStatLabel'), value: stats.value.rateLimiterCount },
-  {
-    key: 'pendingSync',
-    label: t('statePersistence.pendingSyncLabel'),
-    value: stats.value.pendingSync,
-    // 「有未同步积压」属真语义（需要关注），为 0 时保持中性
-    tone: stats.value.pendingSync > 0 ? 'warning' : 'default',
-  },
-])
 
 const loadingDetails = ref(false)
 const recovering = ref(false)

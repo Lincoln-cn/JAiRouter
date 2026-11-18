@@ -16,18 +16,19 @@ import { KNOWN_PERMISSION_CODES } from './knownPermissions'
  * 一旦结构漂移（多一项、少一组、tab 路由写错、反查表漏项），先在这里红。
  */
 describe('menu.ts 信息架构', () => {
-  it('7 组 35 项，组顺序与设计文档一致', () => {
+  it('8 组 49 项，组顺序与设计文档一致', () => {
     expect(menuGroups.map(g => g.index)).toEqual([
       'dashboard',
       'observability',
       'traffic',
       'model-services',
       'security',
-      'system',
+      'access',
+      'platform',
       'dev-tools'
     ])
-    expect(menuGroups.map(g => g.children.length)).toEqual([1, 5, 7, 4, 7, 9, 2])
-    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(35)
+    expect(menuGroups.map(g => g.children.length)).toEqual([1, 12, 9, 4, 6, 3, 8, 6])
+    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(49)
   })
 
   it('每项主路径 = 第一个 tab 的路由，且 tab 路由全局唯一', () => {
@@ -41,10 +42,10 @@ describe('menu.ts 信息架构', () => {
       }
     }
     const routes = items.flatMap(item => item.tabs.map(tab => tab.to))
-    // 40 → 31：12 个被收起页面仍在 tabs 里，因此 tab 总数 = 31 + 12 = 43
-    // （v3.8.6 在「限流」项下新增 config tab、在「系统」项下新增集群设置 ⇒ 43；v3.8.7 新增健康探针设置 ⇒ 44；v3.8.8 新增管理操作 ⇒ 45；
-    // v3.8.8 之后「系统」组新增「监控配置」一项两 tab ⇒ 47；#1174 再加「SLA 接入」一项一 tab ⇒ 48；#1176 再加「登录保护」一项一 tab ⇒ 49）
+    // 2026-11-18「一页一事」重构：原来收在 tabs 里的 14 个页面全部提升为独立菜单项，
+    // 因此「菜单项数 = tab 数 = 页面数」= 49，不存在一项多 tab。
     expect(routes.length).toBe(49)
+    expect(items.length).toBe(49)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -61,7 +62,8 @@ describe('menu.ts 信息架构', () => {
 
   it('深链未命中回退 route.path；异常详情归到异常列表', () => {
     expect(resolveMenuPath('/not-in-menu/42')).toBe('/not-in-menu/42')
-    expect(resolveMenuPath('/monitoring/quota')).toBe('/call-history/token-usage')
+    // 一页一事之后「配额使用」是独立菜单项，不再挂在「Token 用量」下
+    expect(resolveMenuPath('/monitoring/quota')).toBe('/monitoring/quota')
     expect(resolveMenuPath('/exceptions/detail/abc')).toBe('/exceptions/list')
     expect(findMenuEntry('/exceptions/detail/abc')?.group.index).toBe('observability')
     // 详情页不是 tab，面包屑末段由 Layout 单独渲染
@@ -69,7 +71,7 @@ describe('menu.ts 信息架构', () => {
     expect(findMenuTab('/exceptions/statistics')?.key).toBe('statistics')
   })
 
-  it('12 个被收起的路由仍可反查到 tab（深链可达）', () => {
+  it('14 个原 tab 页面提升为独立项后仍可反查（深链可达）', () => {
     const collapsed = [
       '/call-history/dashboard',
       '/tracing/dashboard',
@@ -82,7 +84,9 @@ describe('menu.ts 信息架构', () => {
       '/playground/embedding',
       '/playground/rerank',
       '/playground/audio',
-      '/playground/image'
+      '/playground/image',
+      '/monitoring/config/runtime',
+      '/playground/chat'
     ]
     for (const path of collapsed) {
       expect(findMenuTab(path), path).toBeTruthy()
@@ -143,14 +147,12 @@ describe('menu.ts 权限码白名单（#567）', () => {
     ]
     const items = menuGroups.flatMap(group => group.children)
     for (const [path, readCode, manageCode] of expected) {
-      const tab = items.flatMap(item => item.tabs).find(candidate => candidate.to === path)
-      expect(tab, path).toBeTruthy()
-      expect(tab?.permission, path).toEqual([readCode, manageCode])
+      // 一页一事之后权限码只声明在菜单项上（每项单 tab，tab 不再重复声明）
       const item = items.find(candidate => candidate.path === path)
-      if (item) {
-        // 菜单项级同样「或」：持读码或持写/管理码都能看到入口
-        expect(item.permission, path).toEqual(expect.arrayContaining([readCode, manageCode]))
-      }
+      expect(item, path).toBeTruthy()
+      expect(item?.permission, path).toEqual(expect.arrayContaining([readCode, manageCode]))
+      expect(item?.tabs, path).toHaveLength(1)
+      expect(item?.tabs[0].permission, path).toBeUndefined()
     }
   })
 })

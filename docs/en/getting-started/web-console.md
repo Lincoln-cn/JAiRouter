@@ -68,14 +68,15 @@ Menu visibility is controlled by permission codes: groups/menu items for which t
 ![Dashboard interface](images/dashboard-en-US.png)
 
 | # | Group (en) | Group (zh) | Menu items (tabs in parentheses, `｜` separated) |
-|---|-----------|-----------|--------------------------------------------------|
+|---|-----------|-----------|------------------------------------------|
 | 1 | Overview | 概览 | Dashboard |
-| 2 | Observability | 运行观测 | Call History (Call Records ｜ Call History Dashboard), Distributed Tracing (Trace Search ｜ Tracing Dashboard), Exceptions (Exception List ｜ Statistics), Slow Requests (Slow Calls ｜ Slow SQL), Usage (Token Usage ｜ Quota Usage) |
-| 3 | Traffic Governance | 流量治理 | Routing Rules, Load Balancing (Real-time Monitoring ｜ Strategy Config), Rate Limiting (Rate Limit Monitoring), Circuit Breakers (Circuit Monitoring ｜ Circuit History ｜ Global Config), Response Cache Management, Quota Runtime Config, Resource Pools |
+| 2 | Observability | 运行观测 | Call History (Call Records ｜ Call History Dashboard), Distributed Tracing (Trace Search ｜ Tracing Dashboard), Exceptions (Exception List ｜ Statistics), Slow Requests (Slow Calls ｜ Slow SQL), Usage (Token Usage ｜ Quota Usage), Audit Logs |
+| 3 | Traffic Governance | 流量治理 | Routing Rules, Load Balancing (Real-time Monitoring ｜ Strategy Config), Rate Limiting (Rate Limit Monitoring ｜ Rate Limit Config), Circuit Breakers (Circuit Monitoring ｜ Circuit History ｜ Global Config), Resource Pools |
 | 4 | Model & Instances | 模型与实例 | Adapters, Service Management, Instance Management, Version Management |
-| 5 | Security | 安全 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs, Record Governance, Login Protection |
-| 6 | System | 系统 | Account Management, Permission Management, Tracing Config, Monitoring Config (Monitoring Config ｜ Runtime & Emergency), State Persistence, Cluster Settings, Health Probe Settings, Operation Records, SLA Access |
-| 7 | Developer Tools | 开发工具 | AI Playground (Chat Playground ｜ Embedding ｜ Rerank ｜ Audio Service ｜ Image Service), Client Access Guide |
+| 5 | Security | 安全 | API Key Management, JWT Token Management, Blacklist Management, PII Sanitization, Record Governance, Login Protection |
+| 6 | Access & Identity | 访问与身份 | Account Management, Permission Management, SLA Access |
+| 7 | Platform Settings | 平台设置 | **Runtime Configuration**: Monitoring Config (Monitoring Config ｜ Runtime & Emergency), Tracing Config, Response Cache Management, Quota Runtime Config; **Deployment & Infrastructure**: State Persistence, Cluster Settings, Health Probe Settings; **Audit**: Operation Records |
+| 8 | Developer Tools | 开发工具 | AI Playground (Chat ｜ Embeddings ｜ Rerank ｜ Audio ｜ Images), Client Access Guide |
 
 > This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items; later additions brought it to 7 groups / 35 items and 49 pages (v3.5.1 Record Governance, v3.8.6 Cluster Settings, v3.8.7 Health Probe Settings, v3.8.8 Operation Records and Monitoring Config, SLA Access): 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
 
@@ -247,7 +248,7 @@ On the **Quota Usage Monitoring** page you can:
 |------|------|-----------------|
 | Tracing Dashboard | `/tracing/dashboard` | Trace volume trends, latency distribution, error rate trends, throughput |
 | Tracing Search | `/tracing/search` | Locate specific request traces by Trace ID / service name / time range |
-| Tracing Config | `/tracing/management` | Tracing toggle, sampling rate, exporter configuration (Logging / OTLP / Jaeger); moved to the **System** group |
+| Tracing Config | `/tracing/management` | Tracing toggle, sampling rate, exporter configuration (Logging / OTLP / Jaeger); moved to the **Platform Settings** group |
 
 ### 5.3 Dashboard Overview
 
@@ -285,7 +286,7 @@ Frontend menu rendering is filtered by permission codes:
 
 **Resolution**:
 
-1. Go to **System → Permission Management** (requires `system:permissions:manage`, ADMIN only);
+1. Go to **Access & Identity → Permission Management** (requires `system:permissions:manage`, ADMIN only);
 2. Find the target role, check the missing permission codes, and save.
 
 > 💡 `/v1/**` (OpenAI-compatible inference endpoints) is independent of the RBAC system and only requires authentication — it is not restricted by permission codes.
@@ -337,7 +338,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 
 **Resolution**:
 
-- Log in with the `admin` account, go to System → Permission Management, and add the missing permission code to the role;
+- Log in with the `admin` account, go to Access & Identity → Permission Management, and add the missing permission code to the role;
 - See the [RBAC Permission Management](../security/rbac-permissions.md) documentation for details on the permission code system.
 
 ### 8.3 Missing Menu Pages
@@ -414,14 +415,14 @@ This page provides complete access examples for the OpenAI-compatible API and th
 | Security | Audit Logs | `/security/audit-logs` |
 | Security | Record Governance | `/security/record-governance` |
 | Security | Login Protection | `/security/login-guard` |
-| System | Account Management | `/system/accounts` |
-| System | Permission Management | `/system/permissions` |
-| System | Tracing Config | `/tracing/management` |
-| System | Monitoring Config | Monitoring Config `/monitoring/config` ｜ Runtime & Emergency `/monitoring/config/runtime` |
-| System | State Persistence | `/config/state-persistence` |
-| System | Cluster Settings | `/system/cluster` |
-| System | Health Probe Settings | `/system/health` |
-| System | Operation Records | `/system/console-operations` |
+| Platform Settings | Account Management | `/system/accounts` |
+| Platform Settings | Permission Management | `/system/permissions` |
+| Platform Settings | Tracing Config | `/tracing/management` |
+| Platform Settings | Monitoring Config | Monitoring Config `/monitoring/config` ｜ Runtime & Emergency `/monitoring/config/runtime` |
+| Platform Settings | State Persistence | `/config/state-persistence` |
+| Platform Settings | Cluster Settings | `/system/cluster` |
+| Platform Settings | Health Probe Settings | `/system/health` |
+| Platform Settings | Operation Records | `/system/console-operations` |
 | Developer Tools | AI Playground | Chat Playground `/playground/chat` ｜ Embedding `/playground/embedding` ｜ Rerank `/playground/rerank` ｜ Audio Service `/playground/audio` ｜ Image Service `/playground/image` |
 | Developer Tools | Client Access Guide | `/tools/client-access` |
 

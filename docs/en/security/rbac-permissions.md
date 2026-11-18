@@ -337,28 +337,29 @@ ADMIN receives the full 76 codes; other roles receive the codes from their JWT `
 
 ## Permission Management UI
 
-The "System → Permission Management" page (route `/system/permissions`, requires `system:permissions:manage`) provides graphical permission configuration:
+The "Access & Identity → Permission Management" page (route `/system/permissions`, requires `system:permissions:manage`) provides graphical permission configuration:
 
 1. **Role dropdown**: select ADMIN / OPERATOR / USER / VIEWER; the role's current permission codes are loaded and reflected in the tree.
 2. **Permission code tree**: 76 codes grouped by module as a checkable tree (leaf nodes are permission codes; parent nodes toggle automatically).
 3. **Save permissions**: clicking "Save" calls `PUT /api/security/permissions/roles/{roleName}` to replace the role's permissions wholesale.
 4. **Effect notice**: after saving, the UI reminds you that "permission changes take effect only after re-login" — permissions are embedded in the JWT; the server-side role-permission cache expires in about 5 minutes (it only affects tokens issued by later logins).
 
-> The permission management page lives in the System menu group; accounts (YAML static accounts / database accounts created via the web account management API) are maintained under "System → Account Management".
+> The permission management page lives in the Access & Identity menu group; accounts (YAML static accounts / database accounts created via the web account management API) are maintained under "Access & Identity → Account Management".
 
 ## Menu and Route Guarding
 
 The web menu currently has **7 groups / 35 items / 49 tabs** (P0-3 information-architecture rework), driven by `menu.ts` plus permission filtering. The v2.9.8 shape ("11 groups to 8 groups / 34 items") is historical and has been superseded:
 
 | Menu group | Items | Menu items (tabs in parentheses, `｜` separated; permission code) |
-|------------|:-----:|------------------------------------------------------------------|
+|--------|:-------:|---------------------------------------------|
 | Overview | 1 | Dashboard (`overview:dashboard:read`) |
-| Observability | 5 | Call History (Call Records ｜ Call History Dashboard, `callhistory:read`) / Distributed Tracing (Trace Search `tracing:search:read` ｜ Tracing Dashboard `tracing:dashboard:read`) / Exceptions (Exception List ｜ Statistics, `monitoring:exceptions:read`) / Slow Requests (Slow Calls ｜ Slow SQL, `monitoring:slowquery:read`) / Usage (Token Usage `monitoring:tokenusage:read` ｜ Quota Usage `monitoring:quota:read`) |
-| Traffic Governance | 7 | Routing Rules (`config:rules:read`) / Load Balancing (Real-time Monitoring `lb:monitoring:read` ｜ Strategy Config `lb:config:read` / `lb:config:write`) / Rate Limiting (Rate Limit Monitoring `rl:monitoring:read` ｜ Rate Limit Config `config:ratelimit:read`) / Circuit Breakers (Circuit Monitoring `cb:monitoring:read` ｜ Circuit History `cb:history:read` ｜ Global Config `config:circuitbreaker:read`) / Response Cache Management (`config:cache:read` / `config:cache:write`) / Quota Runtime Config (`config:quota:read`) / Resource Pools (`config:pools:read`) |
+| Observability | 6 | Call History (Call Records ｜ Call History Dashboard, `callhistory:read`) / Distributed Tracing (Trace Search `tracing:search:read` ｜ Tracing Dashboard `tracing:dashboard:read`) / Exceptions (Exception List ｜ Statistics, `monitoring:exceptions:read`) / Slow Requests (Slow Calls ｜ Slow SQL, `monitoring:slowquery:read`) / Usage (Token Usage `monitoring:tokenusage:read` ｜ Quota Usage `monitoring:quota:read`) / Audit Logs (`security:audit:read`) |
+| Traffic Governance | 5 | Routing Rules (`config:rules:read`) / Load Balancing (Real-time Monitoring `lb:monitoring:read` ｜ Strategy Config `lb:config:read` / `lb:config:write`) / Rate Limiting (Rate Limit Monitoring `rl:monitoring:read` ｜ Rate Limit Config `config:ratelimit:read`) / Circuit Breakers (Circuit Monitoring `cb:monitoring:read` ｜ Circuit History `cb:history:read` ｜ Global Config `config:circuitbreaker:read`) / Resource Pools (`config:pools:read`) |
 | Model & Instances | 4 | Adapter Management / Service Management / Instance Management / Version Management (corresponding to `config:adapters|services|instances|versions:read`) |
-| Security | 7 | API Key Management (`security:apikeys:read` / `security:apikeys:manage`) / PII Sanitization (`security:sanitization:read` / `security:sanitization:manage`) / JWT Token Management (`security:jwttokens:read` / `security:jwttokens:manage`) / Blacklist Management (`security:blacklist:read` / `security:blacklist:manage`) / Audit Logs (`security:audit:read`) / Record Governance (`config:callhistory:read` / `config:callhistory:write`) / Login Protection (`security:loginguard:read` / `security:loginguard:manage`) |
-| System | 9 | Account Management (`system:accounts:read` / `system:accounts:manage`) / Permission Management (`system:permissions:read` / `system:permissions:manage`) / Tracing Config (`tracing:config:read` / `tracing:config:manage`) / Monitoring Config (Monitoring Config ｜ Runtime & Emergency, `monitoring:config:read`; write buttons use `monitoring:config:write`) / State Persistence (`config:persistence:read`) / Cluster Settings (`config:cluster:read` / `config:cluster:write`) / Health Probe Settings (`config:health:read` / `config:health:write`) / Operation Log (`monitoring:console:read`/ SLA Access (`system:sla:read`; issue/revoke buttons use `system:sla:manage`) |
-| Developer Tools | 2 | AI Playground (Chat Playground / Embedding / Rerank / Audio / Image, all `ai:playground:use`) / Client Access Guide (no permission code — visible to every authenticated user) |
+| Security | 6 | API Key Management (`security:apikeys:read` / `security:apikeys:manage`) / JWT Token Management (`security:jwttokens:read` / `security:jwttokens:manage`) / Blacklist Management (`security:blacklist:read` / `security:blacklist:manage`) / PII Sanitization (`security:sanitization:read` / `security:sanitization:manage`) / Record Governance (`config:callhistory:read` / `config:callhistory:write`) / Login Protection (`security:loginguard:read` / `security:loginguard:manage`) |
+| Access & Identity | 3 | Account Management (`system:accounts:read` / `system:accounts:manage`) / Permission Management (`system:permissions:read` / `system:permissions:manage`) / SLA Access (`system:sla:read`; issue/revoke buttons use `system:sla:manage`) |
+| Platform Settings | 8 | **Runtime Configuration**: Monitoring Config (Monitoring Config ｜ Runtime & Emergency, `monitoring:config:read`; write buttons use `monitoring:config:write`), Tracing Config (`tracing:config:read` / `tracing:config:manage`), Response Cache Management (`config:cache:read` / `config:cache:write`), Quota Runtime Config (`config:quota:read`); **Deployment & Infrastructure**: State Persistence (`config:persistence:read`), Cluster Settings (`config:cluster:read` / `config:cluster:write`), Health Probe Settings (`config:health:read` / `config:health:write`); **Audit**: Operation Log (`monitoring:console:read`) |
+| Developer Tools | 2 | AI Playground (Chat / Embeddings / Rerank / Audio / Images, all `ai:playground:use`) / Client Access Guide (no permission code; visible to every signed-in user) |
 
 Visibility control mechanisms:
 

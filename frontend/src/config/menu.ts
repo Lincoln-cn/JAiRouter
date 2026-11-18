@@ -1,36 +1,32 @@
 /**
- * 菜单配置（P0-3 信息架构：9 组 40 项 → 7 组 32 项 / 45 个页面）
+ * 菜单配置（2026-11-18「一页一事」重构：8 组 / 49 项 / 49 个页面）
  *
- * 组的顺序（设计文档 §3.1）：
- * - 概览(1)：概览
- * - 运行观测(5)：调用历史 / 链路追踪 / 异常 / 慢请求 / 用量
- * - 流量治理(7)：路由规则 / 负载均衡 / 限流 / 熔断 / 响应缓存 / 配额策略 / 连接池
- * - 模型与实例(4)：服务 / 实例 / 版本 / 适配器
- * - 安全(6)：API Key / 响应脱敏 / JWT 令牌 / 黑名单 / 审计日志 / 记录治理
- * - 系统(7)：账号 / 权限 / 链路追踪配置 / 状态持久化 / 集群设置 / 健康探针设置 / 管理操作
- * - 开发工具(2)：AI 试验场 / 客户端接入
+ * 组的顺序：
+ * - 概览(1)：仪表板
+ * - 运行观测(12)：调用记录 / 调用统计 / 慢调用 / 链路搜索 / 链路统计 /
+ *   异常列表 / 异常统计 / 慢 SQL / 审计日志 / 操作记录 / Token 用量 / 配额使用
+ * - 流量治理(9)：负载均衡监控 / 限流监控 / 熔断监控 / 熔断历史 /
+ *   路由规则 / 负载均衡策略 / 限流配置 / 熔断配置 / 资源池
+ * - 模型与实例(4)：适配器 / 服务 / 实例 / 版本
+ * - 安全(6)：API 密钥 / JWT 令牌 / 黑名单 / PII 脱敏 / 记录治理 / 登录保护
+ * - 访问与身份(3)：账户 / 权限 / SLA 接入
+ * - 平台设置(8)：监控配置 / 监控运行时 / 追踪配置 / 响应缓存 / 配额运行时 /
+ *   状态持久化 / 集群设置 / 健康探针设置
+ * - 开发工具(6)：对话测试 / 向量生成 / 重排序 / 语音服务 / 图像服务 / 客户端接入
  *
- * **URL 一律不变**：40 → 32 只是把 13 个页面收进同组的 `tabs`，
- * 被收起的路由仍可直达（深链、收藏、文档里的路径都继续有效），只是不再单独占侧栏一行。
- * 哪个 tab 是「落地页」由 Layout.vue 按 `permission` 现算（第一个当前用户有权限的 tab）。
+ * **一个菜单项 = 一个页面（单 tab）**：不再用 tab 把「看」与「改」多种形态塞进同一项。
+ * 每组内部按用途用 `section` 分节（观测类成节、策略/配置类成节），节标题不参与点击，
+ * 由 `Layout.vue` 按 `children[i-1].section !== children[i].section` 渲染。
  *
- * 权限语义（设计文档 §3.3）：
+ * **URL 一律不变**：平铺只是把原来藏在 tab 里的页面提升为独立菜单项，
+ * 路由、权限码、后端接口都没动。
+ *
+ * 权限语义：
  * - `permission` 缺省 = 所有已登录用户可见；
- * - 数组 = **或**（任一命中即显示），用于「聚合了不同权限码页面」的菜单项；
- * - `roles` 字段保留（能力上与 `permission` 是**且**关系，必须与路由守卫的
- *   `meta.roles` 同口径），但**当前没有任何菜单项声明它**：`/security`、`/system`
- *   两个父级的 `meta.roles: ['ADMIN']` 已移除，授权边界统一交给权限码 + 路由
- *   `meta.permissions`。原因是运行态冒烟发现「后端允许、前端父路由挡」——OPERATOR /
- *   VIEWER 持有 `security:audit:read`，API 返回 200，UI 却进不去，属重复门控造出的
- *   功能不可达。将来若确实需要角色级门控，请同时给菜单项与路由加上并保持同口径
- *   （见 `menu.spec.ts` 与 `menuRouteAlignment.spec.ts` 的一致性断言）；
- * - tab 必须再单独门控：菜单可见 ≠ 每个 tab 可用（例：只有 `cb:history:read` 的用户
- *   看得到「熔断」，但落地页是「历史」而不是「状态与重置」）。
- * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 71 个：
- *   `callhistory:view` 已拆为 `callhistory:read` + `callhistory:full-content`）。
- *   设计文档 §3.1 表里的 `security:jwt:manage` / `system:users:manage` / `system:roles:manage`
- *   在代码里不存在，已分别替换为 `security:jwttokens:manage` / `system:accounts:manage` /
- *   `system:permissions:manage`。
+ * - 数组 = **或**（任一命中即显示）；
+ * - `roles` 字段保留（与 `permission` 是**且**关系，必须与路由守卫的 `meta.roles` 同口径），
+ *   但**当前没有任何菜单项声明它**：授权边界统一交给权限码 + 路由 `meta.permissions`；
+ * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 76 个）。
  *
  * `icon` 为 Element Plus 图标 kebab-case 名称，Layout.vue 中映射为图标组件。
  */
@@ -68,6 +64,14 @@ export interface MenuItem {
   roles?: string[]
   /** 菜单项图标名（Element Plus 图标 kebab-case 名，可选） */
   icon?: string
+  /**
+   * 组内小节标题（i18n key，如 menu.sections.access）。
+   *
+   * 只用于「项太多、需要组内再分节」的组（当前仅平台设置组：访问与身份 / 运行时配置 /
+   * 部署与基础设施 / 审计）。渲染规则见 `Layout.vue` 的 `showSectionHeader`：同一个小节
+   * 只出现一次标题。缺省表示不分组。
+   */
+  section?: string
   /** tab 列表，顺序即「tab 顺序」；第一个是默认落地页（无权限时取第一个有权限的） */
   tabs: MenuTab[]
 }
@@ -95,9 +99,8 @@ export const menuGroups: MenuGroup[] = [
         tabs: [
           {
             key: 'main',
-            labelKey: 'tabs.dashboard',
-            to: '/dashboard/main',
-            permission: 'overview:dashboard:read'
+            labelKey: 'menu.dashboardMain',
+            to: '/dashboard/main'
           }
         ]
       }
@@ -110,96 +113,157 @@ export const menuGroups: MenuGroup[] = [
     children: [
       {
         path: '/call-history/list',
-        title: 'menu.callHistory',
+        title: 'menu.callRecords',
         permission: 'callhistory:read',
+        section: 'menu.sections.calls',
         tabs: [
           {
             key: 'records',
-            labelKey: 'tabs.callHistoryRecords',
-            to: '/call-history/list',
-            permission: 'callhistory:read'
-          },
-          {
-            key: 'dashboard',
-            labelKey: 'tabs.callHistoryDashboard',
-            to: '/call-history/dashboard',
-            permission: 'callhistory:read'
+            labelKey: 'menu.callRecords',
+            to: '/call-history/list'
           }
         ]
       },
       {
-        path: '/tracing/search',
-        title: 'menu.tracing',
-        permission: ['tracing:search:read', 'tracing:dashboard:read'],
+        path: '/call-history/dashboard',
+        title: 'menu.callStats',
+        permission: 'callhistory:read',
+        section: 'menu.sections.calls',
         tabs: [
-          {
-            key: 'search',
-            labelKey: 'tabs.tracingSearch',
-            to: '/tracing/search',
-            permission: 'tracing:search:read'
-          },
           {
             key: 'dashboard',
-            labelKey: 'tabs.tracingDashboard',
-            to: '/tracing/dashboard',
-            permission: 'tracing:dashboard:read'
-          }
-        ]
-      },
-      {
-        path: '/exceptions/list',
-        title: 'menu.exceptions',
-        permission: 'monitoring:exceptions:read',
-        tabs: [
-          {
-            key: 'list',
-            labelKey: 'tabs.exceptionList',
-            to: '/exceptions/list',
-            permission: 'monitoring:exceptions:read'
-          },
-          {
-            key: 'statistics',
-            labelKey: 'tabs.exceptionStatistics',
-            to: '/exceptions/statistics',
-            permission: 'monitoring:exceptions:read'
+            labelKey: 'menu.callStats',
+            to: '/call-history/dashboard'
           }
         ]
       },
       {
         path: '/call-history/slow-calls',
-        title: 'menu.slowRequests',
+        title: 'menu.slowCalls',
         permission: 'monitoring:slowquery:read',
+        section: 'menu.sections.calls',
         tabs: [
           {
             key: 'slow-calls',
-            labelKey: 'tabs.slowCalls',
-            to: '/call-history/slow-calls',
-            permission: 'monitoring:slowquery:read'
-          },
+            labelKey: 'menu.slowCalls',
+            to: '/call-history/slow-calls'
+          }
+        ]
+      },
+      {
+        path: '/tracing/search',
+        title: 'menu.tracingSearch',
+        permission: 'tracing:search:read',
+        section: 'menu.sections.tracing',
+        tabs: [
+          {
+            key: 'search',
+            labelKey: 'menu.tracingSearch',
+            to: '/tracing/search'
+          }
+        ]
+      },
+      {
+        path: '/tracing/dashboard',
+        title: 'menu.tracingStats',
+        permission: 'tracing:dashboard:read',
+        section: 'menu.sections.tracing',
+        tabs: [
+          {
+            key: 'dashboard',
+            labelKey: 'menu.tracingStats',
+            to: '/tracing/dashboard'
+          }
+        ]
+      },
+      {
+        path: '/exceptions/list',
+        title: 'menu.exceptionList',
+        permission: 'monitoring:exceptions:read',
+        section: 'menu.sections.health',
+        tabs: [
+          {
+            key: 'list',
+            labelKey: 'menu.exceptionList',
+            to: '/exceptions/list'
+          }
+        ]
+      },
+      {
+        path: '/exceptions/statistics',
+        title: 'menu.exceptionStats',
+        permission: 'monitoring:exceptions:read',
+        section: 'menu.sections.health',
+        tabs: [
+          {
+            key: 'statistics',
+            labelKey: 'menu.exceptionStats',
+            to: '/exceptions/statistics'
+          }
+        ]
+      },
+      {
+        path: '/monitoring/slow-queries',
+        title: 'menu.slowSql',
+        permission: 'monitoring:slowquery:read',
+        section: 'menu.sections.health',
+        tabs: [
           {
             key: 'slow-sql',
-            labelKey: 'tabs.slowSql',
-            to: '/monitoring/slow-queries',
-            permission: 'monitoring:slowquery:read'
+            labelKey: 'menu.slowSql',
+            to: '/monitoring/slow-queries'
+          }
+        ]
+      },
+      {
+        path: '/security/audit-logs',
+        title: 'menu.auditLogs',
+        permission: 'security:audit:read',
+        section: 'menu.sections.health',
+        tabs: [
+          {
+            key: 'audit-logs',
+            labelKey: 'menu.auditLogs',
+            to: '/security/audit-logs'
+          }
+        ]
+      },
+      {
+        path: '/system/console-operations',
+        title: 'menu.consoleOperations',
+        permission: ['monitoring:console:read'],
+        section: 'menu.sections.health',
+        tabs: [
+          {
+            key: 'console-operations',
+            labelKey: 'menu.consoleOperations',
+            to: '/system/console-operations'
           }
         ]
       },
       {
         path: '/call-history/token-usage',
-        title: 'menu.usage',
-        permission: ['monitoring:tokenusage:read', 'monitoring:quota:read'],
+        title: 'menu.tokenUsage',
+        permission: 'monitoring:tokenusage:read',
+        section: 'menu.sections.usage',
         tabs: [
           {
             key: 'token-usage',
-            labelKey: 'tabs.tokenUsage',
-            to: '/call-history/token-usage',
-            permission: 'monitoring:tokenusage:read'
-          },
+            labelKey: 'menu.tokenUsage',
+            to: '/call-history/token-usage'
+          }
+        ]
+      },
+      {
+        path: '/monitoring/quota',
+        title: 'menu.quotaUsage',
+        permission: 'monitoring:quota:read',
+        section: 'menu.sections.usage',
+        tabs: [
           {
             key: 'quota',
-            labelKey: 'tabs.quotaUsage',
-            to: '/monitoring/quota',
-            permission: 'monitoring:quota:read'
+            labelKey: 'menu.quotaUsage',
+            to: '/monitoring/quota'
           }
         ]
       }
@@ -211,104 +275,106 @@ export const menuGroups: MenuGroup[] = [
     icon: 'connection',
     children: [
       {
-        path: '/config/rules',
-        title: 'menu.configRules',
-        permission: 'config:rules:read',
-        tabs: [
-          {
-            key: 'rules',
-            labelKey: 'menu.configRules',
-            to: '/config/rules',
-            permission: 'config:rules:read'
-          }
-        ]
-      },
-      {
         path: '/load-balancers/monitoring',
-        title: 'menu.loadBalancing',
-        permission: ['lb:monitoring:read', 'lb:config:write', 'lb:config:read'],
+        title: 'menu.lbMonitoring',
+        permission: 'lb:monitoring:read',
+        section: 'menu.sections.monitor',
         tabs: [
           {
             key: 'monitoring',
-            labelKey: 'tabs.lbMonitoring',
-            to: '/load-balancers/monitoring',
-            permission: 'lb:monitoring:read'
-          },
-          {
-            key: 'strategy',
-            labelKey: 'tabs.lbStrategy',
-            to: '/load-balancers/strategy-config',
-            permission: ['lb:config:read', 'lb:config:write']
+            labelKey: 'menu.lbMonitoring',
+            to: '/load-balancers/monitoring'
           }
         ]
       },
       {
         path: '/rate-limiters/monitoring',
-        title: 'menu.rateLimiting',
-        permission: ['rl:monitoring:read', 'config:ratelimit:read'],
+        title: 'menu.rlMonitoring',
+        permission: 'rl:monitoring:read',
+        section: 'menu.sections.monitor',
         tabs: [
           {
             key: 'monitoring',
-            labelKey: 'menu.rateLimiting',
-            to: '/rate-limiters/monitoring',
-            permission: 'rl:monitoring:read'
-          },
-          {
-            key: 'config',
-            labelKey: 'menu.rateLimitingConfig',
-            to: '/rate-limiters/config',
-            permission: 'config:ratelimit:read'
+            labelKey: 'menu.rlMonitoring',
+            to: '/rate-limiters/monitoring'
           }
         ]
       },
       {
         path: '/circuit-breakers/monitoring',
-        title: 'menu.circuitBreaking',
-        permission: ['cb:monitoring:read', 'cb:history:read', 'config:circuitbreaker:read'],
+        title: 'menu.cbMonitoring',
+        permission: 'cb:monitoring:read',
+        section: 'menu.sections.monitor',
         tabs: [
           {
             key: 'monitoring',
-            labelKey: 'tabs.cbMonitoring',
-            to: '/circuit-breakers/monitoring',
-            permission: 'cb:monitoring:read'
-          },
+            labelKey: 'menu.cbMonitoring',
+            to: '/circuit-breakers/monitoring'
+          }
+        ]
+      },
+      {
+        path: '/circuit-breakers/history',
+        title: 'menu.cbHistory',
+        permission: 'cb:history:read',
+        section: 'menu.sections.monitor',
+        tabs: [
           {
             key: 'history',
-            labelKey: 'tabs.cbHistory',
-            to: '/circuit-breakers/history',
-            permission: 'cb:history:read'
-          },
+            labelKey: 'menu.cbHistory',
+            to: '/circuit-breakers/history'
+          }
+        ]
+      },
+      {
+        path: '/config/rules',
+        title: 'menu.configRules',
+        permission: 'config:rules:read',
+        section: 'menu.sections.policy',
+        tabs: [
+          {
+            key: 'rules',
+            labelKey: 'menu.configRules',
+            to: '/config/rules'
+          }
+        ]
+      },
+      {
+        path: '/load-balancers/strategy-config',
+        title: 'menu.lbStrategy',
+        permission: ['lb:config:read', 'lb:config:write'],
+        section: 'menu.sections.policy',
+        tabs: [
+          {
+            key: 'strategy',
+            labelKey: 'menu.lbStrategy',
+            to: '/load-balancers/strategy-config'
+          }
+        ]
+      },
+      {
+        path: '/rate-limiters/config',
+        title: 'menu.rateLimitingConfig',
+        permission: 'config:ratelimit:read',
+        section: 'menu.sections.policy',
+        tabs: [
+          {
+            key: 'config',
+            labelKey: 'menu.rateLimitingConfig',
+            to: '/rate-limiters/config'
+          }
+        ]
+      },
+      {
+        path: '/circuit-breakers/global-config',
+        title: 'menu.cbConfig',
+        permission: 'config:circuitbreaker:read',
+        section: 'menu.sections.policy',
+        tabs: [
           {
             key: 'global-config',
-            labelKey: 'tabs.cbGlobalConfig',
-            to: '/circuit-breakers/global-config',
-            permission: 'config:circuitbreaker:read'
-          }
-        ]
-      },
-      {
-        path: '/config/cache',
-        title: 'menu.responseCache',
-        permission: ['config:cache:read', 'config:cache:write'],
-        tabs: [
-          {
-            key: 'cache',
-            labelKey: 'menu.responseCache',
-            to: '/config/cache',
-            permission: ['config:cache:read', 'config:cache:write']
-          }
-        ]
-      },
-      {
-        path: '/config/quota',
-        title: 'menu.quotaConfig',
-        permission: 'config:quota:read',
-        tabs: [
-          {
-            key: 'quota',
-            labelKey: 'menu.quotaConfig',
-            to: '/config/quota',
-            permission: 'config:quota:read'
+            labelKey: 'menu.cbConfig',
+            to: '/circuit-breakers/global-config'
           }
         ]
       },
@@ -316,12 +382,12 @@ export const menuGroups: MenuGroup[] = [
         path: '/config/pools',
         title: 'menu.configPools',
         permission: 'config:pools:read',
+        section: 'menu.sections.policy',
         tabs: [
           {
             key: 'pools',
             labelKey: 'menu.configPools',
-            to: '/config/pools',
-            permission: 'config:pools:read'
+            to: '/config/pools'
           }
         ]
       }
@@ -330,9 +396,8 @@ export const menuGroups: MenuGroup[] = [
   {
     index: 'model-services',
     title: 'menu.modelServices',
-    icon: 'setting',
+    icon: 'hourse',
     children: [
-      // 顺序 = 实例管理页引导条的顺序（配置适配器 → 创建服务 → 添加实例 → 版本）
       {
         path: '/config/adapters',
         title: 'menu.configAdapters',
@@ -341,8 +406,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'adapters',
             labelKey: 'menu.configAdapters',
-            to: '/config/adapters',
-            permission: 'config:adapters:read'
+            to: '/config/adapters'
           }
         ]
       },
@@ -354,8 +418,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'services',
             labelKey: 'menu.configServices',
-            to: '/config/services',
-            permission: 'config:services:read'
+            to: '/config/services'
           }
         ]
       },
@@ -367,8 +430,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'instances',
             labelKey: 'menu.configInstances',
-            to: '/config/instances',
-            permission: 'config:instances:read'
+            to: '/config/instances'
           }
         ]
       },
@@ -380,8 +442,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'versions',
             labelKey: 'menu.configVersions',
-            to: '/config/versions',
-            permission: 'config:versions:read'
+            to: '/config/versions'
           }
         ]
       }
@@ -400,21 +461,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'api-keys',
             labelKey: 'menu.apiKeys',
-            to: '/security/api-keys',
-            permission: ['security:apikeys:read', 'security:apikeys:manage']
-          }
-        ]
-      },
-      {
-        path: '/security/sanitization',
-        title: 'menu.sanitization',
-        permission: ['security:sanitization:read', 'security:sanitization:manage'],
-        tabs: [
-          {
-            key: 'sanitization',
-            labelKey: 'menu.sanitization',
-            to: '/security/sanitization',
-            permission: ['security:sanitization:read', 'security:sanitization:manage']
+            to: '/security/api-keys'
           }
         ]
       },
@@ -426,8 +473,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'jwt-tokens',
             labelKey: 'menu.jwtTokens',
-            to: '/security/jwt-tokens',
-            permission: ['security:jwttokens:read', 'security:jwttokens:manage']
+            to: '/security/jwt-tokens'
           }
         ]
       },
@@ -439,21 +485,19 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'blacklist',
             labelKey: 'menu.blacklist',
-            to: '/security/blacklist',
-            permission: ['security:blacklist:read', 'security:blacklist:manage']
+            to: '/security/blacklist'
           }
         ]
       },
       {
-        path: '/security/audit-logs',
-        title: 'menu.auditLogs',
-        permission: 'security:audit:read',
+        path: '/security/sanitization',
+        title: 'menu.sanitization',
+        permission: ['security:sanitization:read', 'security:sanitization:manage'],
         tabs: [
           {
-            key: 'audit-logs',
-            labelKey: 'menu.auditLogs',
-            to: '/security/audit-logs',
-            permission: 'security:audit:read'
+            key: 'sanitization',
+            labelKey: 'menu.sanitization',
+            to: '/security/sanitization'
           }
         ]
       },
@@ -465,8 +509,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'record-governance',
             labelKey: 'menu.recordGovernance',
-            to: '/security/record-governance',
-            permission: ['config:callhistory:read', 'config:callhistory:write']
+            to: '/security/record-governance'
           }
         ]
       },
@@ -478,17 +521,16 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'login-guard',
             labelKey: 'menu.loginGuard',
-            to: '/security/login-guard',
-            permission: ['security:loginguard:read', 'security:loginguard:manage']
+            to: '/security/login-guard'
           }
         ]
       }
     ]
   },
   {
-    index: 'system',
-    title: 'menu.system',
-    icon: 'user',
+    index: 'access',
+    title: 'menu.access',
+    icon: 'key',
     children: [
       {
         path: '/system/accounts',
@@ -498,8 +540,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'accounts',
             labelKey: 'menu.accounts',
-            to: '/system/accounts',
-            permission: ['system:accounts:read', 'system:accounts:manage']
+            to: '/system/accounts'
           }
         ]
       },
@@ -511,92 +552,7 @@ export const menuGroups: MenuGroup[] = [
           {
             key: 'permissions',
             labelKey: 'menu.permissions',
-            to: '/system/permissions',
-            permission: ['system:permissions:read', 'system:permissions:manage']
-          }
-        ]
-      },
-      {
-        path: '/tracing/management',
-        title: 'menu.tracingManagement',
-        permission: ['tracing:config:read', 'tracing:config:manage'],
-        tabs: [
-          {
-            key: 'management',
-            labelKey: 'menu.tracingManagement',
-            to: '/tracing/management',
-            permission: ['tracing:config:read', 'tracing:config:manage']
-          }
-        ]
-      },
-      {
-        path: '/monitoring/config',
-        title: 'menu.monitoringConfig',
-        permission: ['monitoring:config:read'],
-        tabs: [
-          {
-            key: 'monitoring-config',
-            labelKey: 'menu.monitoringConfig',
-            to: '/monitoring/config',
-            permission: ['monitoring:config:read']
-          },
-          {
-            key: 'monitoring-runtime',
-            labelKey: 'tabs.monitoringRuntime',
-            to: '/monitoring/config/runtime',
-            permission: ['monitoring:config:read']
-          }
-        ]
-      },
-      {
-        path: '/config/state-persistence',
-        title: 'menu.statePersistence',
-        permission: 'config:persistence:read',
-        tabs: [
-          {
-            key: 'state-persistence',
-            labelKey: 'menu.statePersistence',
-            to: '/config/state-persistence',
-            permission: 'config:persistence:read'
-          }
-        ]
-      },
-      {
-        path: '/system/cluster',
-        title: 'menu.clusterConfig',
-        permission: ['config:cluster:read', 'config:cluster:write'],
-        tabs: [
-          {
-            key: 'cluster-config',
-            labelKey: 'menu.clusterConfig',
-            to: '/system/cluster',
-            permission: ['config:cluster:read', 'config:cluster:write']
-          }
-        ]
-      },
-      {
-        path: '/system/health',
-        title: 'menu.healthConfig',
-        permission: ['config:health:read', 'config:health:write'],
-        tabs: [
-          {
-            key: 'health-config',
-            labelKey: 'menu.healthConfig',
-            to: '/system/health',
-            permission: ['config:health:read', 'config:health:write']
-          }
-        ]
-      },
-      {
-        path: '/system/console-operations',
-        title: 'menu.consoleOperations',
-        permission: ['monitoring:console:read'],
-        tabs: [
-          {
-            key: 'console-operations',
-            labelKey: 'menu.consoleOperations',
-            to: '/system/console-operations',
-            permission: ['monitoring:console:read']
+            to: '/system/permissions'
           }
         ]
       },
@@ -607,9 +563,119 @@ export const menuGroups: MenuGroup[] = [
         tabs: [
           {
             key: 'sla-access',
-            labelKey: 'tabs.slaAccess',
-            to: '/system/sla',
-            permission: ['system:sla:read', 'system:sla:manage']
+            labelKey: 'menu.slaAccess',
+            to: '/system/sla'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    index: 'platform',
+    title: 'menu.platform',
+    icon: 'setting',
+    children: [
+      {
+        path: '/monitoring/config',
+        title: 'menu.monitoringConfig',
+        permission: ['monitoring:config:read'],
+        section: 'menu.sections.runtime',
+        tabs: [
+          {
+            key: 'monitoring-config',
+            labelKey: 'menu.monitoringConfig',
+            to: '/monitoring/config'
+          }
+        ]
+      },
+      {
+        path: '/monitoring/config/runtime',
+        title: 'menu.monitoringRuntime',
+        permission: ['monitoring:config:read'],
+        section: 'menu.sections.runtime',
+        tabs: [
+          {
+            key: 'monitoring-runtime',
+            labelKey: 'menu.monitoringRuntime',
+            to: '/monitoring/config/runtime'
+          }
+        ]
+      },
+      {
+        path: '/tracing/management',
+        title: 'menu.tracingManagement',
+        permission: ['tracing:config:read', 'tracing:config:manage'],
+        section: 'menu.sections.runtime',
+        tabs: [
+          {
+            key: 'management',
+            labelKey: 'menu.tracingManagement',
+            to: '/tracing/management'
+          }
+        ]
+      },
+      {
+        path: '/config/cache',
+        title: 'menu.responseCache',
+        permission: ['config:cache:read', 'config:cache:write'],
+        section: 'menu.sections.runtime',
+        tabs: [
+          {
+            key: 'cache',
+            labelKey: 'menu.responseCache',
+            to: '/config/cache'
+          }
+        ]
+      },
+      {
+        path: '/config/quota',
+        title: 'menu.quotaConfig',
+        permission: 'config:quota:read',
+        section: 'menu.sections.runtime',
+        tabs: [
+          {
+            key: 'quota',
+            labelKey: 'menu.quotaConfig',
+            to: '/config/quota'
+          }
+        ]
+      },
+      {
+        path: '/config/state-persistence',
+        title: 'menu.statePersistence',
+        permission: 'config:persistence:read',
+        section: 'menu.sections.deployment',
+        tabs: [
+          {
+            key: 'state-persistence',
+            labelKey: 'menu.statePersistence',
+            to: '/config/state-persistence'
+          }
+        ]
+      },
+      {
+        path: '/system/cluster',
+        title: 'menu.clusterConfig',
+        permission: ['config:cluster:read', 'config:cluster:write'],
+        section: 'menu.sections.deployment',
+        tabs: [
+          {
+            key: 'cluster-config',
+            labelKey: 'menu.clusterConfig',
+            to: '/system/cluster'
+          }
+        ]
+      },
+      {
+        path: '/system/health',
+        title: 'menu.healthConfig',
+        permission: ['config:health:read', 'config:health:write'],
+        section: 'menu.sections.deployment',
+        tabs: [
+          {
+            key: 'health-config',
+            labelKey: 'menu.healthConfig',
+            to: '/system/health'
           }
         ]
       }
@@ -622,38 +688,66 @@ export const menuGroups: MenuGroup[] = [
     children: [
       {
         path: '/playground/chat',
-        title: 'menu.playground',
+        title: 'menu.playgroundChat',
         permission: 'ai:playground:use',
+        section: 'menu.sections.playground',
         tabs: [
           {
             key: 'chat',
-            labelKey: 'tabs.playgroundChat',
-            to: '/playground/chat',
-            permission: 'ai:playground:use'
-          },
+            labelKey: 'menu.playgroundChat',
+            to: '/playground/chat'
+          }
+        ]
+      },
+      {
+        path: '/playground/embedding',
+        title: 'menu.playgroundEmbedding',
+        permission: 'ai:playground:use',
+        section: 'menu.sections.playground',
+        tabs: [
           {
             key: 'embedding',
-            labelKey: 'tabs.playgroundEmbedding',
-            to: '/playground/embedding',
-            permission: 'ai:playground:use'
-          },
+            labelKey: 'menu.playgroundEmbedding',
+            to: '/playground/embedding'
+          }
+        ]
+      },
+      {
+        path: '/playground/rerank',
+        title: 'menu.playgroundRerank',
+        permission: 'ai:playground:use',
+        section: 'menu.sections.playground',
+        tabs: [
           {
             key: 'rerank',
-            labelKey: 'tabs.playgroundRerank',
-            to: '/playground/rerank',
-            permission: 'ai:playground:use'
-          },
+            labelKey: 'menu.playgroundRerank',
+            to: '/playground/rerank'
+          }
+        ]
+      },
+      {
+        path: '/playground/audio',
+        title: 'menu.playgroundAudio',
+        permission: 'ai:playground:use',
+        section: 'menu.sections.playground',
+        tabs: [
           {
             key: 'audio',
-            labelKey: 'tabs.playgroundAudio',
-            to: '/playground/audio',
-            permission: 'ai:playground:use'
-          },
+            labelKey: 'menu.playgroundAudio',
+            to: '/playground/audio'
+          }
+        ]
+      },
+      {
+        path: '/playground/image',
+        title: 'menu.playgroundImage',
+        permission: 'ai:playground:use',
+        section: 'menu.sections.playground',
+        tabs: [
           {
             key: 'image',
-            labelKey: 'tabs.playgroundImage',
-            to: '/playground/image',
-            permission: 'ai:playground:use'
+            labelKey: 'menu.playgroundImage',
+            to: '/playground/image'
           }
         ]
       },

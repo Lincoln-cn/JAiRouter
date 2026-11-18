@@ -4,19 +4,20 @@
 import { createAuthedContext, gotoApp, currentPathname } from '../harness.mjs'
 import { ALL_ROUTES } from '../routes.mjs'
 
-// P0-3 IA：7 组 35 项（v3.5.1 记录治理、v3.8.8 监控配置、v3.8.9 SLA 接入、登录保护；顺序与 src/config/menu.ts 的 menuGroups 一致）
+// 一页一事 IA（2026-11-18）：8 组 49 项，一个菜单项 = 一个页面，顺序与 src/config/menu.ts 的 menuGroups 一致
 const MENU_GROUPS = [
   'dashboard',
   'observability',
   'traffic',
   'model-services',
   'security',
-  'system',
+  'access',
+  'platform',
   'dev-tools'
 ]
 
-// 每组菜单项数（合计 31）：40 → 29 后 12 个页面收进 tabs，不再单独占侧栏
-const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 7, 9, 2]
+// 每组菜单项数（合计 49）：原被页签收起的 14 个页面已提升为独立项
+const MENU_ITEMS_PER_GROUP = [1, 12, 9, 4, 6, 3, 8, 6]
 
 export default {
   id: 'layout-nav',
@@ -49,11 +50,11 @@ export default {
     // 菜单组
     const subMenus = page.locator('.el-sub-menu')
     const subCount = await subMenus.count()
-    check('layout-menu-groups', subCount === 7, `sub-menus=${subCount}`)
+    check('layout-menu-groups', subCount === 8, `sub-menus=${subCount}`)
 
-    // 菜单项总数与逐组项数（7 组 35 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
+    // 菜单项总数与逐组项数（8 组 49 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
     const allItems = await page.locator('.layout-menu .el-menu-item').count()
-    check('layout-menu-item-total', allItems === 35, `items=${allItems}`)
+    check('layout-menu-item-total', allItems === 49, `items=${allItems}`)
     for (let i = 0; i < MENU_GROUPS.length; i++) {
       const group = page.locator('.layout-menu .el-sub-menu').nth(i)
       const count = await group.locator('.el-menu-item').count()
@@ -167,14 +168,13 @@ export default {
     // 面包屑存在
     check('layout-breadcrumb', (await page.locator('.el-breadcrumb').count()) > 0)
 
-    // 多 tab 菜单项：切换条出现，被收起的页面可经切换条进入（URL 与单独成项时一致）
+    // 一页一事之后不再有页签切换条：同一组内的页面各占一个菜单项，直接可达
     await gotoApp(page, '/call-history/list', { waitMs: 400 })
     const tabStrip = page.locator('.nav-tabs .nav-tab')
     const tabCount = await tabStrip.count()
-    check('layout-tabs-render', tabCount === 2, `tabs=${tabCount}`)
-    if (tabCount === 2) {
-      await tabStrip.nth(1).click()
-      await page.waitForTimeout(500)
+    check('layout-tabs-render', tabCount === 0, `tabs=${tabCount}`)
+    if (tabCount === 0) {
+      await gotoApp(page, '/call-history/dashboard', { waitMs: 400 })
       check(
         'layout-tabs-switch',
         currentPathname(page).endsWith('/call-history/dashboard'),
