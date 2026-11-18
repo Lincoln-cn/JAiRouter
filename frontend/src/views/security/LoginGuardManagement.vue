@@ -21,8 +21,8 @@
       :title="loadError"
     />
 
-    <el-tabs v-model="activeTab" class="page-tabs">
-      <el-tab-pane :label="t('loginGuard.tabThresholds')" name="thresholds">
+        <section class="config-group">
+      <h3 class="config-group-title">{{ t('loginGuard.tabThresholds') }}</h3>
         <ConfigSectionCard
           :title="t('loginGuard.thresholdTitle')"
           :description="t('loginGuard.thresholdDesc')"
@@ -48,9 +48,10 @@
             </div>
           </div>
         </ConfigSectionCard>
-      </el-tab-pane>
+    </section>
 
-      <el-tab-pane :label="t('loginGuard.tabLocked')" name="locked">
+    <section class="config-group">
+      <h3 class="config-group-title">{{ t('loginGuard.tabLocked') }}</h3>
         <ConfigSectionCard
           :title="t('loginGuard.lockedTitle', { count: locked.length })"
           :description="t('loginGuard.lockedDesc')"
@@ -118,8 +119,7 @@
             :title="t('loginGuard.instanceOnlyHint')"
           />
         </ConfigSectionCard>
-      </el-tab-pane>
-    </el-tabs>
+    </section>
   </ConfigPageShell>
 </template>
 
@@ -201,7 +201,6 @@ const { hasPermission } = usePermission()
 const canWrite = computed(() => hasPermission('security:loginguard:manage'))
 
 /** 阈值配置与锁定情况是两个关注点：前者有草稿，后者是即时操作，故拆两个 tab。 */
-const activeTab = ref('thresholds')
 const thresholdFields = THRESHOLD_FIELDS
 
 const loading = ref(false)

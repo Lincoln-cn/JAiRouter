@@ -113,7 +113,9 @@
       },
       "cards": {
         "ariaLabel": "调用记录卡片列表"
-      }
+      },
+      "governanceHint": "记录级别（元数据 / 摘要 / 全文）与内容治理在「记录治理」页统一配置。",
+      "governanceLink": "前往记录治理"
     },
     "slowCalls": {
       "pageTitle": "慢调用分析",

@@ -113,7 +113,9 @@
       },
       "cards": {
         "ariaLabel": "Call history card list"
-      }
+      },
+      "governanceHint": "Record level (metadata / summary / full) and content governance are configured on the Record Governance page.",
+      "governanceLink": "Open Record Governance"
     },
     "slowCalls": {
       "pageTitle": "Slow Call Analysis",

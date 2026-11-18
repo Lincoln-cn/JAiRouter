@@ -12,7 +12,6 @@
     @save="handleSave"
     @discard="resetDraft"
   >
-    <MetricStrip :items="metricItems" :loading="loading" :columns="3" class="overview-strip" />
 
     <el-alert
       v-if="!config && !loading"
@@ -25,8 +24,8 @@
     />
 
     <!-- 三类内容语义不同（可编辑配置 / 只读规则 / 样例试跑），拆 tab 避免把只读卡夹在可编辑卡之间 -->
-    <el-tabs v-model="activeTab" class="sanitization-tabs">
-      <el-tab-pane :label="t('sanitization.tabConfig')" name="config">
+        <section class="config-group">
+      <h3 class="config-group-title">{{ t('sanitization.tabConfig') }}</h3>
         <ConfigSectionCard :title="t('sanitization.responseSection')">
           <!-- 同一条常驻警示：响应侧在出站做正则匹配 + 文本重写 -->
           <el-alert
@@ -126,9 +125,10 @@
             </div>
           </div>
         </ConfigSectionCard>
-      </el-tab-pane>
+    </section>
 
-      <el-tab-pane :label="t('sanitization.tabRules')" name="rules">
+    <section class="config-group">
+      <h3 class="config-group-title">{{ t('sanitization.tabRules') }}</h3>
         <ConfigSectionCard
           :title="t('sanitization.scopeTitle')"
           :description="t('sanitization.scopeDesc')"
@@ -205,9 +205,10 @@
             </el-table-column>
           </el-table>
         </ConfigSectionCard>
-      </el-tab-pane>
+    </section>
 
-      <el-tab-pane :label="t('sanitization.tabTest')" name="test">
+    <section class="config-group">
+      <h3 class="config-group-title">{{ t('sanitization.tabTest') }}</h3>
         <ConfigSectionCard :title="t('sanitization.testTitle')">
           <el-form label-width="100px">
             <el-form-item :label="t('sanitization.testSampleLabel')">
@@ -244,8 +245,7 @@
             </template>
           </el-form>
         </ConfigSectionCard>
-      </el-tab-pane>
-    </el-tabs>
+    </section>
   </ConfigPageShell>
 </template>
 
@@ -256,8 +256,6 @@ import { useI18n } from 'vue-i18n'
 import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
 import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
 import SettingsSwitch from '@/components/config/SettingsSwitch.vue'
-import MetricStrip from '@/components/MetricStrip.vue'
-import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 import { useConfigDraft } from '@/composables/useConfigDraft'
 import { getErrorMessage } from '@/utils/error'
@@ -289,7 +287,6 @@ const testSample = ref('联系人手机 13800138000，邮箱 user@example.com')
 const testResult = ref<SanitizationTestResult | null>(null)
 
 /** 页面拆成三个 tab：可编辑配置 / 只读规则 / 样例试跑 */
-const activeTab = ref<'config' | 'rules' | 'test'>('config')
 
 const scopeInfo = computed(() => config.value?.response?.scope ?? null)
 const scopePreviewPath = ref('/v1/chat/completions')
@@ -330,29 +327,6 @@ const baseline = reactive({
   maskingChar: '*',
   piiPatternsText: '',
   sensitiveWordsText: ''
-})
-
-/** 顶部指标条：数值语义与原 KPI 卡一致，只有「未启用」是风险状态 */
-const metricItems = computed<MetricStripItem[]>(() => {
-  const responseEnabled = config.value?.response?.enabled ?? false
-  return [
-    {
-      key: 'ruleCount',
-      label: t('sanitization.ruleCountLabel'),
-      value: config.value?.ruleCount ?? '—'
-    },
-    {
-      key: 'responseEnabled',
-      label: t('sanitization.responseEnabledLabel'),
-      value: responseEnabled ? t('common.enabled') : t('common.disabled'),
-      tone: responseEnabled ? 'default' : 'warning'
-    },
-    {
-      key: 'recordNote',
-      label: t('sanitization.recordNote'),
-      value: t('sanitization.recordNoteValue')
-    }
-  ]
 })
 
 /**

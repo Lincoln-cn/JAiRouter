@@ -12,9 +12,8 @@
     @save="handleSave"
     @discard="resetRows"
   >
-    <el-tabs v-model="activeTab">
-      <!-- 全局策略：来自配置文件，控制台只读展示 -->
-      <el-tab-pane :label="t('loadBalancer.strategyConfig.tabs.global')" name="global">
+        <section class="config-group">
+      <h3 class="config-group-title">{{ t('loadBalancer.strategyConfig.tabs.global') }}</h3>
         <ConfigSectionCard
           :title="t('loadBalancer.strategyConfig.globalTitle')"
           :description="t('loadBalancer.strategyConfig.globalReadonlyHint')"
@@ -34,10 +33,10 @@
             </el-descriptions-item>
           </el-descriptions>
         </ConfigSectionCard>
-      </el-tab-pane>
+    </section>
 
-      <!-- 服务配置：每行一个服务的生效策略，改动随底部动作条保存 -->
-      <el-tab-pane :label="t('loadBalancer.strategyConfig.tabs.services')" name="services">
+    <section class="config-group">
+      <h3 class="config-group-title">{{ t('loadBalancer.strategyConfig.tabs.services') }}</h3>
         <ConfigSectionCard
           :title="t('loadBalancer.strategyConfig.serviceConfigsTitle')"
           :description="t('loadBalancer.strategyConfig.configureHint')"
@@ -93,8 +92,7 @@
           </el-table>
           <p class="save-hint">{{ t('loadBalancer.strategyConfig.saveHint') }}</p>
         </ConfigSectionCard>
-      </el-tab-pane>
-    </el-tabs>
+    </section>
   </ConfigPageShell>
 </template>
 
@@ -144,8 +142,6 @@ const loadingStrategies = ref(false)
 const loadingGlobal = ref(false)
 const loadingConfigs = ref(false)
 const loading = computed(() => loadingStrategies.value || loadingGlobal.value || loadingConfigs.value)
-
-const activeTab = ref('global')
 const strategies = ref<StrategyInfo[]>([])
 const globalConfig = ref<LoadBalanceConfig>({ type: 'random', hashAlgorithm: 'md5', virtualNodes: 150 })
 const globalConfigLoaded = ref(false)

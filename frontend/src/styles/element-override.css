@@ -166,3 +166,23 @@ p { color: var(--ja-text-regular); }
 .switch-label {
   color: var(--el-text-color-regular);
 }
+
+/* 配置页平铺后的分区标题：比卡标题弱、比正文强，形成「组 → 卡」两级结构 */
+.config-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.config-group + .config-group {
+  margin-top: 20px;
+}
+
+.config-group-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ja-ink-3);
+  text-transform: uppercase;
+}

@@ -11,7 +11,6 @@
     @save="handleSave"
     @discard="resetDraft"
   >
-    <MetricStrip :items="metricItems" :loading="loading" :columns="3" class="overview-strip" />
 
     <el-alert
       v-if="fallbackDetected"
@@ -100,8 +99,6 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import ConfigPageShell from '@/components/config/ConfigPageShell.vue'
 import ConfigSectionCard from '@/components/config/ConfigSectionCard.vue'
-import MetricStrip from '@/components/MetricStrip.vue'
-import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 import { useConfigDraft } from '@/composables/useConfigDraft'
 import { getErrorMessage } from '@/utils/error'
@@ -147,27 +144,6 @@ const levelDescription = computed(() => {
       return t('recordGovernance.levelMetadataOnlyDesc')
   }
 })
-
-const metricItems = computed<MetricStripItem[]>(() => [
-  {
-    key: 'level',
-    label: t('recordGovernance.metricLevel'),
-    value: config.value?.recordLevel ?? '—'
-  },
-  {
-    key: 'encrypted',
-    label: t('recordGovernance.metricEncrypted'),
-    value: encrypted.value ? t('common.enabled') : t('common.disabled'),
-    tone: encrypted.value ? 'default' : 'warning'
-  },
-  {
-    key: 'retention',
-    label: t('recordGovernance.metricRetention'),
-    value: config.value?.retentionDays != null
-      ? t('recordGovernance.days', { n: config.value.retentionDays })
-      : '—'
-  }
-])
 
 const levelPascal = (level: RecordLevel): string =>
   level === 'METADATA_ONLY'

@@ -90,8 +90,18 @@ export default {
     if ((await servicesTab.count()) > 0) {
       await servicesTab.click({ timeout: 8000 }).catch(() => {})
       await page.waitForTimeout(600)
+      check('traffic:lb-strategy:services-tab', true, 'tab switched')
     } else {
-      check('traffic:lb-strategy:services-tab', false, 'skip: services tab not found')
+      // 一页一事之后两节平铺在同一页，不再有页签；此处置为通过并用分区标题自证
+      const servicesSection = page
+        .locator('.config-group-title')
+        .filter({ hasText: /服务配置|Service Config/i })
+        .first()
+      check(
+        'traffic:lb-strategy:services-section',
+        (await servicesSection.count()) > 0,
+        'single page: services section present'
+      )
     }
     const statusRes = await api(page, '/api/loadbalancer/status')
     const statusTypes = Array.isArray(statusRes.body?.data)
