@@ -87,7 +87,7 @@
       "playground": "Playground"
     },
     "devTools": "Developer Tools",
-    "tracing": "Distributed Tracing",
+    "tracing": "Tracing",
     "playground": "AI Playground",
     "dashboardMain": "Dashboard",
     "configServices": "Services",
@@ -144,7 +144,9 @@
     "slowCalls": "Slow Calls",
     "slowSql": "Slow SQL",
     "tokenUsage": "Token Usage",
-    "tracingSearch": "Trace Search"
+    "tracingSearch": "Trace Search",
+    "audit": "Audit",
+    "deployment": "Deployment"
   },
   "tabs": {
     "dashboard": "Dashboard",

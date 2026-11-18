@@ -112,6 +112,15 @@ public final class PermissionCodes {
     public static final String CALLHISTORY_READ = "callhistory:read";
 
     /**
+     * 本人调用记录读（数据层 scope=mine，issue #1183）。
+     *
+     * <p>与 {@link #CALLHISTORY_READ}（全局读）并存：持本码的请求由服务端强制按
+     * {@code userId} 过滤，因此后端判定是「任一码通过」；同一码在列表/详情/统计三处
+     * 都必须走同一过滤，避免「列表看不到、详情能猜 id 读到」。
+     */
+    public static final String CALLHISTORY_SELF_READ = "callhistory:self:read";
+
+    /**
      * 调用历史正文查看（解密 FULL 级别记录的请求 / 响应正文）。
      *
      * <p>只含正文的「打开」权限，不负责列表访问：<b>必须同时持有 {@link #CALLHISTORY_READ}</b>
@@ -131,16 +140,20 @@ public final class PermissionCodes {
     public static final String MONITORING_SLOWQUERY_READ = "monitoring:slowquery:read";
     /** 慢查询统计重置-写（issue #468：该前缀此前只登记了 GET 规则，重置操作只靠默认 DENY_ALL 兜住） */
     public static final String MONITORING_SLOWQUERY_WRITE = "monitoring:slowquery:write";
-    /** Token 用量-读 */
+    /** Token 用量-读（全局：看所有用户/密钥的用量） */
     public static final String MONITORING_TOKENUSAGE_READ = "monitoring:tokenusage:read";
+    /** Token 用量-本人读（数据层 scope=mine，issue #1183） */
+    public static final String MONITORING_TOKENUSAGE_SELF_READ = "monitoring:tokenusage:self:read";
     /** 模型统计-读 */
     public static final String MONITORING_MODELSTATS_READ = "monitoring:modelstats:read";
     /** 路由监控-读 */
     public static final String MONITORING_ROUTING_READ = "monitoring:routing:read";
     /** 配额监控-读 */
     public static final String MONITORING_QUOTA_READ = "monitoring:quota:read";
-    /** 异常事件-读（R2-P1-03） */
+    /** 异常事件-读（R2-P1-03；全局：看所有用户的异常） */
     public static final String MONITORING_EXCEPTIONS_READ = "monitoring:exceptions:read";
+    /** 异常事件-本人读（数据层 scope=mine，issue #1183） */
+    public static final String MONITORING_EXCEPTIONS_SELF_READ = "monitoring:exceptions:self:read";
 
     /** 控制台管理操作-读（#1154：系统 → 管理操作页） */
     public static final String MONITORING_CONSOLE_READ = "monitoring:console:read";
@@ -254,13 +267,15 @@ public final class PermissionCodes {
             LB_MONITORING_READ, LB_CONFIG_READ, LB_CONFIG_WRITE,
             CB_MONITORING_READ, CB_HISTORY_READ,
             RL_MONITORING_READ,
-            CALLHISTORY_READ, CALLHISTORY_FULL_CONTENT,
+            CALLHISTORY_READ, CALLHISTORY_SELF_READ, CALLHISTORY_FULL_CONTENT,
             MONITORING_METRICS_READ, MONITORING_METRICS_WRITE, MONITORING_SLOWQUERY_READ,
             MONITORING_SLOWQUERY_WRITE,
-            MONITORING_TOKENUSAGE_READ, MONITORING_MODELSTATS_READ,
+            MONITORING_TOKENUSAGE_READ, MONITORING_TOKENUSAGE_SELF_READ,
+            MONITORING_MODELSTATS_READ,
             MONITORING_ROUTING_READ,
             MONITORING_QUOTA_READ,
-            MONITORING_EXCEPTIONS_READ, MONITORING_EXCEPTIONS_WRITE,
+            MONITORING_EXCEPTIONS_READ, MONITORING_EXCEPTIONS_SELF_READ,
+            MONITORING_EXCEPTIONS_WRITE,
             MONITORING_CONSOLE_READ,
             MONITORING_CONFIG_READ, MONITORING_CONFIG_WRITE,
             TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_READ, TRACING_CONFIG_MANAGE,

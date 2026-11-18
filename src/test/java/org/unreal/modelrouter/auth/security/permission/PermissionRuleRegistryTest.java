@@ -39,11 +39,39 @@ class PermissionRuleRegistryTest {
     @DisplayName("规则表里出现的每个权限码都存在于 ALL_PERMISSION_CODES（防拼写漂移）")
     void everyRuleCodeExistsInCatalog() {
         List<String> unknown = registry.getRules().stream()
-                .map(PermissionRule::permissionCode)
+                .flatMap(rule -> rule.permissionCodes().stream())
                 .filter(code -> !PermissionCodes.ALL_PERMISSION_CODES.contains(code))
                 .distinct()
                 .collect(Collectors.toList());
         assertTrue(unknown.isEmpty(), "规则表引用了未登记的权限码（拼写漂移？）: " + unknown);
+    }
+
+    @Test
+    @DisplayName("#1183：数据面读规则同时接受「全局读码」与「本人读码」")
+    void dataScopeRulesAcceptBothGlobalAndSelfCodes() {
+        List<String> dataPaths = List.of("/api/call-history/**", "/api/token-usage/**", "/api/exceptions/**");
+        for (String path : dataPaths) {
+            PermissionRule rule = registry.findRule(HttpMethod.GET, path.replace("/**", "/x"))
+                    .orElseThrow(() -> new AssertionError("数据面路径未登记 GET 规则: " + path));
+            assertTrue(rule.permissionCodes().size() >= 2,
+                    path + " 应同时接受全局读码与本人读码，实际: " + rule.permissionCodes());
+            assertTrue(rule.permissionCodes().stream().anyMatch(code -> code.endsWith(":self:read")),
+                    path + " 缺少本人读码: " + rule.permissionCodes());
+            assertTrue(rule.permissionCodes().stream().anyMatch(code -> !code.endsWith(":self:read")),
+                    path + " 缺少全局读码（观察者/运维仍需全局读面）: " + rule.permissionCodes());
+        }
+    }
+
+    @Test
+    @DisplayName("#1183：写规则不得接受本人读码（self 码只放行读）")
+    void writeRulesNeverAcceptSelfCodes() {
+        List<String> offenders = registry.getRules().stream()
+                .filter(rule -> rule.methods().contains(HttpMethod.PUT)
+                        || rule.methods().contains(HttpMethod.DELETE))
+                .filter(rule -> rule.permissionCodes().stream().anyMatch(code -> code.contains(":self:")))
+                .map(rule -> rule.pathPattern() + " -> " + rule.permissionCodes())
+                .collect(Collectors.toList());
+        assertTrue(offenders.isEmpty(), "写规则挂了本人读码: " + offenders);
     }
 
     @Test

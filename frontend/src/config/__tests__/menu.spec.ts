@@ -16,7 +16,7 @@ import { KNOWN_PERMISSION_CODES } from './knownPermissions'
  * 一旦结构漂移（多一项、少一组、tab 路由写错、反查表漏项），先在这里红。
  */
 describe('menu.ts 信息架构', () => {
-  it('8 组 49 项，组顺序与设计文档一致', () => {
+  it('8 组 31 项，组顺序与设计文档一致', () => {
     expect(menuGroups.map(g => g.index)).toEqual([
       'dashboard',
       'observability',
@@ -27,11 +27,17 @@ describe('menu.ts 信息架构', () => {
       'platform',
       'dev-tools'
     ])
-    expect(menuGroups.map(g => g.children.length)).toEqual([1, 12, 9, 4, 6, 3, 8, 6])
-    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(49)
+    expect(menuGroups.map(g => g.children.length)).toEqual([1, 6, 5, 3, 6, 3, 5, 2])
+    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(31)
   })
 
-  it('每项主路径 = 第一个 tab 的路由，且 tab 路由全局唯一', () => {
+  it('每组 ≤8 项（数量预算，防止再次膨胀）', () => {
+    for (const group of menuGroups) {
+      expect(group.children.length, `${group.index} 超过 8 项`).toBeLessThanOrEqual(8)
+    }
+  })
+
+  it('每项主路径 = 第一个视图的路由，且视图路由全局唯一', () => {
     const items = menuGroups.flatMap(g => g.children)
     for (const item of items) {
       expect(item.tabs.length).toBeGreaterThan(0)
@@ -42,14 +48,53 @@ describe('menu.ts 信息架构', () => {
       }
     }
     const routes = items.flatMap(item => item.tabs.map(tab => tab.to))
-    // 2026-11-18「一页一事」重构：原来收在 tabs 里的 14 个页面全部提升为独立菜单项，
-    // 因此「菜单项数 = tab 数 = 页面数」= 49，不存在一项多 tab。
+    // 31 个菜单项承载 49 个页面：同一对象的多视图合并为一项，URL 一个都没少。
     expect(routes.length).toBe(49)
-    expect(items.length).toBe(49)
+    expect(items.length).toBe(31)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
-  it('ROUTE_TO_MENU 覆盖每个 tab 并指回所属菜单项', () => {
+  it('多视图项收敛为「同一对象的视图切换」，单视图项不为合并而合并', () => {
+    const items = menuGroups.flatMap(g => g.children)
+    const multi = items.filter(item => item.tabs.length > 1)
+    const expectedMulti = [
+      '/call-history/list',
+      '/call-history/slow-calls',
+      '/tracing/search',
+      '/exceptions/list',
+      '/security/audit-logs',
+      '/call-history/token-usage',
+      '/load-balancers/monitoring',
+      '/rate-limiters/monitoring',
+      '/circuit-breakers/monitoring',
+      '/config/services',
+      '/monitoring/config',
+      '/config/state-persistence',
+      '/playground/chat'
+    ]
+    expect(multi.map(item => item.path).sort()).toEqual(expectedMulti.sort())
+    // 单视图项必须真的只有一个页面（防「为了少点一次把不相关页面塞进来」）
+    const single = items.filter(item => item.tabs.length === 1)
+    expect(single.length).toBe(31 - expectedMulti.length)
+  })
+
+  it('每项都声明 object 与合法 audience；audience 只允许五种取值', () => {
+    const allowed = ['admin', 'maintainer', 'user', 'observer', 'auditor']
+    for (const item of menuGroups.flatMap(g => g.children)) {
+      expect(item.object, item.path).toBeTruthy()
+      expect(Array.isArray(item.audience), item.path).toBe(true)
+      expect((item.audience ?? []).length, item.path).toBeGreaterThan(0)
+      for (const audience of item.audience ?? []) {
+        expect(allowed, `${item.path} 的 audience`).toContain(audience)
+      }
+    }
+    // ADMIN 必须对每一项都可见（任何项漏掉 admin 都会让管理员看不到它）
+    for (const item of menuGroups.flatMap(g => g.children)) {
+      expect(item.audience, item.path).toContain('admin')
+    }
+  })
+
+  it('ROUTE_TO_MENU 覆盖每个视图并指回所属菜单项', () => {
     for (const group of menuGroups) {
       for (const item of group.children) {
         for (const tab of item.tabs) {
@@ -60,51 +105,27 @@ describe('menu.ts 信息架构', () => {
     expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(49)
   })
 
-  it('深链未命中回退 route.path；异常详情归到异常列表', () => {
+  it('深链未命中回退 route.path；异常详情归到异常；合并页归到所属项', () => {
     expect(resolveMenuPath('/not-in-menu/42')).toBe('/not-in-menu/42')
-    // 一页一事之后「配额使用」是独立菜单项，不再挂在「Token 用量」下
-    expect(resolveMenuPath('/monitoring/quota')).toBe('/monitoring/quota')
+    // 合并后「配额使用」是「用量」项的第二个视图，深链仍回到该菜单项
+    expect(resolveMenuPath('/monitoring/quota')).toBe('/call-history/token-usage')
     expect(resolveMenuPath('/exceptions/detail/abc')).toBe('/exceptions/list')
     expect(findMenuEntry('/exceptions/detail/abc')?.group.index).toBe('observability')
-    // 详情页不是 tab，面包屑末段由 Layout 单独渲染
-    expect(findMenuTab('/exceptions/detail/abc')).toBeUndefined()
-    expect(findMenuTab('/exceptions/statistics')?.key).toBe('statistics')
+    expect(findMenuTab('/exceptions/statistics')?.key).toBe('exceptions-statistics')
+    expect(findMenuEntry('/monitoring/quota')?.item.title).toBe('menu.usage')
   })
 
-  it('14 个原 tab 页面提升为独立项后仍可反查（深链可达）', () => {
-    const collapsed = [
-      '/call-history/dashboard',
-      '/tracing/dashboard',
-      '/exceptions/statistics',
-      '/monitoring/slow-queries',
-      '/monitoring/quota',
-      '/load-balancers/strategy-config',
-      '/circuit-breakers/history',
-      '/circuit-breakers/global-config',
-      '/playground/embedding',
-      '/playground/rerank',
-      '/playground/audio',
-      '/playground/image',
-      '/monitoring/config/runtime',
-      '/playground/chat'
-    ]
-    for (const path of collapsed) {
-      expect(findMenuTab(path), path).toBeTruthy()
-      expect(ROUTE_TO_MENU[path], path).toBeTruthy()
+  it('49 个页面全部能从菜单反查到所属项（合并后不漏页）', () => {
+    const items = menuGroups.flatMap(group => group.children)
+    const allTabs = items.flatMap(item => item.tabs.map(tab => tab.to))
+    expect(allTabs).toHaveLength(49)
+    for (const to of allTabs) {
+      expect(findMenuEntry(to), to).toBeTruthy()
+      expect(ROUTE_TO_MENU[to], to).toBeTruthy()
     }
   })
 })
 
-
-/**
- * 权限码白名单（#567）
- *
- * `menu.ts` 里写错一个权限码（例如把 `security:apikeys:manage` 写成 `security:apikey:manage`）
- * 不会报错，只会让菜单静默消失 —— 这份白名单就是那种漂移的哨兵。
- *
- * 白名单本体在 `./knownPermissions.ts`（74 码），由 `permissionCodesBackend.spec.ts`
- * 与后端 `PermissionCodes.java` 做双向比对，这里只守「menu.ts 的码都在白名单内」。
- */
 describe('menu.ts 权限码白名单（#567）', () => {
   const collectPermissions = (): string[] => {
     const codes: string[] = []
@@ -121,9 +142,9 @@ describe('menu.ts 权限码白名单（#567）', () => {
     return codes
   }
 
-  it('白名单自身 = 76 个互不重复的权限码', () => {
-    expect(KNOWN_PERMISSION_CODES).toHaveLength(76)
-    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(76)
+  it('白名单自身 = 79 个互不重复的权限码', () => {
+    expect(KNOWN_PERMISSION_CODES).toHaveLength(79)
+    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(79)
   })
 
   it('menu.ts 里出现的权限码全部在白名单内', () => {
@@ -133,7 +154,7 @@ describe('menu.ts 权限码白名单（#567）', () => {
     expect(unknown).toEqual([])
   })
 
-  it('9 个读写双挂入口按「读码或写码」放行（#567）', () => {
+  it('读写双挂入口按「读码或写码」放行（#567，多视图项按视图判定）', () => {
     const expected: Array<[string, string, string]> = [
       ['/load-balancers/strategy-config', 'lb:config:read', 'lb:config:write'],
       ['/config/cache', 'config:cache:read', 'config:cache:write'],
@@ -147,31 +168,17 @@ describe('menu.ts 权限码白名单（#567）', () => {
     ]
     const items = menuGroups.flatMap(group => group.children)
     for (const [path, readCode, manageCode] of expected) {
-      // 一页一事之后权限码只声明在菜单项上（每项单 tab，tab 不再重复声明）
+      // 码可能声明在视图上（多视图项）或菜单项上（单视图项），判定时取「视图 ?? 项」
       const item = items.find(candidate => candidate.path === path)
+        ?? items.find(candidate => candidate.tabs.some(tab => tab.to === path))
       expect(item, path).toBeTruthy()
-      expect(item?.permission, path).toEqual(expect.arrayContaining([readCode, manageCode]))
-      expect(item?.tabs, path).toHaveLength(1)
-      expect(item?.tabs[0].permission, path).toBeUndefined()
+      const tab = item?.tabs.find(candidate => candidate.to === path)
+      const declared = tab?.permission ?? item?.permission
+      expect(declared, path).toEqual(expect.arrayContaining([readCode, manageCode]))
     }
   })
 })
 
-/**
- * 菜单角色声明的现状（2026-11-16 第五轮）
- *
- * 第五轮前的做法是「`/security`、`/system` 父路由要求 `roles: ['ADMIN']`，菜单给对应 11 项
- * 补同样的 roles」—— 修掉了「看得见但点不进」的死入口。
- *
- * 但四角色运行态冒烟又发现反向问题：OPERATOR / VIEWER 持有 `security:audit:read`
- * （VIEWER 模板是「所有 :read 减 8 个管理面 read」），后端 `/api/security/audit/extended/**`
- * 返回 200，前端却因父路由角色限制进不去 —— 同一条授权边界在两处各写一遍，必然漂移。
- *
- * 现在的口径：**授权边界只由权限码 + 路由 `meta.permissions` 表达**，两个父级的
- * `meta.roles` 已移除，菜单也不再声明 roles。`roles` 字段保留但当前无人使用；
- * 若将来重新启用，必须同时改菜单与路由并让本文件与
- * `router/__tests__/menuRouteAlignment.spec.ts` 的一致性断言继续通过。
- */
 describe('menu.ts 角色声明（当前统一交给权限码）', () => {
   it('没有任何菜单项声明 roles', () => {
     const items = menuGroups.flatMap(group => group.children)

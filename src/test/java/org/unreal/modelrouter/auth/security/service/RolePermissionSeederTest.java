@@ -63,14 +63,14 @@ class RolePermissionSeederTest {
     class SeedWhenEmptyTests {
 
         @Test
-        @DisplayName("表空时种入 6 个角色模板，权限码数量正确")
+        @DisplayName("表空时种入 7 个角色模板，权限码数量正确")
         void seedsSixRoleTemplatesWithCorrectCounts() {
             seeder.seedIfEmpty();
 
             Map<String, Long> counts = repository.rows().stream().collect(Collectors.groupingBy(
                     RolePermissionEntity::getRoleName, Collectors.counting()));
 
-            assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER", "SLA_READONLY", "SLA_OPERATOR"),
+            assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER", "AUDITOR", "SLA_READONLY", "SLA_OPERATOR"),
                     counts.keySet());
             assertEquals(PermissionCodes.ALL_PERMISSION_CODES.size(), counts.get("ADMIN").intValue());
             // R2-P1-03: + monitoring:exceptions:read/write；#116: + monitoring:config:write, security:audit:write
@@ -84,17 +84,19 @@ class RolePermissionSeederTest {
             // v3.8.6：新增 config:cluster:read/write（集群设置）⇒ OPERATOR +2、USER +1、VIEWER +1
             // v3.8.8：新增 monitoring:console:read（管理操作页）⇒ OPERATOR +1、USER +1、VIEWER +1
             // 调用历史双码：callhistory:read 由「全部 :read」规则自动进 OPERATOR（+1 ⇒ 54），
-            // callhistory:full-content 只授 ADMIN；VIEWER 显式排除 callhistory:read ⇒ 仍 31
+            // callhistory:full-content 只授 ADMIN；VIEWER 保留全局 callhistory:read（用户令：不要移除）⇒ 32
             // #1173：monitoring:config:read 与 write 配对（MANAGE_PAIRED_READ_TO_WRITE）⇒
             // OPERATOR 持 write 故保留 read（+1 ⇒ 55），VIEWER 不持写码故被排除 ⇒ 仍 31
             assertEquals(55L, counts.get("OPERATOR"));
-            assertEquals(33L, counts.get("USER"));
-            assertEquals(31L, counts.get("VIEWER"));
+            assertEquals(34L, counts.get("USER"));
+            assertEquals(32L, counts.get("VIEWER"));
             // #1174：系统里第一组「不是人」的角色模板。SLA_READONLY = 35 个只读码（不含
             // callhistory:full-content、security:*:manage、system:*）；SLA_OPERATOR 再加 18 个
             // 控制面写码（config 15 个 write + lb:config:write + tracing:config:manage +
             // monitoring:config:write）⇒ 53。两者都不含 system:sla:manage，避免巡检账号自己
             // 给自己续凭据。
+            // #1183：AUDITOR 给第三方审计用，最小三码；任何加码都要单独评审
+            assertEquals(3L, counts.get("AUDITOR"));
             assertEquals(35L, counts.get("SLA_READONLY"));
             assertEquals(53L, counts.get("SLA_OPERATOR"));
         }
@@ -155,7 +157,12 @@ class RolePermissionSeederTest {
             for (String monitoringRead : monitoringReadCodes()) {
                 assertTrue(codes.contains(monitoringRead), "USER 应包含 " + monitoringRead);
             }
-            assertTrue(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ));
+            assertTrue(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ));
+            assertTrue(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ));
+            assertTrue(codes.contains(PermissionCodes.CALLHISTORY_SELF_READ));
+            // #1183：USER 只能看自己的明细，全局读码与正文码都不给
+            assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ));
+            assertFalse(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ));
             assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_WRITE));
             assertTrue(codes.contains(PermissionCodes.TRACING_DASHBOARD_READ));
             assertTrue(codes.contains(PermissionCodes.TRACING_SEARCH_READ));
@@ -173,15 +180,15 @@ class RolePermissionSeederTest {
         }
 
         @Test
-        @DisplayName("VIEWER 仅含 :read 权限码（31 个），排除 view/write/manage/use")
+        @DisplayName("VIEWER 仅含 :read 权限码（32 个），排除 view/write/manage/use")
         void viewerContainsOnlyReadCodes() {
             List<String> codes = codesOf("VIEWER");
 
-            assertEquals(31, codes.size());
+            assertEquals(32, codes.size());
             assertTrue(codes.stream().allMatch(code -> code.endsWith(":read")));
             assertTrue(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
-            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_READ),
-                    "调用历史双码：VIEWER 不持运维面的记录读权限");
+            assertTrue(codes.contains(PermissionCodes.CALLHISTORY_READ),
+                    "用户令（m10072）：全局 callhistory:read 不要移除，VIEWER 保留记录读面");
             assertFalse(codes.contains(PermissionCodes.CALLHISTORY_FULL_CONTENT));
             assertFalse(codes.contains(PermissionCodes.LB_CONFIG_WRITE));
             assertFalse(codes.contains(PermissionCodes.AI_PLAYGROUND_USE));
@@ -228,6 +235,7 @@ class RolePermissionSeederTest {
                     "OPERATOR", Set.of(PermissionCodes.LB_CONFIG_READ),
                     "USER", Set.of(PermissionCodes.LB_CONFIG_READ),
                     "VIEWER", Set.of(),
+                    "AUDITOR", Set.of(),
                     // #1174：SLA 模板是「巡检面」，只读角色需要看负载均衡策略、链路配置与监控
                     // 配置（这三个 read 的配对写码分别由 SLA_OPERATOR 的 lb:config:write /
                     // tracing:config:manage / monitoring:config:write 覆盖），但都不持有
@@ -468,7 +476,7 @@ class RolePermissionSeederTest {
 
     private Set<String> requiredByRealRules() {
         return new PermissionRuleRegistry().getRules().stream()
-                .map(PermissionRule::permissionCode)
+                .flatMap(rule -> rule.permissionCodes().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -495,6 +503,12 @@ class RolePermissionSeederTest {
         return PermissionCodes.ALL_PERMISSION_CODES.stream()
                 .filter(code -> code.startsWith("monitoring:") && code.endsWith(":read"))
                 .filter(code -> !PermissionCodes.MONITORING_CONFIG_READ.equals(code))
+                // #1183：本人读码（tokenusage/exceptions:self:read）零权限面给 USER 的替代，不参与全局读断言
+                .filter(code -> !code.contains(":self:"))
+                // #1183：tokenusage / exceptions 的全局读码对 USER 收窄成「本人读」，
+                // 其它 monitoring 读码仍是全局的，所以这两个不能进「USER 必须持有」的期望
+                .filter(code -> !PermissionCodes.MONITORING_TOKENUSAGE_READ.equals(code))
+                .filter(code -> !PermissionCodes.MONITORING_EXCEPTIONS_READ.equals(code))
                 .collect(Collectors.toList());
     }
 

@@ -613,11 +613,14 @@ const handleUserCommand = async (command: string) => {
   }
 }
 
+/* 视图分段：同一对象的多视图（记录 / 统计）在这里切换，形态保持安静——
+   文字 + 选中下划线，不用胶囊、不用填充块，避免和面包屑抢注意力。 */
 .nav-tabs {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 18px;
   overflow-x: auto;
+  margin-left: 4px;
   scrollbar-width: none;
 }
 
@@ -626,26 +629,35 @@ const handleUserCommand = async (command: string) => {
 }
 
 .nav-tab {
+  position: relative;
   flex: 0 0 auto;
   border: none;
   background: transparent;
   color: var(--ja-text-secondary);
   font-size: 13px;
   line-height: 1;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 6px 0;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition: color 0.15s;
 }
 
 .nav-tab:hover {
-  background-color: var(--el-fill-color-light);
   color: var(--ja-text-primary);
 }
 
 .nav-tab.active {
-  background-color: var(--ja-primary);
-  color: #fff;
+  color: var(--ja-text-primary);
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--ja-accent);
+  border-radius: 1px;
 }
 
 .sidebar-toggle {

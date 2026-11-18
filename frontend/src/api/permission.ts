@@ -18,7 +18,13 @@ export interface PermissionGroup {
 }
 
 /** 4 个种子角色（RolePermissionSeeder 模板） */
-export const ROLES = ['ADMIN', 'OPERATOR', 'USER', 'VIEWER'] as const
+/**
+ * 内置角色（与后端 `RolePermissionSeeder.buildDefaultRoleTemplates()` 一一对应）。
+ *
+ * <p>#1183：补上 AUDITOR（第三方审计最小集）与两个 SLA 角色 —— 之前这里硬编码四角色，
+ * 导致权限管理页根本看不到「给外部审计开了哪些码」。
+ */
+export const ROLES = ['ADMIN', 'OPERATOR', 'USER', 'VIEWER', 'AUDITOR', 'SLA_READONLY', 'SLA_OPERATOR'] as const
 export type RoleName = (typeof ROLES)[number]
 
 /**
@@ -29,7 +35,10 @@ export const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
   ADMIN: 'permissions.roleDescriptions.ADMIN',
   OPERATOR: 'permissions.roleDescriptions.OPERATOR',
   USER: 'permissions.roleDescriptions.USER',
-  VIEWER: 'permissions.roleDescriptions.VIEWER'
+  VIEWER: 'permissions.roleDescriptions.VIEWER',
+  AUDITOR: 'permissions.roleDescriptions.AUDITOR',
+  SLA_READONLY: 'permissions.roleDescriptions.SLA_READONLY',
+  SLA_OPERATOR: 'permissions.roleDescriptions.SLA_OPERATOR'
 }
 
 /**
@@ -68,16 +77,16 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       'rl:monitoring:read'
     ]
   },
-  { module: 'permissions.groups.callHistory', codes: ['callhistory:read', 'callhistory:full-content'] },
+  { module: 'permissions.groups.callHistory', codes: ['callhistory:read', 'callhistory:self:read', 'callhistory:full-content'] },
   {
     module: 'permissions.groups.monitoring',
     codes: [
       'monitoring:metrics:read', 'monitoring:metrics:write',
       'monitoring:slowquery:read', 'monitoring:slowquery:write',
       'monitoring:quota:read',
-      'monitoring:tokenusage:read', 'monitoring:modelstats:read',
+      'monitoring:tokenusage:read', 'monitoring:tokenusage:self:read', 'monitoring:modelstats:read',
       'monitoring:routing:read',
-      'monitoring:exceptions:read', 'monitoring:exceptions:write',
+      'monitoring:exceptions:read', 'monitoring:exceptions:self:read', 'monitoring:exceptions:write',
       'monitoring:console:read',
       'monitoring:config:read', 'monitoring:config:write'
     ]

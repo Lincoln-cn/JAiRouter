@@ -18,16 +18,26 @@ import java.util.Set;
  * @author JAiRouter Team
  * @since 2.9.8
  */
-public record PermissionRule(Set<HttpMethod> methods, String pathPattern, String permissionCode) {
+public record PermissionRule(Set<HttpMethod> methods, String pathPattern, Set<String> permissionCodes) {
+
+    /**
+     * 单码便捷访问（日志/诊断/既有测试用）：返回集合中的第一个码。
+     *
+     * <p>数据层（{@code scope=mine}）引入后，一个路径可能同时接受「全局读码」与
+     * 「本人读码」——判定用 {@link #permissionCodes()}，不要用本方法。
+     */
+    public String permissionCode() {
+        return permissionCodes.iterator().next();
+    }
 
     /** 匹配任意 HTTP 方法的规则 */
     public static PermissionRule any(final String pathPattern, final String permissionCode) {
-        return new PermissionRule(Set.of(), pathPattern, permissionCode);
+        return new PermissionRule(Set.of(), pathPattern, Set.of(permissionCode));
     }
 
     /** 仅匹配 GET 的规则（读操作） */
     public static PermissionRule get(final String pathPattern, final String permissionCode) {
-        return new PermissionRule(Set.of(HttpMethod.GET), pathPattern, permissionCode);
+        return new PermissionRule(Set.of(HttpMethod.GET), pathPattern, Set.of(permissionCode));
     }
 
     /**
@@ -39,14 +49,24 @@ public record PermissionRule(Set<HttpMethod> methods, String pathPattern, String
      * {@link PermissionRuleRegistry#findRule} 是顺序匹配、首个命中即返回。
      */
     public static PermissionRule post(final String pathPattern, final String permissionCode) {
-        return new PermissionRule(Set.of(HttpMethod.POST), pathPattern, permissionCode);
+        return new PermissionRule(Set.of(HttpMethod.POST), pathPattern, Set.of(permissionCode));
+    }
+
+    /**
+     * 仅匹配 GET、且**任一**给定权限码通过即可的规则。
+     *
+     * <p>用于「全局读」与「本人读」并存的数据面：持 {@code callhistory:read} 的人看全部，
+     * 持 {@code callhistory:self:read} 的人只能看自己的（数据层再按 scope 过滤）。
+     */
+    public static PermissionRule getAny(final String pathPattern, final String... codes) {
+        return new PermissionRule(Set.of(HttpMethod.GET), pathPattern, Set.of(codes));
     }
 
     /** 匹配写操作（POST/PUT/DELETE/PATCH）的规则 */
     public static PermissionRule write(final String pathPattern, final String permissionCode) {
         return new PermissionRule(
                 Set.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH),
-                pathPattern, permissionCode);
+                pathPattern, Set.of(permissionCode));
     }
 
     /**
