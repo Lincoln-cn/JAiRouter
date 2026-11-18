@@ -70,10 +70,10 @@
     },
     "docs/en/api-reference/monitoring-api.md": {
       "FilePath": "docs/en/api-reference/monitoring-api.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-11-17T10:12:02.199491",
-      "ContentHash": "5aeb13da9c490df3",
-      "GitCommit": "1f147ca6",
+      "Version": "1.0.8",
+      "LastModified": "2026-11-18T02:42:14.773242",
+      "ContentHash": "3c7a291c181e9604",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -465,10 +465,10 @@
     },
     "docs/en/deployment/multi-replica.md": {
       "FilePath": "docs/en/deployment/multi-replica.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-11-13T22:09:37.826348",
-      "ContentHash": "cabbfc4ac5de6fbd",
-      "GitCommit": "399fb4aa",
+      "Version": "1.0.9",
+      "LastModified": "2026-11-18T02:42:14.921882",
+      "ContentHash": "5bd85b0f7b402df1",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -630,10 +630,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-11-17T18:20:52.138086",
-      "ContentHash": "de4e5643947b4749",
-      "GitCommit": "3509988c",
+      "Version": "1.0.9",
+      "LastModified": "2026-11-18T02:42:15.029668",
+      "ContentHash": "1733e242d2a825c8",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -841,10 +841,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.31",
-      "LastModified": "2026-11-17T18:20:52.320285",
-      "ContentHash": "1e49108e79ad878a",
-      "GitCommit": "3509988c",
+      "Version": "1.0.32",
+      "LastModified": "2026-11-18T02:42:15.156209",
+      "ContentHash": "bd39f14cb0f14009",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -995,10 +995,10 @@
     },
     "docs/en/security/rbac-permissions.md": {
       "FilePath": "docs/en/security/rbac-permissions.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-17T18:20:52.412009",
-      "ContentHash": "9baf404e4944f6b6",
-      "GitCommit": "3509988c",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-18T02:42:15.222264",
+      "ContentHash": "5fb57c115c97ac90",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1226,10 +1226,10 @@
     },
     "docs/zh/api-reference/monitoring-api.md": {
       "FilePath": "docs/zh/api-reference/monitoring-api.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-11-17T10:12:02.803360",
-      "ContentHash": "19db8c0f9f14b643",
-      "GitCommit": "1f147ca6",
+      "Version": "1.0.8",
+      "LastModified": "2026-11-18T02:42:15.353655",
+      "ContentHash": "3c7f306d8138eae9",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1619,10 +1619,10 @@
     },
     "docs/zh/deployment/multi-replica.md": {
       "FilePath": "docs/zh/deployment/multi-replica.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-11-13T22:09:38.698259",
-      "ContentHash": "1ddef49035fac105",
-      "GitCommit": "399fb4aa",
+      "Version": "1.0.9",
+      "LastModified": "2026-11-18T02:42:15.521658",
+      "ContentHash": "d8417745f76b6c41",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1787,10 +1787,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-11-17T18:20:52.989104",
-      "ContentHash": "6aa70535ae04fb09",
-      "GitCommit": "3509988c",
+      "Version": "1.0.9",
+      "LastModified": "2026-11-18T02:42:15.628548",
+      "ContentHash": "7284b399c906b173",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2002,10 +2002,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.31",
-      "LastModified": "2026-11-17T18:20:53.193798",
-      "ContentHash": "75bd67b906e37311",
-      "GitCommit": "3509988c",
+      "Version": "1.0.32",
+      "LastModified": "2026-11-18T02:42:15.772211",
+      "ContentHash": "fc8ddad975493d26",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2158,10 +2158,10 @@
     },
     "docs/zh/security/rbac-permissions.md": {
       "FilePath": "docs/zh/security/rbac-permissions.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-17T18:20:53.289679",
-      "ContentHash": "90ee4a58903abd1f",
-      "GitCommit": "3509988c",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-18T02:42:15.839177",
+      "ContentHash": "0976ffdee97eec7e",
+      "GitCommit": "c594608d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -8722,7 +8722,87 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-17T18:20:53.289688",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:14.773250",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/multi-replica.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:14.921895",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:15.029679",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.31",
+      "NewVersion": "1.0.32",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:15.156220",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:15.222274",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:15.353666",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/multi-replica.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:15.521668",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:15.628559",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.31",
+      "NewVersion": "1.0.32",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:15.772223",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T02:42:15.839187",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-17T18:20:53.462048"
+  "last_updated": "2026-11-18T02:42:15.956689"
 }
