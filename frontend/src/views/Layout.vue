@@ -110,9 +110,10 @@ import { useTheme } from '@/composables/useTheme'
 import { usePermission } from '@/composables/usePermission'
 import { useViewport } from '@/composables/useViewport'
 import {
-  menuGroups,
   findMenuEntry,
   findMenuTab,
+  isMenuItemView,
+  menuGroups,
   resolveMenuPath
 } from '@/config/menu'
 import type { MenuGroup, MenuItem } from '@/config/menu'
@@ -343,7 +344,7 @@ const handleTabSelect = async (to: string) => {
   }
 }
 
-// 处理菜单选择：进入该菜单项下「第一个当前用户有权限的 tab」，无权限则回退第一个 tab
+// 处理菜单选择：已在该项的某个视图上则原地不动；否则进入「第一个当前用户有权限的 tab」
 const handleMenuSelect = async (index: string) => {
   // 防止快速连续点击
   if (isNavigating.value) {
@@ -351,6 +352,14 @@ const handleMenuSelect = async (index: string) => {
   }
 
   const item = findItemByPath(index)
+
+  // 已经停在这个菜单项的任一视图上：保持当前视图，不要弹回第一个。
+  // 「AI 试验场」有 5 个视图，此前从「图像服务」点侧栏会被打回「对话测试」，
+  // 看起来像菜单点不动，实际是被重置了。
+  if (item && isMenuItemView(item, route.path)) {
+    return
+  }
+
   const target = item ? resolveLandingPath(item) : index
 
   // 如果已经在目标路由，不进行跳转

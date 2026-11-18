@@ -499,6 +499,16 @@ export function findMenuEntry(path: string): { group: MenuGroup; item: MenuItem 
 }
 
 /** 精确匹配当前路由对应的 tab（详情页等无 tab 的页面返回 undefined） */
+/**
+ * 给定的路由是不是该菜单项的某个视图。
+ *
+ * 点侧栏菜单项时用它判断「要不要跳」：用户已经停在这一项的某个视图上（例如「AI 试验场 / 图像服务」）
+ * 就不该被打回第一个视图——那种「点了菜单却又回到别处」的体验会被读成「菜单点不动」。
+ */
+export function isMenuItemView(item: MenuItem, path: string): boolean {
+  return item.tabs.some(tab => tab.to === path)
+}
+
 export function findMenuTab(path: string): MenuTab | undefined {
   for (const group of menuGroups) {
     for (const item of group.children) {

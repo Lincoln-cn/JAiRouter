@@ -6,6 +6,7 @@ import {
   ROUTE_TO_MENU,
   findMenuEntry,
   findMenuTab,
+  isMenuItemView,
   resolveMenuPath
 } from '@/config/menu'
 import { KNOWN_PERMISSION_CODES } from './knownPermissions'
@@ -17,6 +18,28 @@ import { KNOWN_PERMISSION_CODES } from './knownPermissions'
  * 默认展开组、面包屑都从 `menuGroups` / `ROUTE_TO_MENU` 推导，
  * 一旦结构漂移（多一项、少一组、tab 路由写错、反查表漏项），先在这里红。
  */
+describe('isMenuItemView（点菜单是否原地不动）', () => {
+  /**
+   * 「AI 试验场」有 5 个视图。用户在「图像服务」点侧栏菜单项时，若判定为「不在该项上」，
+   * 就会被 resolveLandingPath 打回第一个视图 —— 用户看到的是「点菜单又跳回对话测试」。
+   */
+  const playground = menuGroups
+    .flatMap(group => group.children)
+    .find(item => item.tabs.some(tab => tab.to === '/playground/image'))
+
+  it('该项的任一视图都判定为「在本项上」', () => {
+    expect(playground).toBeTruthy()
+    for (const tab of playground!.tabs) {
+      expect(isMenuItemView(playground!, tab.to)).toBe(true)
+    }
+  })
+
+  it('其它项的路由判定为「不在本项上」', () => {
+    expect(isMenuItemView(playground!, '/dashboard/main')).toBe(false)
+    expect(isMenuItemView(playground!, '/security/api-keys')).toBe(false)
+  })
+})
+
 describe('menu.ts 信息架构', () => {
   it('8 组 31 项，组顺序与设计文档一致', () => {
     expect(menuGroups.map(g => g.index)).toEqual([
