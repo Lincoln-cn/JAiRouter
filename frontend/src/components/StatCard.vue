@@ -51,8 +51,8 @@ const formattedValue = computed(() => {
   display: flex;
   align-items: center;
   background: var(--ja-bg-card);
-  /* 默认色调 */
-  --ja-stat-tone-bg: var(--ja-primary-light-9);
+  /* 默认：中性面 + 中性色图标（色调变体只改图标色） */
+  --ja-stat-tone-bg: var(--ja-surface-2);
   --ja-stat-tone-icon: var(--ja-dashboard-icon-color);
 }
 
@@ -70,7 +70,6 @@ const formattedValue = computed(() => {
   align-items: center;
   justify-content: center;
   margin-right: 12px;
-  box-shadow: var(--ja-shadow-sm);
   background: var(--ja-stat-tone-bg);
 }
 
@@ -86,7 +85,7 @@ const formattedValue = computed(() => {
 
 .value {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ja-dashboard-value-color);
 }
 
@@ -103,29 +102,27 @@ const formattedValue = computed(() => {
   margin-top: 4px;
 }
 
-/* ── 色调变体 ── */
+/* ── 色调变体（unslop：只染图标，不染面）──
+   原先每种色调各配一块 light-9 底色（成功淡绿 / 警告淡橙 / 危险淡红…），
+   概览页 4~6 张并排时暗色下会变成绿/棕/蓝拼贴，像四张通知横幅。
+   统计卡是「读数」，面应该中性；颜色只留在图标与数值上，用于快速定位异常。 */
 .stat-card--primary {
-  --ja-stat-tone-bg: var(--ja-primary-light-9);
-  --ja-stat-tone-icon: var(--ja-primary);
+  --ja-stat-tone-icon: var(--ja-accent);
 }
 
 .stat-card--success {
-  --ja-stat-tone-bg: var(--el-color-success-light-9, var(--ja-primary-light-9));
   --ja-stat-tone-icon: var(--ja-success);
 }
 
 .stat-card--warning {
-  --ja-stat-tone-bg: var(--el-color-warning-light-9, var(--ja-primary-light-9));
   --ja-stat-tone-icon: var(--ja-warning);
 }
 
 .stat-card--danger {
-  --ja-stat-tone-bg: var(--el-color-danger-light-9, var(--ja-primary-light-9));
   --ja-stat-tone-icon: var(--ja-danger);
 }
 
 .stat-card--info {
-  --ja-stat-tone-bg: var(--el-color-info-light-9, var(--ja-primary-light-9));
   --ja-stat-tone-icon: var(--ja-info);
 }
 

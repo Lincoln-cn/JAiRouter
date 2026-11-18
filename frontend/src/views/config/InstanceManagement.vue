@@ -1378,7 +1378,7 @@ onMounted(() => {
 }
 
 .instance-drawer :deep(.el-drawer__title) {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ja-text-primary);
   font-size: 18px;
 }
@@ -1445,7 +1445,7 @@ onMounted(() => {
   background-color: var(--ja-bg-card);
   border: 1px solid var(--ja-border-light);
   border-radius: 6px;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .header-row:hover {
@@ -1472,7 +1472,7 @@ onMounted(() => {
 }
 
 .remove-header-btn {
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .remove-header-btn:hover {

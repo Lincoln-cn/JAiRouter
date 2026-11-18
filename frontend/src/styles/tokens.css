@@ -16,14 +16,16 @@
  */
 
 :root {
-  /* ========== 品牌色 ========== */
-  --ja-primary: #409eff;
-  --ja-primary-light-3: #79bbff;
-  --ja-primary-light-5: #a0cfff;
-  --ja-primary-light-7: #c6e2ff;
-  --ja-primary-light-8: #d9ecff;
-  --ja-primary-light-9: #ecf5ff;
-  --ja-primary-dark-2: #337ecc;
+  /* ========== 品牌色 ==========
+     唯一强调色是 --ja-accent（品牌青的深阶）。--ja-primary* 只做别名保留旧引用点，
+     避免 20+ 处页面样式同时写两套色；新代码请直接用 --ja-accent*。 */
+  --ja-primary: var(--ja-accent);
+  --ja-primary-light-3: var(--ja-accent-light-3);
+  --ja-primary-light-5: var(--ja-accent-light-5);
+  --ja-primary-light-7: var(--ja-accent-light-7);
+  --ja-primary-light-8: var(--ja-accent-light-8);
+  --ja-primary-light-9: var(--ja-accent-light-9);
+  --ja-primary-dark-2: var(--ja-accent-dark-2);
 
   /* ========== 侧边栏 ==========
      明色下侧栏与内容区同一套面：白底 + 右侧 1px 分界，避免「浅色界面配深色导轨」的割裂感。
@@ -31,8 +33,8 @@
   --ja-sidebar-bg: var(--ja-paper, #ffffff);
   --ja-sidebar-solid-bg: #ffffff;
   --ja-sidebar-text: #3d4757;
-  --ja-sidebar-active: #2563c9;
-  --ja-sidebar-active-bg: rgba(37, 99, 201, 0.1);
+  --ja-sidebar-active: var(--ja-accent);
+  --ja-sidebar-active-bg: var(--ja-accent-soft);
   --ja-sidebar-group-text: #616c7c;
   --ja-sidebar-border: #dde3ea;
   --ja-sidebar-shadow: 2px 0 12px rgba(16, 24, 40, 0.04);
@@ -42,7 +44,6 @@
 
   /* ========== 主内容区 ========== */
   --ja-main-bg: var(--ja-surface);
-  --ja-main-bg-gradient: linear-gradient(180deg, #f6f9ff 0%, #fbfdff 100%);
 
   /* ========== 文字 ========== */
   /* 新令牌 ink 阶梯是源头，这里只做别名（P1-3）：
@@ -90,11 +91,11 @@
   --ja-shadow-xl: 0 10px 30px rgba(0, 0, 0, 0.2);
 
   /* ========== 字体 ========== */
-  --ja-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
-  /* ========== 登录页渐变 ========== */
-  --ja-login-gradient-start: #667eea;
-  --ja-login-gradient-end: #764ba2;
+  /* 跨平台一致：Inter 本地打包（@fontsource/inter，400/500/600 三档），中文回落到系统字体。
+     不使用 Tahoma/Verdana —— macOS/Linux 上会掉进这两档，观感与 Windows 差异过大。 */
+  --ja-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'PingFang SC',
+    'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --ja-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* ========== 功能色 ========== */
   --ja-success: #67c23a;
@@ -109,14 +110,6 @@
   --ja-dashboard-config-title: #283044;
   --ja-dashboard-error-row: #fff7f6;
   --ja-dashboard-empty-color: #909399;
-
-  /* 仪表盘统计卡片渐变 */
-  --ja-stat-gradient-service: linear-gradient(135deg, #e6f7ff, #fff0f6);
-  --ja-stat-gradient-instance: linear-gradient(135deg, #fff7e6, #f0fff4);
-  --ja-stat-gradient-model: linear-gradient(135deg, #f0f5ff, #fff);
-  --ja-stat-gradient-healthy: linear-gradient(135deg, #e6fffb, #f0f9ff);
-  --ja-stat-gradient-error: linear-gradient(135deg, #fff0f0, #fff7e6);
-  --ja-stat-gradient-user: linear-gradient(135deg, #f8eaff, #eef7ff);
 
   /* 中性阶与强调色（P0-1 品牌与令牌） */
   /* 中性阶（源头令牌）：paper = 卡片承载体，surface = 页底，surface-2 = 悬停/次级面。
@@ -134,9 +127,17 @@
   --ja-ink-2: #3d4757;
   --ja-ink-3: #616c7c;
 
-  /* 强调色：取自 logo 青色，只用于品牌面（不替代 --ja-primary / --ja-primary-*） */
-  --ja-accent: #34c8da;
-  --ja-accent-soft: rgba(52, 200, 218, 0.16);
+  /* 强调色：唯一强调色（品牌青的深阶，白底 4.9:1）。
+     只用于选中态、链接、图表高亮、状态点；主按钮走墨色填充（见 element-override.css）。 */
+  --ja-accent: #0e7490;
+  --ja-accent-soft: rgba(14, 116, 144, 0.12);
+  /* accent 的 EP 色阶（Element Plus 组件消费 --el-color-primary-light-N 与 dark-N） */
+  --ja-accent-light-3: #569eb1;
+  --ja-accent-light-5: #86b9c7;
+  --ja-accent-light-7: #b6d5dd;
+  --ja-accent-light-8: #cee3e8;
+  --ja-accent-light-9: #e6f1f3;
+  --ja-accent-dark-2: #0b5c73;
 
   /* 图表专用中性色（P1-3）：分类色板第 6 位与轴线/网格线不能直接借用 --ja-border ——
      边框是「面与面的分界」，在暗色下刻意压到 1.2:1 左右；当作数据系列或网格线会几乎不可见。
@@ -147,31 +148,30 @@
 
 /* ========== 暗色模式 ========== */
 html.dark {
-  /* 品牌色（暗色模式下略微调亮） */
-  --ja-primary: #409eff;
-  --ja-primary-light-3: #3375b9;
-  --ja-primary-light-5: #2a598a;
-  --ja-primary-light-7: #213d5b;
-  --ja-primary-light-8: #1d3043;
-  --ja-primary-light-9: #18222b;
-  --ja-primary-dark-2: #337ecc;
+  /* 品牌色：同样跟随 accent（暗色下 light-* 更暗、dark-2 更亮） */
+  --ja-primary: var(--ja-accent);
+  --ja-primary-light-3: var(--ja-accent-light-3);
+  --ja-primary-light-5: var(--ja-accent-light-5);
+  --ja-primary-light-7: var(--ja-accent-light-7);
+  --ja-primary-light-8: var(--ja-accent-light-8);
+  --ja-primary-light-9: var(--ja-accent-light-9);
+  --ja-primary-dark-2: var(--ja-accent-dark-2);
 
   /* 侧边栏暗色 */
-  --ja-sidebar-bg: linear-gradient(135deg, #1a1f2e 0%, #242b3d 100%);
+  --ja-sidebar-bg: var(--ja-paper);
   --ja-sidebar-solid-bg: #1a1f2e;
   --ja-sidebar-text: #e0e0e0;
-  --ja-sidebar-active: #ffd04b;
+  --ja-sidebar-active: var(--ja-accent);
   --ja-sidebar-active-bg: rgba(255, 255, 255, 0.07);
   --ja-sidebar-group-text: #9aa4b2;
   --ja-sidebar-border: transparent;
-  --ja-sidebar-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3), 2px 0 10px rgba(0, 0, 0, 0.2);
-  --ja-sidebar-logo-bg: linear-gradient(135deg, #1e2536 0%, #1a1f2e 100%);
+  --ja-sidebar-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+  --ja-sidebar-logo-bg: transparent;
   --ja-sidebar-logo-border: #2a3040;
   --ja-sidebar-scrollbar: rgba(255, 255, 255, 0.18);
 
   /* 主内容区 */
   --ja-main-bg: var(--ja-surface);
-  --ja-main-bg-gradient: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
 
   /* 文字 */
   /* 与浅色同一套别名；实际颜色由本块下方 ink 阶梯覆写（P1-3） */
@@ -201,10 +201,6 @@ html.dark {
   --ja-shadow-lg: 0 6px 14px rgba(0, 0, 0, 0.4);
   --ja-shadow-xl: 0 10px 30px rgba(0, 0, 0, 0.5);
 
-  /* 登录页渐变（暗色模式保持一致） */
-  --ja-login-gradient-start: #667eea;
-  --ja-login-gradient-end: #764ba2;
-
   /* 功能色 */
   --ja-success: #67c23a;
   --ja-warning: #e6a23c;
@@ -219,14 +215,6 @@ html.dark {
   --ja-dashboard-error-row: #2d1f1f;
   --ja-dashboard-empty-color: #a3a6ad;
 
-  /* 仪表盘统计卡片渐变（暗色） */
-  --ja-stat-gradient-service: linear-gradient(135deg, #1a2a3a, #2a1a2e);
-  --ja-stat-gradient-instance: linear-gradient(135deg, #2a2a1a, #1a2a1f);
-  --ja-stat-gradient-model: linear-gradient(135deg, #1a1f2e, #1d1e1f);
-  --ja-stat-gradient-healthy: linear-gradient(135deg, #1a2e2e, #1a2233);
-  --ja-stat-gradient-error: linear-gradient(135deg, #2e1a1a, #2a2a1a);
-  --ja-stat-gradient-user: linear-gradient(135deg, #2a1a2e, #1a1f2e);
-
   /* ========== 中性阶与强调色（P0-1 品牌与令牌） ========== */
   /* 中性阶（源头令牌，P1-3 修正层级）：页底最深 #0e1116 → 卡片提亮 #151a21 → 悬停/次级面 #1c222b。
      修正前 paper(#0e1116) 比页底(#141414) 更暗，ChartCard/MetricStrip 等卡片看起来像「洞」。
@@ -238,9 +226,16 @@ html.dark {
   --ja-ink-2: #b6bfcc;
   --ja-ink-3: #7d8797;
 
-  /* 强调色（暗色下略微提亮） */
+  /* 强调色（暗色下提亮到 #6ee0e8，对 paper #151a21 约 9:1） */
   --ja-accent: #6ee0e8;
   --ja-accent-soft: rgba(110, 224, 232, 0.14);
+  /* 暗色下 light-* 是「更暗」的阶（与 EP 暗色主题同向），dark-2 反而提亮 */
+  --ja-accent-light-3: #4d9ca2;
+  --ja-accent-light-5: #377074;
+  --ja-accent-light-7: #214346;
+  --ja-accent-light-8: #162d2e;
+  --ja-accent-light-9: #0b1617;
+  --ja-accent-dark-2: #8be6ec;
 
   /* 图表专用中性色（P1-3）：暗色下系列中性阶对卡片 #151a21 约 4.2:1，
      轴线/网格线刻意压暗（约 1.35:1），只做弱提示，不与数据争注意力。 */
@@ -257,4 +252,16 @@ html.dark {
 body {
   background: var(--ja-surface);
   color: var(--ja-ink);
+  font-family: var(--ja-font-family);
+  /* 数字等宽：表格、指标、时间列对不齐会显得潦草 */
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--ja-font-mono);
 }

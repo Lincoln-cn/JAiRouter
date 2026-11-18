@@ -89,10 +89,8 @@ const toneClass = (tone?: MetricStripItem['tone']): string =>
   padding-left: 0;
 }
 
-/* 相邻指标之间一条 1px 分隔线；换行后由媒体查询修正行首 */
-.metric + .metric {
-  border-left: 1px solid var(--ja-border);
-}
+/* 指标之间只靠 20px 留白分隔（原先再加一条 1px 竖线，四段并排时像表格格线，
+   数值本身已经是视觉主体，不需要格线强调边界）。 */
 
 .metric__value {
   color: var(--ja-ink);
@@ -151,12 +149,10 @@ const toneClass = (tone?: MetricStripItem['tone']): string =>
   }
 
   .metric:nth-child(n) {
-    border-left: none;
     padding-left: 0;
   }
 
   .metric:nth-child(even) {
-    border-left: 1px solid var(--ja-border);
     padding-left: var(--ja-space-5);
   }
 }
@@ -167,7 +163,6 @@ const toneClass = (tone?: MetricStripItem['tone']): string =>
   }
 
   .metric:nth-child(n) {
-    border-left: none;
     padding-left: 0;
   }
 }

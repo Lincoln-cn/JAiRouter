@@ -57,6 +57,15 @@ jairouter:
   security:
     enabled: true
 
+    # 管理面限流在 dev 单独放宽：本地/CI 反复跑 e2e 时，默认的「创建 API Key 每小时 10 次」
+    # 会让 crud:apikey:create-* 三条用例撞 429（不是功能回归）。生产值不变。
+    # 注意：本块必须留在 security 之下 —— 上一轮把 jwt/api-key 等块误挂到 auth 下，
+    # 导致空库启动不种 admin（见 issue #1177 的修复提交）。
+    admin-api-rate-limit:
+      create-per-hour: 200
+      mutate-per-minute: 200
+      mutate-per-hour: 2000
+
     jwt:
       enabled: true
       # #674：DEV_JWT_SECRET 兼容别名已移除，dev 也只认 JWT_SECRET；

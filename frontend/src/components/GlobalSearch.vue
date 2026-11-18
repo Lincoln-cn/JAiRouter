@@ -315,9 +315,10 @@ defineExpose({ open, close })
   color: var(--ja-ink-3);
 }
 
+/* 分组标题用 sentence case：11px 大写 + 字距在小字号下会糊成一排方块 */
 .global-search__group-title {
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .global-search__item {

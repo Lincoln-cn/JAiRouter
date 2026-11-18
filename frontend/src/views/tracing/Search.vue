@@ -1071,11 +1071,12 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid var(--ja-border-light);
 }
 
-/* 多 Span 追踪的特殊样式 */
+/* 多 Span 追踪：单色强调（原先绿→蓝 45° 渐变，是典型的装饰性渐变；
+   这枚指示器表达的是「多于一个 span」，一个实心色足够）。 */
 .multi-span-indicator {
-  background: linear-gradient(45deg, var(--ja-success), var(--ja-primary));
-  color: white;
-  font-weight: bold;
+  background: var(--ja-accent);
+  color: var(--ja-paper);
+  font-weight: 600;
 }
 
 .single-span-indicator {

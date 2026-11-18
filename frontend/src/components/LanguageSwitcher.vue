@@ -52,7 +52,7 @@ const handleCommand = (command: string | number | object) => {
   gap: 6px;
   padding: 5px 12px;
   border: 1px solid var(--ja-border);
-  border-radius: 999px;
+  border-radius: var(--ja-radius-sm);
   background: var(--el-fill-color-blank);
   color: var(--ja-text-regular);
   font-size: 13px;

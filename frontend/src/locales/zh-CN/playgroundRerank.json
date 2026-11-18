@@ -31,7 +31,7 @@
     "messages": {
       "rerankCompleted": "重排序完成",
       "operation": "重排序",
-      "suggestion": "💡 建议: {suggestion}"
+      "suggestion": "建议: {suggestion}"
     }
   }
 }

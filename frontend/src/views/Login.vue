@@ -281,8 +281,8 @@ onMounted(() => {
   margin: 40px 0 10px;
   color: var(--ja-ink-3);
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 .brandwall__title {

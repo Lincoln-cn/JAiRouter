@@ -22,8 +22,8 @@
       "serviceDegraded": "The service is circuit-broken. Retry later or reset the circuit breaker.",
       "failedTo": "Operation failed. Check the configuration."
     },
-    "enhance401": "{message}\n\n💡 Tip: Authentication is not configured for the instance. Add an authentication header (e.g. Authorization or X-API-Key) in Instance Management.",
-    "enhanceKeyword": "{message}\n\n💡 Tip: {hint}",
+    "enhance401": "{message}\n\nTip: Authentication is not configured for the instance. Add an authentication header (e.g. Authorization or X-API-Key) in Instance Management.",
+    "enhanceKeyword": "{message}\n\nTip: {hint}",
     "failedDetail": "{context} failed: {message}",
     "failedCheckConfig": "{context} failed. Please check the configuration and try again.",
     "suggestion": {

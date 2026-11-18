@@ -49,7 +49,7 @@
     "usernamePlaceholder": "请输入用户名",
     "passwordPlaceholder": "请输入密码",
     "submitting": "登录中…",
-    "eyebrow": "LLM GATEWAY",
+    "eyebrow": "LLM Gateway",
     "lede": "面向生产的 LLM 网关 —— 统一入口、按策略路由、全程可审计。",
     "factProtocol": "协议",
     "factProtocolDesc": "OpenAI 与 Anthropic 兼容，客户端零改造接入。",
