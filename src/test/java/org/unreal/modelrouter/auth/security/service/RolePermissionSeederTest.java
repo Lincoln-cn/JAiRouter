@@ -157,12 +157,17 @@ class RolePermissionSeederTest {
             for (String monitoringRead : monitoringReadCodes()) {
                 assertTrue(codes.contains(monitoringRead), "USER 应包含 " + monitoringRead);
             }
-            assertTrue(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ));
-            assertTrue(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ));
+            // #1183：本人读码目前只发 callhistory:self:read —— 该面的数据隔离已在
+            // ApiCallHistoryController 落地（CallHistoryDataScopeTest 守着）；
+            // tokenusage / exceptions 的 self 过滤尚未实现，因此这两个 self 码不发给任何角色，
+            // 避免「发了码但后端不过滤」的安全假象（#1185）。这两个面仍是全局读。
             assertTrue(codes.contains(PermissionCodes.CALLHISTORY_SELF_READ));
-            // #1183：USER 只能看自己的明细，全局读码与正文码都不给
-            assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ));
-            assertFalse(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ));
+            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_READ),
+                    "#1183：USER 持本人读码时不发全局调用记录读码");
+            assertTrue(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ));
+            assertTrue(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ));
+            assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ));
+            assertFalse(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ));
             assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_WRITE));
             assertTrue(codes.contains(PermissionCodes.TRACING_DASHBOARD_READ));
             assertTrue(codes.contains(PermissionCodes.TRACING_SEARCH_READ));

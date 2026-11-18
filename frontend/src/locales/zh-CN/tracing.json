@@ -167,7 +167,8 @@
         "traceDownloaded": "追踪数据已下载",
         "spanDetailsCopied": "Span详情已复制到控制台"
       },
-      "includeArchived": "包含已归档的异常链路"
+      "includeArchived": "包含已归档的异常链路",
+      "serviceNameEmpty": "没有可用服务"
     },
     "management": {
       "title": "追踪配置",

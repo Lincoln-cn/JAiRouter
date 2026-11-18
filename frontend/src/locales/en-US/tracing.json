@@ -167,7 +167,8 @@
         "traceDownloaded": "Trace data downloaded",
         "spanDetailsCopied": "Span details copied to the console"
       },
-      "includeArchived": "Include archived error traces"
+      "includeArchived": "Include archived error traces",
+      "serviceNameEmpty": "No services available"
     },
     "management": {
       "title": "Tracing Configuration",
