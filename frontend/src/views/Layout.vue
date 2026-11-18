@@ -595,6 +595,7 @@ const handleUserCommand = async (command: string) => {
 
 /* 面包屑：单行不换行，超长时裁切，避免把中间列挤偏 */
 .header-left {
+  grid-column: 1;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -608,13 +609,17 @@ const handleUserCommand = async (command: string) => {
 }
 
 .header-center {
+  grid-column: 2;
   display: flex;
   justify-content: center;
   min-width: 0;
 }
 
 /* 右侧操作区：语言 / 主题 / 账户三项固定不换行，窄屏时由左侧 tab 让位 */
+/* 显式指定第 3 列：单视图页没有中间列（v-if 不渲染），
+   若靠 grid 自动排布，右侧操作区会掉进第 2 列贴着面包屑，右半边空一大块。 */
 .header-right {
+  grid-column: 3;
   display: flex;
   align-items: center;
   gap: 8px;
