@@ -137,7 +137,8 @@ public class PermissionAuthorizationManager
         return authentication
                 .map(auth -> new AuthorizationDecision(
                         isAuthenticated(auth)
-                                && (hasAuthority(auth, ADMIN_ROLE_AUTHORITY)
+                                && (requiredCodes.isEmpty()
+                                || hasAuthority(auth, ADMIN_ROLE_AUTHORITY)
                                 || requiredCodes.stream().anyMatch(code -> hasAuthority(auth, code)))))
                 .doOnNext(decision -> log.debug("URL 权限判定: method={}, path={}, codes={}, decision={}",
                         method, path, requiredCodes, decision.isGranted()))

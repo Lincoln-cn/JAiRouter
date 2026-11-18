@@ -40,11 +40,11 @@ describe('usePermission 菜单过滤', () => {
     expect(groups.map(group => group.index)).toEqual(['dashboard', 'dev-tools'])
   })
 
-  it('ADMIN 拥有全部权限且命中全部 audience ⇒ 8 组 35 项全在', () => {
+  it('ADMIN 拥有全部权限且命中全部 audience ⇒ 8 组 36 项全在', () => {
     const { filterMenuByPermission } = setup([], ['ADMIN'])
     const groups = filterMenuByPermission(menuGroups)
     expect(groups).toHaveLength(8)
-    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(35)
+    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(36)
   })
 
   it('无 permission 声明的菜单项（客户端接入）对所有已登录用户可见', () => {
@@ -177,14 +177,16 @@ describe('usePermission audience 收窄（角色决定可见面）', () => {
     expect(paths.length).toBeLessThanOrEqual(8)
   })
 
-  it('AUDITOR 只看到仪表板、审计与接入指南三项', () => {
+  it('AUDITOR 只看到仪表板、审计、页面访问热度与接入指南四项', () => {
+    // 页面访问热度（B4）与审计同属「别人的记录」，因此 AUDITOR 也要看得到；
+    // 但没有任何管理动作：签发、改权限、清缓存都不在它的权限集里。
     const paths = pathsOf(['AUDITOR'], [
       'overview:dashboard:read',
       'security:audit:read',
       'monitoring:console:read'
     ])
     expect(paths.sort()).toEqual(
-      ['/dashboard/main', '/security/audit-logs', '/tools/client-access'].sort()
+      ['/dashboard/main', '/security/audit-logs', '/system/page-heat', '/tools/client-access'].sort()
     )
   })
 

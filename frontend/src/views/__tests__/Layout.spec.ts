@@ -170,7 +170,8 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     expect(groups.find(group => group.title === '访问与身份')?.items).toEqual([
       '账户管理',
       '权限管理',
-      'SLA 接入'
+      'SLA 接入',
+      '页面访问热度'
     ])
     expect(groups.find(group => group.title === '平台设置')?.items).toHaveLength(5)
     // 平台设置组两节，各出现一次（观测组与流量治理组的小节也会渲染，这里只比对集合）

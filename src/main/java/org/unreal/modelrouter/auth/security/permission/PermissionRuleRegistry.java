@@ -246,6 +246,13 @@ public class PermissionRuleRegistry {
                 // ===== 监控配置/运维端点（MonitoringController，#116） =====
                 // 注意：必须登记在 metrics/slow-queries/quota 的更具体 GET 规则之后（首条命中优先），
                 // 以免改写已生效的 monitoring:metrics|slowquery|quota:read 绑定。
+                // ===== 控制台页面访问统计（B4，2026-11-18） =====
+                // 上报端点：任何已认证用户都能上报「自己看了哪一页」——只看自己的 userId、不记 IP。
+                // 汇总端点：需要 security:audit:read（审计读取），仅管理员/审计员可见。
+                // 两条都必须排在下一条 /api/monitoring/** 通配之前（首条命中优先）。
+                PermissionRule.authenticated("/api/monitoring/ui-access", HttpMethod.POST),
+                PermissionRule.get("/api/monitoring/ui-access/summary", PermissionCodes.SECURITY_AUDIT_READ),
+
                 // 应急操作的影响面预览（#1173）是只读端点，但读的是「配置/运维面」的现状，
                 // 与页面门槛同用 monitoring:config:read；必须排在下一条通配 GET 之前。
                 PermissionRule.get("/api/monitoring/emergency/preview", PermissionCodes.MONITORING_CONFIG_READ),

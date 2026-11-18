@@ -17,7 +17,7 @@ const MENU_GROUPS = [
 ]
 
 // 每组菜单项数（合计 49）：原被页签收起的 14 个页面已提升为独立项
-const MENU_ITEMS_PER_GROUP = [1, 6, 5, 3, 6, 3, 5, 6]
+const MENU_ITEMS_PER_GROUP = [1, 6, 5, 3, 6, 4, 5, 6]
 
 export default {
   id: 'layout-nav',
@@ -52,9 +52,9 @@ export default {
     const subCount = await subMenus.count()
     check('layout-menu-groups', subCount === 8, `sub-menus=${subCount}`)
 
-    // 菜单项总数与逐组项数（8 组 35 项 / 49 个页面；增删菜单时这里与 MENU_GROUPS 都要同步改）
+    // 菜单项总数与逐组项数（8 组 36 项 / 50 个页面；增删菜单时这里与 MENU_GROUPS 都要同步改）
     const allItems = await page.locator('.layout-menu .el-menu-item').count()
-    check('layout-menu-item-total', allItems === 35, `items=${allItems}`)
+    check('layout-menu-item-total', allItems === 36, `items=${allItems}`)
     for (let i = 0; i < MENU_GROUPS.length; i++) {
       const group = page.locator('.layout-menu .el-sub-menu').nth(i)
       const count = await group.locator('.el-menu-item').count()

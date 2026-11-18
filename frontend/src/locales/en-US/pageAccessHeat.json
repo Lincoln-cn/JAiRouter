@@ -1,0 +1,33 @@
+{
+  "pageAccessHeat": {
+    "pageTitle": "Page Access Heat",
+    "title": "Access detail",
+    "reload": "Refresh",
+    "rowsHint": "{count} rows (busiest first)",
+    "hintTitle": "Where these numbers come from",
+    "hintDesc": "The console reports one page view per route change. Repeated visits to the same page by the same user are counted per occurrence; query strings and client IPs are not recorded.",
+    "searchPlaceholder": "Search by path or role",
+    "range": {
+      "days7": "Last 7 days",
+      "days30": "Last 30 days",
+      "days90": "Last 90 days"
+    },
+    "metrics": {
+      "pages": "Pages covered",
+      "views": "Views",
+      "topUsers": "Users on busiest page",
+      "topPage": "Busiest page"
+    },
+    "table": {
+      "path": "Page path",
+      "role": "Role",
+      "roleUnknown": "Role not recorded",
+      "views": "Views",
+      "users": "Unique users"
+    },
+    "emptyTitle": "No page views yet",
+    "emptyHint": "After this version is deployed, every page a user opens produces one record.",
+    "noMatchTitle": "No matching records",
+    "noMatchHint": "Try another keyword or time range."
+  }
+}

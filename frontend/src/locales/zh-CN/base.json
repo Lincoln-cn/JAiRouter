@@ -147,7 +147,8 @@
     "tokenUsage": "Token 用量",
     "tracingSearch": "链路搜索",
     "audit": "审计",
-    "deployment": "部署"
+    "deployment": "部署",
+    "pageHeat": "页面访问热度"
   },
   "tabs": {
     "dashboard": "仪表板",
@@ -239,7 +240,8 @@
     "tools": "开发者工具",
     "clientAccessGuide": "客户端接入指南",
     "notFound": "页面不存在",
-    "loginGuard": "登录保护"
+    "loginGuard": "登录保护",
+    "pageHeat": "页面访问热度"
   },
   "globalSearch": {
     "dialogLabel": "全局搜索",

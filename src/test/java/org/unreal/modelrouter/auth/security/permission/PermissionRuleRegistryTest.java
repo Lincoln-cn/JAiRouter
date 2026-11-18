@@ -79,8 +79,12 @@ class PermissionRuleRegistryTest {
     void getOnlyRulesNeverRequireWriteOrManageCodes() {
         List<String> offenders = registry.getRules().stream()
                 .filter(rule -> rule.methods().equals(Set.of(HttpMethod.GET)))
-                .filter(rule -> rule.permissionCode().endsWith(":write")
-                        || rule.permissionCode().endsWith(":manage"))
+                // 只要求「已认证」的规则（permissionCodes 为空）不参与本断言：
+                // 它们不绑定任何码，自然也不会「用写码读」
+                .filter(rule -> {
+                    final String code = rule.permissionCode();
+                    return code != null && (code.endsWith(":write") || code.endsWith(":manage"));
+                })
                 .map(rule -> rule.pathPattern() + " -> " + rule.permissionCode())
                 .collect(Collectors.toList());
         assertTrue(offenders.isEmpty(), "存在「用写码读」的 GET 规则: " + offenders);

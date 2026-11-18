@@ -27,7 +27,7 @@ public record PermissionRule(Set<HttpMethod> methods, String pathPattern, Set<St
      * 「本人读码」——判定用 {@link #permissionCodes()}，不要用本方法。
      */
     public String permissionCode() {
-        return permissionCodes.iterator().next();
+        return permissionCodes.isEmpty() ? null : permissionCodes.iterator().next();
     }
 
     /** 匹配任意 HTTP 方法的规则 */
@@ -60,6 +60,19 @@ public record PermissionRule(Set<HttpMethod> methods, String pathPattern, Set<St
      */
     public static PermissionRule getAny(final String pathPattern, final String... codes) {
         return new PermissionRule(Set.of(HttpMethod.GET), pathPattern, Set.of(codes));
+    }
+
+    /**
+     * 仅要求「已认证」的规则（不需要任何权限码）。
+     *
+     * <p>用于「任何人都要能调用、但只有登录后能调用」的自助上报端点，例如
+     * {@code POST /api/monitoring/ui-access}（记录当前用户看了哪一页）。
+     * {@code permissionCodes} 为空集合，授权管理器据此只校验认证态。
+     *
+     * <p>登记时必须排在更宽的兜底规则<b>之前</b>（首条命中优先），否则会被兜底规则要求的权限码覆盖。
+     */
+    public static PermissionRule authenticated(final String pathPattern, final HttpMethod... methods) {
+        return new PermissionRule(Set.of(methods), pathPattern, Set.of());
     }
 
     /** 匹配写操作（POST/PUT/DELETE/PATCH）的规则 */

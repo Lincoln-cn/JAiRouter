@@ -147,7 +147,8 @@
     "tokenUsage": "Token Usage",
     "tracingSearch": "Trace Search",
     "audit": "Audit",
-    "deployment": "Deployment"
+    "deployment": "Deployment",
+    "pageHeat": "Page Access Heat"
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -239,7 +240,8 @@
     "tools": "Developer Tools",
     "clientAccessGuide": "Client Access Guide",
     "notFound": "Page not found",
-    "loginGuard": "Login Protection"
+    "loginGuard": "Login Protection",
+    "pageHeat": "Page Access Heat"
   },
   "globalSearch": {
     "dialogLabel": "Global search",

@@ -1,0 +1,33 @@
+{
+  "pageAccessHeat": {
+    "pageTitle": "页面访问热度",
+    "title": "访问明细",
+    "reload": "刷新",
+    "rowsHint": "共 {count} 行（按访问次数降序）",
+    "hintTitle": "这些数字从哪来",
+    "hintDesc": "每次路由切换后前端上报一次「谁看了哪一页」，同一页面 {days} 天窗口内同用户只按次累计；不记查询参数与客户端 IP。",
+    "searchPlaceholder": "按路径或角色搜索",
+    "range": {
+      "days7": "最近 7 天",
+      "days30": "最近 30 天",
+      "days90": "最近 90 天"
+    },
+    "metrics": {
+      "pages": "覆盖页面",
+      "views": "访问次数",
+      "topUsers": "最热页面用户数",
+      "topPage": "最热页面"
+    },
+    "table": {
+      "path": "页面路径",
+      "role": "角色",
+      "roleUnknown": "未记录角色",
+      "views": "访问次数",
+      "users": "去重用户"
+    },
+    "emptyTitle": "还没有访问记录",
+    "emptyHint": "升级到这个版本后，使用者每打开一个页面就会产生一条记录。",
+    "noMatchTitle": "没有匹配的记录",
+    "noMatchHint": "换一个关键词或时间范围再试。"
+  }
+}

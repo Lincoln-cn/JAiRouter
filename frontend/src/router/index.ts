@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { reportPageView } from '@/api/uiAccess'
 import { i18n } from '@/i18n'
 
 /**
@@ -304,6 +305,14 @@ const router = createRouter({
           component: () => import('../views/system/SlaAccessManagement.vue'),
           // 看账号列表只需读码；签发/吊销/删除按钮各自挂 system:sla:manage。
           meta: { titleKey: 'route.slaAccess', icon: 'link', permissions: ['system:sla:read', 'system:sla:manage'] }
+        },
+        {
+          // B4（2026-11-18）：页面访问热度（只读集合页）。
+          // 数据是「别人的访问记录」，因此和审计日志同一把门：security:audit:read。
+          path: 'page-heat',
+          name: 'page-access-heat',
+          component: () => import('../views/system/PageAccessHeat.vue'),
+          meta: { titleKey: 'route.pageHeat', icon: 'data-line', permissions: ['security:audit:read'] }
         }
       ]
     },
@@ -607,6 +616,19 @@ const { t: tTitle } = i18n.global as unknown as { t: (key: string) => string }
 router.afterEach((to) => {
   const titleKey = to.meta.titleKey as string | undefined
   document.title = titleKey ? `${tTitle(titleKey)} · JAiRouter` : 'JAiRouter'
+
+  // B4（2026-11-18）：页面访问统计——回答「哪些页面真的有人用、哪些角色的入口形同虚设」。
+  // 只上报已认证后的页面：登录页由 userStore.isLoggedIn() 判掉。
+  // 节流（同路径 60s 一次）与失败静默都在 api 层做，这里不 await、不处理结果。
+  if (to.name !== 'login') {
+    const userStore = useUserStore()
+    const roles = userStore.userInfo?.roles ?? []
+    // 只上报「已认证后」的页面：登录页与未拿到角色时一律跳过，
+    // 避免把登录过程或异常态混进热度表
+    if (roles.length > 0) {
+      reportPageView(to.fullPath, roles[0])
+    }
+  }
 })
 
 export default router

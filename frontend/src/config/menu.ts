@@ -353,6 +353,19 @@ export const menuGroups: MenuGroup[] = [
           { key: 'system-sla', labelKey: 'menu.slaAccess', to: '/system/sla' },
         ],
       },
+      {
+        // B4（2026-11-18）：页面访问热度。与「权限管理」同组相邻，因为它们是同一个问题的两面
+        // ——权限管理决定「谁应该看到什么」，访问热度回答「谁实际在用」。
+        // 只读、无写动作；审计员与管理员可见（权限码 security:audit:read）。
+        path: '/system/page-heat',
+        title: 'menu.pageHeat',
+        object: 'page-access',
+        permission: ['security:audit:read'],
+        audience: ['admin', 'auditor'],
+        tabs: [
+          { key: 'system-page-heat', labelKey: 'menu.pageHeat', to: '/system/page-heat' },
+        ],
+      },
     ],
   },
   {
