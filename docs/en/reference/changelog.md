@@ -21,6 +21,16 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [Unreleased] - Console menu re-grouping, dark-mode readability and list-page consistency
+
+- **Menu re-grouping** (URLs, permission codes and page count unchanged — still **8 groups / 35 items / 49 pages**):
+  - Audit Logs moved from Security to Observability;
+  - Response Cache Management and Quota Runtime Config moved out of Traffic Governance to the platform side;
+  - Account Management, Permission Management and SLA Access moved out of the system group into a new top-level group **Access & Identity**;
+  - the former System group is renamed **Platform Settings** and split into sections: Runtime Configuration / Deployment & Infrastructure / Audit.
+- **Dark-mode readability fix** ([#1178](https://github.com/Lincoln-cn/JAiRouter/issues/1178)): with a manually selected dark theme the `body` inherited the near-black first-paint color (1.03:1 contrast), making config labels unreadable; text color is now owned by the base rules in `tokens.css`, with `html.dark` first-paint styles plus table-header and `.config-label` colors fixed.
+- **List-page and mixed-page rules applied**: 12 collection pages now follow "metric strip → toolbar → table → empty state", edit forms use right-side drawers and destructive actions use `ConfirmAction`; mixed pages were split into tabs or had their reference blocks moved below the editable ones.
+
 ### [Unreleased] - Login protection configuration (persisted thresholds + lock release)
 
 - **New codes `security:loginguard:read` / `security:loginguard:manage`** (76 permission codes): the first reads thresholds and locked principals, the second changes thresholds and releases locks. The six built-in role templates are unchanged; the paired-read table grows to 11 entries, and OPERATOR (55 codes) does not hold `loginguard:manage`, so B11 also withholds the matching read code.

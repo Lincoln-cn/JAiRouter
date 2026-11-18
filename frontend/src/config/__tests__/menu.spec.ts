@@ -16,17 +16,18 @@ import { KNOWN_PERMISSION_CODES } from './knownPermissions'
  * 一旦结构漂移（多一项、少一组、tab 路由写错、反查表漏项），先在这里红。
  */
 describe('menu.ts 信息架构', () => {
-  it('7 组 35 项，组顺序与设计文档一致', () => {
+  it('8 组 35 项，组顺序与设计文档一致', () => {
     expect(menuGroups.map(g => g.index)).toEqual([
       'dashboard',
       'observability',
       'traffic',
       'model-services',
       'security',
+      'access',
       'system',
       'dev-tools'
     ])
-    expect(menuGroups.map(g => g.children.length)).toEqual([1, 5, 7, 4, 7, 9, 2])
+    expect(menuGroups.map(g => g.children.length)).toEqual([1, 6, 5, 4, 6, 3, 8, 2])
     expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(35)
   })
 
@@ -44,6 +45,8 @@ describe('menu.ts 信息架构', () => {
     // 40 → 31：12 个被收起页面仍在 tabs 里，因此 tab 总数 = 31 + 12 = 43
     // （v3.8.6 在「限流」项下新增 config tab、在「系统」项下新增集群设置 ⇒ 43；v3.8.7 新增健康探针设置 ⇒ 44；v3.8.8 新增管理操作 ⇒ 45；
     // v3.8.8 之后「系统」组新增「监控配置」一项两 tab ⇒ 47；#1174 再加「SLA 接入」一项一 tab ⇒ 48；#1176 再加「登录保护」一项一 tab ⇒ 49）
+  // 2026-11-18 菜单重分类（方案 B）不改变 tab 总数：审计日志从安全组移到运行观测组、
+  // 响应缓存与配额运行时从流量治理移到平台设置组 ⇒ 仍是 49 个页面。
     expect(routes.length).toBe(49)
     expect(new Set(routes).size).toBe(routes.length)
   })

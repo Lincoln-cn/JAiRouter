@@ -292,7 +292,7 @@ jairouter:
   `clusterConfigVersion`、`summary{total,online,suspect,staleReplicas}` 与 `members[]`
   （每个成员的 `displayName` / `advertiseUrl` / `startedAt` / `configVersion` / `instanceCount` /
   `healthyInstances` / `buildVersion` / `lastSeen`）。单机模式返回 `mode: "standalone"` 与空成员表。
-- **控制台**：「系统 → 集群设置」页展示成员表与配置同步参数，读写走 `/api/config/cluster`
+- **控制台**：「平台设置 → 集群设置」页展示成员表与配置同步参数，读写走 `/api/config/cluster`
   （权限 `config:cluster:read` / `config:cluster:write`）。
 
 成员记录的默认 TTL 是 15 秒（3 个心跳周期）。副本被 `kill -9` 时，最长 15 秒后从成员表消失；

@@ -68,6 +68,14 @@ export interface MenuItem {
   roles?: string[]
   /** 菜单项图标名（Element Plus 图标 kebab-case 名，可选） */
   icon?: string
+  /**
+   * 组内小节标题（i18n key，如 menu.sections.access）。
+   *
+   * 只用于「项太多、需要组内再分节」的组（当前仅平台设置组：访问与身份 / 运行时配置 /
+   * 部署与基础设施 / 审计）。渲染规则见 `Layout.vue` 的 `showSectionHeader`：同一个小节
+   * 只出现一次标题。缺省表示不分组。
+   */
+  section?: string
   /** tab 列表，顺序即「tab 顺序」；第一个是默认落地页（无权限时取第一个有权限的） */
   tabs: MenuTab[]
 }
@@ -202,6 +210,19 @@ export const menuGroups: MenuGroup[] = [
             permission: 'monitoring:quota:read'
           }
         ]
+      },
+      {
+        path: '/security/audit-logs',
+        title: 'menu.auditLogs',
+        permission: 'security:audit:read',
+        tabs: [
+          {
+            key: 'audit-logs',
+            labelKey: 'menu.auditLogs',
+            to: '/security/audit-logs',
+            permission: 'security:audit:read'
+          }
+        ]
       }
     ]
   },
@@ -287,32 +308,6 @@ export const menuGroups: MenuGroup[] = [
         ]
       },
       {
-        path: '/config/cache',
-        title: 'menu.responseCache',
-        permission: ['config:cache:read', 'config:cache:write'],
-        tabs: [
-          {
-            key: 'cache',
-            labelKey: 'menu.responseCache',
-            to: '/config/cache',
-            permission: ['config:cache:read', 'config:cache:write']
-          }
-        ]
-      },
-      {
-        path: '/config/quota',
-        title: 'menu.quotaConfig',
-        permission: 'config:quota:read',
-        tabs: [
-          {
-            key: 'quota',
-            labelKey: 'menu.quotaConfig',
-            to: '/config/quota',
-            permission: 'config:quota:read'
-          }
-        ]
-      },
-      {
         path: '/config/pools',
         title: 'menu.configPools',
         permission: 'config:pools:read',
@@ -332,7 +327,6 @@ export const menuGroups: MenuGroup[] = [
     title: 'menu.modelServices',
     icon: 'setting',
     children: [
-      // 顺序 = 实例管理页引导条的顺序（配置适配器 → 创建服务 → 添加实例 → 版本）
       {
         path: '/config/adapters',
         title: 'menu.configAdapters',
@@ -406,19 +400,6 @@ export const menuGroups: MenuGroup[] = [
         ]
       },
       {
-        path: '/security/sanitization',
-        title: 'menu.sanitization',
-        permission: ['security:sanitization:read', 'security:sanitization:manage'],
-        tabs: [
-          {
-            key: 'sanitization',
-            labelKey: 'menu.sanitization',
-            to: '/security/sanitization',
-            permission: ['security:sanitization:read', 'security:sanitization:manage']
-          }
-        ]
-      },
-      {
         path: '/security/jwt-tokens',
         title: 'menu.jwtTokens',
         permission: ['security:jwttokens:read', 'security:jwttokens:manage'],
@@ -445,15 +426,15 @@ export const menuGroups: MenuGroup[] = [
         ]
       },
       {
-        path: '/security/audit-logs',
-        title: 'menu.auditLogs',
-        permission: 'security:audit:read',
+        path: '/security/sanitization',
+        title: 'menu.sanitization',
+        permission: ['security:sanitization:read', 'security:sanitization:manage'],
         tabs: [
           {
-            key: 'audit-logs',
-            labelKey: 'menu.auditLogs',
-            to: '/security/audit-logs',
-            permission: 'security:audit:read'
+            key: 'sanitization',
+            labelKey: 'menu.sanitization',
+            to: '/security/sanitization',
+            permission: ['security:sanitization:read', 'security:sanitization:manage']
           }
         ]
       },
@@ -486,9 +467,9 @@ export const menuGroups: MenuGroup[] = [
     ]
   },
   {
-    index: 'system',
-    title: 'menu.system',
-    icon: 'user',
+    index: 'access',
+    title: 'menu.access',
+    icon: 'key',
     children: [
       {
         path: '/system/accounts',
@@ -517,21 +498,29 @@ export const menuGroups: MenuGroup[] = [
         ]
       },
       {
-        path: '/tracing/management',
-        title: 'menu.tracingManagement',
-        permission: ['tracing:config:read', 'tracing:config:manage'],
+        path: '/system/sla',
+        title: 'menu.slaAccess',
+        permission: ['system:sla:read', 'system:sla:manage'],
         tabs: [
           {
-            key: 'management',
-            labelKey: 'menu.tracingManagement',
-            to: '/tracing/management',
-            permission: ['tracing:config:read', 'tracing:config:manage']
+            key: 'sla-access',
+            labelKey: 'tabs.slaAccess',
+            to: '/system/sla',
+            permission: ['system:sla:read', 'system:sla:manage']
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    index: 'system',
+    title: 'menu.platform',
+    icon: 'user',
+    children: [
       {
         path: '/monitoring/config',
         title: 'menu.monitoringConfig',
+        section: 'menu.sections.runtime',
         permission: ['monitoring:config:read'],
         tabs: [
           {
@@ -549,8 +538,51 @@ export const menuGroups: MenuGroup[] = [
         ]
       },
       {
+        path: '/tracing/management',
+        title: 'menu.tracingManagement',
+        section: 'menu.sections.runtime',
+        permission: ['tracing:config:read', 'tracing:config:manage'],
+        tabs: [
+          {
+            key: 'management',
+            labelKey: 'menu.tracingManagement',
+            to: '/tracing/management',
+            permission: ['tracing:config:read', 'tracing:config:manage']
+          }
+        ]
+      },
+      {
+        path: '/config/cache',
+        title: 'menu.responseCache',
+        section: 'menu.sections.runtime',
+        permission: ['config:cache:read', 'config:cache:write'],
+        tabs: [
+          {
+            key: 'cache',
+            labelKey: 'menu.responseCache',
+            to: '/config/cache',
+            permission: ['config:cache:read', 'config:cache:write']
+          }
+        ]
+      },
+      {
+        path: '/config/quota',
+        title: 'menu.quotaConfig',
+        section: 'menu.sections.runtime',
+        permission: 'config:quota:read',
+        tabs: [
+          {
+            key: 'quota',
+            labelKey: 'menu.quotaConfig',
+            to: '/config/quota',
+            permission: 'config:quota:read'
+          }
+        ]
+      },
+      {
         path: '/config/state-persistence',
         title: 'menu.statePersistence',
+        section: 'menu.sections.deployment',
         permission: 'config:persistence:read',
         tabs: [
           {
@@ -564,6 +596,7 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/cluster',
         title: 'menu.clusterConfig',
+        section: 'menu.sections.deployment',
         permission: ['config:cluster:read', 'config:cluster:write'],
         tabs: [
           {
@@ -577,6 +610,7 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/health',
         title: 'menu.healthConfig',
+        section: 'menu.sections.deployment',
         permission: ['config:health:read', 'config:health:write'],
         tabs: [
           {
@@ -590,6 +624,7 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/console-operations',
         title: 'menu.consoleOperations',
+        section: 'menu.sections.audit',
         permission: ['monitoring:console:read'],
         tabs: [
           {
@@ -597,19 +632,6 @@ export const menuGroups: MenuGroup[] = [
             labelKey: 'menu.consoleOperations',
             to: '/system/console-operations',
             permission: ['monitoring:console:read']
-          }
-        ]
-      },
-      {
-        path: '/system/sla',
-        title: 'menu.slaAccess',
-        permission: ['system:sla:read', 'system:sla:manage'],
-        tabs: [
-          {
-            key: 'sla-access',
-            labelKey: 'tabs.slaAccess',
-            to: '/system/sla',
-            permission: ['system:sla:read', 'system:sla:manage']
           }
         ]
       }

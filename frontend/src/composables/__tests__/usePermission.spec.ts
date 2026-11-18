@@ -48,11 +48,11 @@ describe('filterMenuByPermission', () => {
     expect(groups.map(group => group.index)).toEqual(['dashboard', 'dev-tools'])
   })
 
-  it('ADMIN 拥有全部权限 ⇒ 7 组 35 项全在', () => {
+  it('ADMIN 拥有全部权限 ⇒ 8 组 35 项全在', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
-    expect(groups).toHaveLength(7)
+    expect(groups).toHaveLength(8)
     expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(35)
   })
 
@@ -139,21 +139,19 @@ describe('菜单可见性：权限码是唯一门控', () => {
     setActivePinia(createPinia())
   })
 
-  it('OPERATOR 持审计/集群/健康/操作记录/监控配置码时，安全与系统组只显示有码的项', () => {
+  it('OPERATOR 持审计/集群/健康/操作记录/监控配置码时，安全与平台设置组只显示有码的项', () => {
     setup(
       ['security:audit:read', 'config:cluster:read', 'config:health:read', 'monitoring:console:read', 'config:callhistory:read', 'config:persistence:read', 'monitoring:config:read', 'monitoring:config:write'],
       ['OPERATOR']
     )
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
-    // 安全组：API Key / PII 脱敏 / JWT 令牌 / 黑名单 需要各自的 read 码（OPERATOR 不持有）
+    // 安全组：API Key / PII 脱敏 / JWT 令牌 / 黑名单 / 登录保护 都需要各自的 read 码（OPERATOR 不持有）；
+    // 审计日志已于 2026-11-18 移到运行观测组，所以这里只剩记录治理。
     const security = groups.find(group => group.index === 'security')
-    expect(security?.children.map(item => item.path)).toEqual([
-      '/security/audit-logs',
-      '/security/record-governance'
-    ])
-    // 系统组：accounts/permissions 需要 system:* 码；追踪配置需要 tracing:config:* ⇒ 都不显示；
-    // 「监控配置」与「状态持久化」都是运行时配置面，OPERATOR 持相应写码/读码即可见。
+    expect(security?.children.map(item => item.path)).toEqual(['/security/record-governance'])
+    // 平台设置组（index 仍是 system）：accounts/permissions/sla 需要 system:* 码，追踪配置需要
+    // tracing:config:*，响应缓存与配额运行时需要 config:cache|quota 码 ⇒ 本用例的授权里都没有。
     const system = groups.find(group => group.index === 'system')
     expect(system?.children.map(item => item.path)).toEqual([
       '/monitoring/config',
@@ -176,19 +174,23 @@ describe('菜单可见性：权限码是唯一门控', () => {
     ])
   })
 
-  it('VIEWER 持 security:audit:read 时看得到「审计日志」（与后端接口一致）', () => {
+  it('VIEWER 持 security:audit:read 时在「运行观测」组看到审计日志（与后端接口一致）', () => {
     setup(['security:audit:read'], ['VIEWER'])
     const { filterMenuByPermission } = usePermission()
-    const security = filterMenuByPermission(menuGroups).find(group => group.index === 'security')
-    expect(security?.children.map(item => item.path)).toEqual(['/security/audit-logs'])
+    const groups = filterMenuByPermission(menuGroups)
+    const observability = groups.find(group => group.index === 'observability')
+    expect(observability?.children.map(item => item.path)).toEqual(['/security/audit-logs'])
+    // 安全组里不再有审计日志，VIEWER 也没有其它安全码 ⇒ 整组隐藏
+    expect(groups.find(group => group.index === 'security')).toBeUndefined()
   })
 
-  it('ADMIN 不受影响（安全组 7 项、系统组 9 项都在）', () => {
+  it('ADMIN 不受影响（安全 6 项、访问与身份 3 项、平台设置 8 项都在）', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
-    expect(groups.find(group => group.index === 'security')?.children).toHaveLength(7)
-    expect(groups.find(group => group.index === 'system')?.children).toHaveLength(9)
+    expect(groups.find(group => group.index === 'security')?.children).toHaveLength(6)
+    expect(groups.find(group => group.index === 'access')?.children).toHaveLength(3)
+    expect(groups.find(group => group.index === 'system')?.children).toHaveLength(8)
   })
 
   it('调用历史拆码：callhistory:read 给运维（可见），USER/VIEWER 不可见', () => {

@@ -71,7 +71,14 @@
     "traffic": "Traffic Governance",
     "modelServices": "Model & Instances",
     "security": "Security",
+    "access": "Access & Identity",
     "system": "System",
+    "platform": "Platform Settings",
+    "sections": {
+      "runtime": "Runtime Configuration",
+      "deployment": "Deployment & Infrastructure",
+      "audit": "Audit"
+    },
     "devTools": "Developer Tools",
     "tracing": "Distributed Tracing",
     "playground": "AI Playground",

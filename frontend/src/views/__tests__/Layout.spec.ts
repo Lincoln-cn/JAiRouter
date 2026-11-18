@@ -111,7 +111,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       items: group.findAll('.el-menu-item').map(node => node.text())
     }))
 
-  it('OPERATOR 视角：安全组只剩审计日志/记录治理，系统组只剩有码的 5 项', async () => {
+  it('OPERATOR 视角：安全组只剩记录治理，平台设置组只剩有码的 5 项', async () => {
     const wrapper = await mountAt('/config/state-persistence', [
       'overview:dashboard:read',
       'security:audit:read',
@@ -125,21 +125,27 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     ], ['OPERATOR'])
 
     const groups = sidebarGroups(wrapper)
-    // 第五轮撤掉了父路由 roles：有 security:audit:read 就能看到「审计日志」，
-    // 与后端 /api/security/audit/extended/** 返回 200 的口径一致。
-    expect(groups.find(group => group.title === '安全')?.items).toEqual(['审计日志', '记录治理'])
-    // API Key / PII 脱敏 / JWT 令牌 / 黑名单 仍需各自的 read 码（OPERATOR 不持有）
-    expect(groups.find(group => group.title === '系统')?.items).toEqual([
+    // 2026-11-18 菜单重分类：审计日志移到运行观测组，安全组只剩记录治理
+    // （API Key / PII 脱敏 / JWT 令牌 / 黑名单 / 登录保护 仍需各自的 read 码，OPERATOR 不持有）。
+    expect(groups.find(group => group.title === '安全')?.items).toEqual(['记录治理'])
+    // 平台设置组（原「系统」组）按小节排序：运行时配置 → 部署与基础设施 → 审计
+    expect(groups.find(group => group.title === '平台设置')?.items).toEqual([
       '监控配置',
       '状态持久化',
       '集群设置',
       '健康探针设置',
       '操作记录'
     ])
+    // 小节标题：只渲染「当前可见项所属」的小节，且同一小节只出现一次
+    expect(wrapper.findAll('.menu-section-title').map(node => node.text())).toEqual([
+      '运行时配置',
+      '部署与基础设施',
+      '审计'
+    ])
     wrapper.unmount()
   })
 
-  it('ADMIN 视角：七组齐全，安全 7 项与系统 9 项都在（反证不是整栏都没渲染）', async () => {
+  it('ADMIN 视角：八组齐全，安全 6 项、访问与身份 3 项与平台设置 8 项都在（反证不是整栏都没渲染）', async () => {
     const wrapper = await mountAt('/system/cluster', [], ['ADMIN'])
 
     const groups = sidebarGroups(wrapper)
@@ -149,19 +155,30 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       '流量治理',
       '模型与实例',
       '安全',
-      '系统',
+      '访问与身份',
+      '平台设置',
       '开发工具'
     ])
     expect(groups.find(group => group.title === '安全')?.items).toEqual([
       'API 密钥管理',
-      'PII 脱敏管理',
       'JWT 令牌管理',
       '黑名单管理',
-      '审计日志',
+      'PII 脱敏管理',
       '记录治理',
       '登录保护'
     ])
-    expect(groups.find(group => group.title === '系统')?.items).toHaveLength(9)
+    expect(groups.find(group => group.title === '访问与身份')?.items).toEqual([
+      '账户管理',
+      '权限管理',
+      'SLA 接入'
+    ])
+    expect(groups.find(group => group.title === '平台设置')?.items).toHaveLength(8)
+    // 平台设置组剩三个小节标题，各出现一次
+    expect(wrapper.findAll('.menu-section-title').map(node => node.text())).toEqual([
+      '运行时配置',
+      '部署与基础设施',
+      '审计'
+    ])
     wrapper.unmount()
   })
 

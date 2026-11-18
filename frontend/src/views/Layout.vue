@@ -22,9 +22,16 @@
             </el-icon>
             <span class="menu-label" :title="t(group.title)">{{ t(group.title) }}</span>
           </template>
-          <el-menu-item v-for="item in group.children" :key="item.path" :index="item.path">
-            <span class="menu-label" :title="t(item.title)">{{ t(item.title) }}</span>
-          </el-menu-item>
+          <template v-for="(item, index) in group.children" :key="item.path">
+            <!-- 组内小节标题：仅「项多到需要分节」的组会声明 section（当前是平台设置组）。
+                 折叠态不渲染——64px 宽放不下文字，且 popup 里会把小节切碎。 -->
+            <li v-if="!collapsed && showSectionHeader(group, index)" class="menu-section-title">
+              <span>{{ t(item.section!) }}</span>
+            </li>
+            <el-menu-item :index="item.path">
+              <span class="menu-label" :title="t(item.title)">{{ t(item.title) }}</span>
+            </el-menu-item>
+          </template>
         </el-sub-menu>
       </el-menu>
     </el-aside>
@@ -105,7 +112,7 @@ import {
   findMenuTab,
   resolveMenuPath
 } from '@/config/menu'
-import type { MenuItem } from '@/config/menu'
+import type { MenuGroup, MenuItem } from '@/config/menu'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import StatusBar from '@/components/StatusBar.vue'
 import GlobalSearch from '@/components/GlobalSearch.vue'
@@ -114,6 +121,7 @@ import {
   Setting,
   Lock,
   User,
+  Key,
   Connection,
   DataAnalysis,
   Tools,
@@ -207,10 +215,25 @@ const toggleSidebar = (): void => {
   }
 }
 
-// 菜单数据驱动 + 权限过滤（menu.ts 提供 7 组 28 项结构与权限码；数组权限为「或」）
+// 菜单数据驱动 + 权限过滤（menu.ts 提供 7 组 35 项结构与权限码；数组权限为「或」）
 const filteredMenuGroups = computed(() => filterMenuByPermission(menuGroups))
 
-// 组图标名 → 图标组件（menu.ts 的 icon 为 kebab-case 名，7 组各一）
+/**
+ * 是否在当前菜单项前渲染小节标题。
+ *
+ * 只有声明了 `section` 的项才会触发（当前是平台设置组：访问与身份 / 运行时配置 /
+ * 部署与基础设施 / 审计）。`filteredMenuGroups` 已是权限过滤后的结构，所以前一项被
+ * 过滤掉时，这项会自动补上标题，不会出现「有内容没标题」。
+ */
+const showSectionHeader = (group: MenuGroup, index: number): boolean => {
+  const item = group.children[index]
+  if (!item?.section) {
+    return false
+  }
+  return index === 0 || group.children[index - 1]?.section !== item.section
+}
+
+// 组图标名 → 图标组件（menu.ts 的 icon 为 kebab-case 名，8 组各一）
 const groupIconMap: Record<string, Component> = {
   house: House,
   'data-analysis': DataAnalysis,
@@ -218,6 +241,7 @@ const groupIconMap: Record<string, Component> = {
   setting: Setting,
   lock: Lock,
   user: User,
+  key: Key,
   tools: Tools
 }
 
@@ -472,6 +496,19 @@ const handleUserCommand = async (command: string) => {
 .layout-menu:not(.el-menu--collapse) :deep(.el-menu-item),
 .layout-menu:not(.el-menu--collapse) :deep(.el-sub-menu__title) {
   overflow: hidden;
+}
+
+/* 组内小节标题（平台设置组分四节）：小一号、降低对比，不参与点击 */
+.layout-menu :deep(.menu-section-title) {
+  padding: 12px 20px 4px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  color: var(--ja-sidebar-text);
+  opacity: 0.62;
+  list-style: none;
+  cursor: default;
+  user-select: none;
 }
 
 .layout-menu :deep(.menu-label) {

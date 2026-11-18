@@ -357,7 +357,7 @@ jairouter:
   `members[]` (each with `displayName` / `advertiseUrl` / `startedAt` / `configVersion` /
   `instanceCount` / `healthyInstances` / `buildVersion` / `lastSeen`). In standalone mode it returns
   `mode: "standalone"` with an empty member list.
-- **Console**: the "System → Cluster Settings" page shows the member table and config-sync parameters,
+- **Console**: the "Platform Settings → Cluster Settings" page shows the member table and config-sync parameters,
   backed by `/api/config/cluster` (permissions `config:cluster:read` / `config:cluster:write`).
 
 The default member TTL is 15 seconds (three heartbeat periods). After a replica is `kill -9`ed it

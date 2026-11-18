@@ -71,7 +71,14 @@
     "traffic": "流量治理",
     "modelServices": "模型与实例",
     "security": "安全",
+    "access": "访问与身份",
     "system": "系统",
+    "platform": "平台设置",
+    "sections": {
+      "runtime": "运行时配置",
+      "deployment": "部署与基础设施",
+      "audit": "审计"
+    },
     "devTools": "开发工具",
     "tracing": "链路追踪",
     "playground": "AI 试验场",

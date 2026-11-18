@@ -142,7 +142,7 @@ replicas out of the ready set during a rolling update.
 
 #### Health probe settings
 
-Both switches are readable and editable on **System → Health Probe Settings** (`/system/health`) or over
+Both switches are readable and editable on **Platform Settings → Health Probe Settings** (`/system/health`) or over
 the API. Both are hot-editable and need no restart.
 
 | Key | Default | Effect |
