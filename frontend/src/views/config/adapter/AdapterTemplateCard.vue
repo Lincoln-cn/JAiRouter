@@ -76,7 +76,7 @@ const categoryTagType = computed(() => {
   border: 1px solid var(--el-border-color);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
   background: var(--ja-bg-card);
 }
 

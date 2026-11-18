@@ -1202,7 +1202,7 @@ onMounted(() => { fetchServices() })
 }
 
 .service-drawer :deep(.el-drawer__title) {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ja-text-primary);
   font-size: 18px;
 }

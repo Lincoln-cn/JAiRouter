@@ -49,7 +49,7 @@
     "usernamePlaceholder": "Enter username",
     "passwordPlaceholder": "Enter password",
     "submitting": "Signing in…",
-    "eyebrow": "LLM GATEWAY",
+    "eyebrow": "LLM Gateway",
     "lede": "A production-grade LLM gateway — one endpoint, policy-based routing, fully auditable.",
     "factProtocol": "Protocols",
     "factProtocolDesc": "OpenAI and Anthropic compatible, no client changes required.",

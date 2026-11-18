@@ -64,7 +64,7 @@
       }
     },
     "messages": {
-      "suggestion": "💡 建议: {suggestion}"
+      "suggestion": "建议: {suggestion}"
     }
   }
 }

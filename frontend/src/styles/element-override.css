@@ -15,13 +15,13 @@
 :root,
 html.dark {
   /* ========== 主色 ========== */
-  --el-color-primary: var(--ja-primary);
-  --el-color-primary-light-3: var(--ja-primary-light-3);
-  --el-color-primary-light-5: var(--ja-primary-light-5);
-  --el-color-primary-light-7: var(--ja-primary-light-7);
-  --el-color-primary-light-8: var(--ja-primary-light-8);
-  --el-color-primary-light-9: var(--ja-primary-light-9);
-  --el-color-primary-dark-2: var(--ja-primary-dark-2);
+  --el-color-primary: var(--ja-accent);
+  --el-color-primary-light-3: var(--ja-accent-light-3);
+  --el-color-primary-light-5: var(--ja-accent-light-5);
+  --el-color-primary-light-7: var(--ja-accent-light-7);
+  --el-color-primary-light-8: var(--ja-accent-light-8);
+  --el-color-primary-light-9: var(--ja-accent-light-9);
+  --el-color-primary-dark-2: var(--ja-accent-dark-2);
 
   /* ========== 背景 ========== */
   --el-bg-color: var(--ja-bg-page);
@@ -184,5 +184,29 @@ p { color: var(--ja-text-regular); }
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--ja-ink-3);
-  text-transform: uppercase;
+  text-transform: none;
+}
+
+/* ===== 按钮：主操作走墨色填充（浅色底 15:1 / 深色底反相），accent 只做强调 =====
+   原实现是 EP 默认蓝底白字（2.78:1，低于 4.5:1），且与品牌青抢主色。
+   这里只改实心 primary 按钮；is-link / is-plain / is-text 变体仍走 --el-color-primary（青）。 */
+.el-button--primary:not(.is-link):not(.is-plain):not(.is-text) {
+  --el-button-bg-color: var(--ja-ink);
+  --el-button-border-color: var(--ja-ink);
+  --el-button-text-color: var(--ja-paper);
+  --el-button-hover-bg-color: var(--ja-ink-2);
+  --el-button-hover-border-color: var(--ja-ink-2);
+  --el-button-hover-text-color: var(--ja-paper);
+  --el-button-active-bg-color: var(--ja-ink);
+  --el-button-active-border-color: var(--ja-ink);
+  --el-button-disabled-bg-color: var(--ja-ink-3);
+  --el-button-disabled-border-color: var(--ja-ink-3);
+  --el-button-disabled-text-color: var(--ja-paper);
+}
+
+/* ===== 表格内的分类/状态标签：4px 圆角浅底，不用胶囊 ===== */
+.el-table .el-tag {
+  border-radius: var(--ja-radius-sm);
+  border-color: transparent;
+  font-weight: 500;
 }

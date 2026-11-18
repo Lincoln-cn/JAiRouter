@@ -249,7 +249,7 @@ const handleClear = () => {
 
 .slide-enter-active,
 .slide-leave-active {
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .slide-enter-from,

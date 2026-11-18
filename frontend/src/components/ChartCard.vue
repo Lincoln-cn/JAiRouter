@@ -118,24 +118,9 @@ const bodyStyle = computed<Record<string, string>>(() => ({
   position: absolute;
   inset: 0;
   border-radius: var(--ja-radius);
+  /* 静态骨架：原先是 1.4s 无限脉冲，六张图同时呼吸会让人以为页面在抖动。
+     加载态用低对比面 + 右上角既有 spinner 表达即可。 */
   background: var(--ja-surface-2);
-  animation: chart-card-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes chart-card-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.55;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chart-card__skeleton {
-    animation: none;
-  }
+  opacity: 0.72;
 }
 </style>

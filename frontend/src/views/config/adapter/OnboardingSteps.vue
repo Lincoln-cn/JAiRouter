@@ -135,7 +135,7 @@ function navigate(step: StepItem) {
 
 .step--active .step-label {
   color: var(--ja-primary, #409eff);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .step--active:hover {

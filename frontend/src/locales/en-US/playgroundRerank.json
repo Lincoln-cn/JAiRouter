@@ -31,7 +31,7 @@
     "messages": {
       "rerankCompleted": "Rerank completed",
       "operation": "Reranking",
-      "suggestion": "💡 Suggestion: {suggestion}"
+      "suggestion": "Suggestion: {suggestion}"
     }
   }
 }

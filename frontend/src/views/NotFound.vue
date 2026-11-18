@@ -65,7 +65,7 @@ function goBack(): void {
 
 .code {
   font-size: 64px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.1;
   color: var(--el-color-primary);
   letter-spacing: 2px;

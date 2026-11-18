@@ -201,24 +201,27 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 
+/* 顶栏计数：安静文字 + 图标，不做胶囊。
+   原先两枚 999px 胶囊（底 + 边框）在浅色下比页面标题还抢眼；
+   计数是「背景读数」，只在异常时用色标（见 .is-danger / .is-warning）。 */
 .status-bar__pill {
   display: inline-flex;
   gap: var(--ja-space-1);
   align-items: center;
-  padding: 2px var(--ja-space-2);
+  padding: 0;
   font: inherit;
   font-size: 12px;
   line-height: 20px;
-  color: var(--ja-ink-2);
+  color: var(--ja-ink-3);
   white-space: nowrap;
   cursor: pointer;
-  background: var(--ja-surface-2);
-  border: 1px solid var(--ja-border);
-  border-radius: 999px;
+  background: none;
+  border: 0;
+  border-radius: 0;
 }
 
 .status-bar__pill:hover {
-  background: var(--ja-surface);
+  color: var(--ja-ink);
 }
 
 .status-bar__icon {

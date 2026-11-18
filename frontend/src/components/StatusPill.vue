@@ -15,9 +15,11 @@
 import { computed } from 'vue'
 
 /**
- * 状态徽标（设计 §4.4 的用户口径版本）：
- * `status` 是展示文本，`tone` 决定配色；未给 `tone` 时按关键词推断。
+ * 状态徽标（unslop 第 3 轮：状态点 + 文本，不用胶囊）：
+ * `status` 是展示文本，`tone` 决定色点与文字色；未给 `tone` 时按关键词推断。
  *
+ * 表格一行里原本会出现 2~3 个「胶囊」（分类、HTTP 状态、结果），视觉噪声大于信息；
+ * 这里改成 6px 状态点 + 12px 文本，无边框无底色，靠色点承担状态语义。
  * 颜色不是唯一信息载体：文本 + `role="status"` + `title`/`aria-label` 一并给出。
  */
 type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'brand'
@@ -75,10 +77,10 @@ const resolvedTone = computed<StatusTone>(() => {
   align-items: center;
   gap: 6px;
   max-width: 100%;
-  padding: 2px 8px;
-  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, currentColor 12%, transparent);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
   color: var(--ja-ink-2);
   font-size: 12px;
   font-weight: 500;
