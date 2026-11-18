@@ -2,10 +2,10 @@
   "versions": {
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.34",
-      "LastModified": "2026-11-17T18:20:51.725773",
-      "ContentHash": "7f6c55bd8324db45",
-      "GitCommit": "3509988c",
+      "Version": "1.0.35",
+      "LastModified": "2026-11-18T19:18:01.202814",
+      "ContentHash": "a7d1cd6f737a6c04",
+      "GitCommit": "abcfe741",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -16,10 +16,10 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.36",
-      "LastModified": "2026-11-17T18:20:51.728257",
-      "ContentHash": "859407c420a13dd2",
-      "GitCommit": "3509988c",
+      "Version": "1.0.37",
+      "LastModified": "2026-11-18T19:18:01.205875",
+      "ContentHash": "148528a39a6f3c0e",
+      "GitCommit": "abcfe741",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -8802,7 +8802,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-18T02:42:15.839187",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.34",
+      "NewVersion": "1.0.35",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T19:18:01.202825",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.36",
+      "NewVersion": "1.0.37",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-18T19:18:01.205883",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-18T09:44:32.468279"
+  "last_updated": "2026-11-18T19:18:03.155550"
 }
