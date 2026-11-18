@@ -85,6 +85,8 @@
   --ja-radius-xl: 16px;
 
   /* ========== 阴影 ========== */
+  /* 分段控件（视图切换）选中块：明色白底抬起，深色另给亮面（槽是 surface-2，白底不可用） */
+  --ja-segment-active: #ffffff;
   --ja-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
   --ja-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   --ja-shadow-lg: 0 6px 14px rgba(0, 0, 0, 0.1);
@@ -222,6 +224,7 @@ html.dark {
   --ja-paper: #151a21;
   --ja-surface: #0e1116;
   --ja-surface-2: #1c222b;
+  --ja-segment-active: #2c3744;
   --ja-ink: #e8ecf2;
   --ja-ink-2: #b6bfcc;
   --ja-ink-3: #7d8797;

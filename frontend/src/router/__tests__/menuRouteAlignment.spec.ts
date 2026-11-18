@@ -112,15 +112,32 @@ describe('菜单与路由守卫一致性', () => {
     expect(paths).toEqual([])
   })
 
-  it('菜单项的 permission 覆盖其每个 tab 的 permission（否则菜单项门控与 tab 门控会漂移）', () => {
+  it('菜单项 permission 等于第一视图的 permission（默认落点的门控与菜单一致）', () => {
     const offenders: string[] = []
     for (const group of menuGroups) {
       for (const item of group.children) {
-        const itemCodes = toArray(item.permission)
+        const first = item.tabs[0]
+        const itemCodes = toArray(item.permission).slice().sort()
+        // 首视图未声明码时继承菜单项（这是 menu.ts 的既有语义）
+        const tabCodes = toArray(first.permission ?? item.permission).slice().sort()
+        if (JSON.stringify(itemCodes) !== JSON.stringify(tabCodes)) {
+          offenders.push(`${item.path}: 项=${JSON.stringify(itemCodes)} 首视图=${JSON.stringify(tabCodes)}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('多视图项允许视图各自声明码，但每个视图码都必须被该视图的路由 meta.permissions 覆盖', () => {
+    const offenders: string[] = []
+    for (const group of menuGroups) {
+      for (const item of group.children) {
         for (const tab of item.tabs) {
-          const uncovered = toArray(tab.permission).filter(code => !itemCodes.includes(code))
+          const declared = toArray(tab.permission ?? item.permission)
+          const meta = toArray(router.resolve(tab.to).meta.permissions)
+          const uncovered = declared.filter(code => !meta.includes(code))
           if (uncovered.length > 0) {
-            offenders.push(`${tab.to} 的 ${uncovered.join(', ')} 不在菜单项 permission 里`)
+            offenders.push(`${tab.to} 的 ${uncovered.join(', ')} 不在路由 meta.permissions 里`)
           }
         }
       }

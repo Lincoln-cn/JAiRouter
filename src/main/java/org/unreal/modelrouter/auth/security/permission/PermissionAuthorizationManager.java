@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * 数据驱动 URL 权限授权管理器（v2.9.8 RBAC，#128 Phase 3）
@@ -132,14 +133,15 @@ public class PermissionAuthorizationManager
             return checkUnmatched(authentication, method, path).map(x -> (AuthorizationResult) x);
         }
 
-        String requiredCode = rule.get().permissionCode();
+        Set<String> requiredCodes = rule.get().permissionCodes();
         return authentication
                 .map(auth -> new AuthorizationDecision(
                         isAuthenticated(auth)
-                                && (hasAuthority(auth, ADMIN_ROLE_AUTHORITY)
-                                || hasAuthority(auth, requiredCode))))
-                .doOnNext(decision -> log.debug("URL 权限判定: method={}, path={}, code={}, decision={}",
-                        method, path, requiredCode, decision.isGranted()))
+                                && (requiredCodes.isEmpty()
+                                || hasAuthority(auth, ADMIN_ROLE_AUTHORITY)
+                                || requiredCodes.stream().anyMatch(code -> hasAuthority(auth, code)))))
+                .doOnNext(decision -> log.debug("URL 权限判定: method={}, path={}, codes={}, decision={}",
+                        method, path, requiredCodes, decision.isGranted()))
                 .map(x -> (AuthorizationResult) x)
                 .defaultIfEmpty(new AuthorizationDecision(false));
     }

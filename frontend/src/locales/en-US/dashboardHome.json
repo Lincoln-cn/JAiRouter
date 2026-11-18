@@ -1,0 +1,56 @@
+{
+  "dashboardHome": {
+    "refresh": "Refresh",
+    "range": {
+      "today": "Last 24 hours",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days"
+    },
+    "loadFailed": "The statistics endpoint returned nothing — the backend may not be ready or the range is too large. Try again shortly.",
+    "chartEmpty": "No calls in the selected range",
+    "ops": {
+      "title": "Operations board",
+      "subtitle": "Daily health and traffic view: run results only — configuration lives under Traffic governance and Models & instances.",
+      "metricRequests": "Requests",
+      "metricSuccessRate": "Success rate",
+      "metricFailed": "Failed",
+      "metricLatency": "Avg latency",
+      "chartService": "Requests by service type",
+      "chartStatus": "Status code distribution",
+      "errorTitle": "Error code distribution",
+      "errorHint": "Sorted by count, to tell a single upstream failure from a broad one.",
+      "errorCode": "Error code",
+      "errorCount": "Count",
+      "noErrors": "No failed calls in the selected range"
+    },
+    "mine": {
+      "title": "My usage",
+      "subtitle": "Only your own calls: your session, plus requests made with API keys you created.",
+      "metricRequests": "My requests",
+      "metricTokens": "My tokens",
+      "metricSuccessRate": "Success rate",
+      "metricLatency": "Avg latency",
+      "chartDaily": "Requests per day",
+      "modelTitle": "Breakdown by model",
+      "modelHint": "Tokens and latency grouped by model, to show which path costs the most.",
+      "modelName": "Model",
+      "modelRequests": "Requests",
+      "modelTokens": "Tokens",
+      "modelLatency": "Avg latency",
+      "emptyHint": "No calls yet: create an API key, then send one request following the client integration guide."
+    },
+    "trends": {
+      "title": "Trend report",
+      "subtitle": "Aggregated view: trends and composition only, no per-call detail.",
+      "metricRequests": "Total requests",
+      "metricSuccessRate": "Success rate",
+      "metricDailyAvg": "Daily average",
+      "metricLatency": "Avg latency",
+      "chartDaily": "Requests and tokens over time",
+      "chartHourly": "Distribution by hour",
+      "seriesRequests": "Requests",
+      "seriesTokens": "Tokens"
+    }
+  }
+}

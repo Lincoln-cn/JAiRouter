@@ -32,7 +32,8 @@
     "home": "首页",
     "profile": "个人资料",
     "logout": "退出登录",
-    "admin": "管理员"
+    "admin": "管理员",
+    "viewSwitch": "切换视图"
   },
   "login": {
     "title": "JAiRouter 管理后台",
@@ -87,13 +88,16 @@
       "playground": "AI 试验场"
     },
     "devTools": "开发工具",
-    "tracing": "链路追踪",
+    "tracing": "链路",
     "playground": "AI 试验场",
     "dashboardMain": "仪表板",
-    "configServices": "服务管理",
-    "configInstances": "实例管理",
+    "dashboardOps": "运营看板",
+    "dashboardMine": "我的用量",
+    "dashboardTrends": "趋势报表",
+    "configServices": "服务",
+    "configInstances": "实例",
     "configVersions": "版本管理",
-    "configAdapters": "适配器管理",
+    "configAdapters": "适配器",
     "configRules": "路由规则",
     "configPools": "资源池",
     "responseCache": "响应缓存管理",
@@ -115,9 +119,9 @@
     "quotaConfig": "配额运行时配置",
     "clientAccess": "客户端接入指南",
     "callHistory": "调用历史",
-    "exceptions": "异常管理",
+    "exceptions": "异常",
     "slowRequests": "慢请求",
-    "usage": "用量统计",
+    "usage": "用量",
     "loadBalancing": "负载均衡",
     "rateLimiting": "限流",
     "rateLimitingConfig": "限流配置",
@@ -144,7 +148,10 @@
     "slowCalls": "慢调用",
     "slowSql": "慢 SQL",
     "tokenUsage": "Token 用量",
-    "tracingSearch": "链路搜索"
+    "tracingSearch": "链路搜索",
+    "audit": "审计",
+    "deployment": "部署",
+    "pageHeat": "页面访问热度"
   },
   "tabs": {
     "dashboard": "仪表板",
@@ -186,6 +193,9 @@
     "monitoring": "监控分析",
     "callHistory": "调用历史",
     "dashboardMain": "仪表板",
+    "dashboardOps": "运营看板",
+    "dashboardMine": "我的用量",
+    "dashboardTrends": "趋势报表",
     "serviceManagement": "服务管理",
     "instanceManagement": "实例管理",
     "versionManagement": "版本管理",
@@ -236,7 +246,8 @@
     "tools": "开发者工具",
     "clientAccessGuide": "客户端接入指南",
     "notFound": "页面不存在",
-    "loginGuard": "登录保护"
+    "loginGuard": "登录保护",
+    "pageHeat": "页面访问热度"
   },
   "globalSearch": {
     "dialogLabel": "全局搜索",

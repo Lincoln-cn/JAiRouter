@@ -11,7 +11,12 @@
       </el-tag>
     </template>
     <div class="permission-popover">
-      <el-tag v-for="permission in permissions" :key="permission" size="small">
+      <el-tag
+          v-for="permission in permissions"
+          :key="permission"
+          :type="getPermissionTagType(permission)"
+          size="small"
+      >
         {{ formatPermission(permission) }}
       </el-tag>
     </div>

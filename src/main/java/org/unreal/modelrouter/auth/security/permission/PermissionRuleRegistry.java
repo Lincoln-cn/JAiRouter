@@ -96,7 +96,8 @@ public class PermissionRuleRegistry {
                 // （默认 DENY_ALL ⇒ 仅 ROLE_ADMIN 直通；POST /record 走 RbacExemptEndpoints 摄取豁免）。
                 // FULL 级别正文是否解密由 controller 按 callhistory:full-content 逐主体裁剪，
                 // 所以这条前缀规则只挂 callhistory:read，不参与正文判定。
-                PermissionRule.get("/api/call-history/**", PermissionCodes.CALLHISTORY_READ),
+                PermissionRule.getAny("/api/call-history/**", PermissionCodes.CALLHISTORY_READ,
+                        PermissionCodes.CALLHISTORY_SELF_READ),
                 PermissionRule.get("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_READ),
                 PermissionRule.write("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_WRITE),
 
@@ -142,7 +143,8 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/config/pools/**", PermissionCodes.CONFIG_POOLS_WRITE),
 
                 // ===== 监控（Token 用量 / 熔断监控 / 限流监控 / 路由监控 / 指标） =====
-                PermissionRule.get("/api/token-usage/**", PermissionCodes.MONITORING_TOKENUSAGE_READ),
+                PermissionRule.getAny("/api/token-usage/**", PermissionCodes.MONITORING_TOKENUSAGE_READ,
+                        PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ),
                 PermissionRule.get("/api/v1/circuit-breaker-monitor/**", PermissionCodes.CB_MONITORING_READ),
                 PermissionRule.write("/api/v1/circuit-breaker-monitor/**", PermissionCodes.CONFIG_CIRCUITBREAKER_WRITE),
                 PermissionRule.any("/api/rate-limiter/**", PermissionCodes.RL_MONITORING_READ),
@@ -244,6 +246,13 @@ public class PermissionRuleRegistry {
                 // ===== 监控配置/运维端点（MonitoringController，#116） =====
                 // 注意：必须登记在 metrics/slow-queries/quota 的更具体 GET 规则之后（首条命中优先），
                 // 以免改写已生效的 monitoring:metrics|slowquery|quota:read 绑定。
+                // ===== 控制台页面访问统计（B4，2026-11-18） =====
+                // 上报端点：任何已认证用户都能上报「自己看了哪一页」——只看自己的 userId、不记 IP。
+                // 汇总端点：需要 security:audit:read（审计读取），仅管理员/审计员可见。
+                // 两条都必须排在下一条 /api/monitoring/** 通配之前（首条命中优先）。
+                PermissionRule.authenticated("/api/monitoring/ui-access", HttpMethod.POST),
+                PermissionRule.get("/api/monitoring/ui-access/summary", PermissionCodes.SECURITY_AUDIT_READ),
+
                 // 应急操作的影响面预览（#1173）是只读端点，但读的是「配置/运维面」的现状，
                 // 与页面门槛同用 monitoring:config:read；必须排在下一条通配 GET 之前。
                 PermissionRule.get("/api/monitoring/emergency/preview", PermissionCodes.MONITORING_CONFIG_READ),
@@ -251,7 +260,8 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/monitoring/**", PermissionCodes.MONITORING_CONFIG_WRITE),
 
                 // ===== R2-P1-03：异常管理（原未登记，任意登录用户可访问） =====
-                PermissionRule.get("/api/exceptions/**", PermissionCodes.MONITORING_EXCEPTIONS_READ),
+                PermissionRule.getAny("/api/exceptions/**", PermissionCodes.MONITORING_EXCEPTIONS_READ,
+                        PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ),
                 PermissionRule.write("/api/exceptions/**", PermissionCodes.MONITORING_EXCEPTIONS_WRITE),
 
                 // ===== R2-P1-03：配置校验/来源指南 =====

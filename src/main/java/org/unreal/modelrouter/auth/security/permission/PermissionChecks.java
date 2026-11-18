@@ -62,4 +62,26 @@ public final class PermissionChecks {
         }
         return admin || matched;
     }
+
+    /**
+     * 判断当前主体是否持有其中任意一个权限码（ADMIN 恒为 true）。
+     *
+     * <p>用于「一条 URL 规则接受多个码」的场景（{@code PermissionRule#getAny}）与数据面范围判定
+     * （全局读码 vs 本人读码）。与 {@link #hasPermission} 同一口径：先认 {@code ROLE_ADMIN}，再逐码比对。</p>
+     *
+     * @param authentication 当前认证主体，可为 {@code null}
+     * @param permissionCodes 权限码，空数组表示「不限制」（返回 true）
+     * @return 是否持有其中任意一个
+     */
+    public static boolean hasAny(final Authentication authentication, final String... permissionCodes) {
+        if (permissionCodes == null || permissionCodes.length == 0) {
+            return true;
+        }
+        for (String code : permissionCodes) {
+            if (hasPermission(authentication, code)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -17,9 +17,24 @@ export function useApiKeyDisplay(): {
 } {
   const { t } = useI18n()
 
+  /**
+   * 后端服务类型里 `imgGen` / `imgEdit` 是驼峰，但有两条路径会把它们变成全小写：
+   * 早期 `ApiKeyService.validatePermissions` 直接 `toLowerCase()` 后入库，以及历史上手工写入的数据。
+   *
+   * 只改后端还不够 —— 库里已有的小写值不会自己变回来，所以展示层必须两种写法都认，
+   * 否则标签上直接显示 `imggen`、`imgedit`（真实反馈：API 密钥管理页后两项没「转义」）。
+   */
+  const SERVICE_PERMISSION_ALIASES: Record<string, string> = {
+    imggen: 'imgGen',
+    imgedit: 'imgEdit'
+  }
+
+  const permissionKey = (permission: string): string =>
+    SERVICE_PERMISSION_ALIASES[permission.trim().toLowerCase()] ?? permission.trim()
+
   // 获取权限标签类型
   const getPermissionTagType = (permission: string) => {
-    switch (permission) {
+    switch (permissionKey(permission)) {
       case 'chat':
         return 'primary'
       case 'embedding':
@@ -46,9 +61,9 @@ export function useApiKeyDisplay(): {
     }
   }
 
-  // 格式化权限显示（后端权限值与 i18n key 同名；未知值原样返回）
+  // 格式化权限显示（后端权限值与 i18n key 同名，大小写差异先经 permissionKey 归一；未知值原样返回）
   const formatPermission = (permission: string) => {
-    return t(`apiKeys.permissions.${permission}`, permission)
+    return t(`apiKeys.permissions.${permissionKey(permission)}`, permission)
   }
 
   // 获取剩余天数文本

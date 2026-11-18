@@ -14,7 +14,10 @@
       "ADMIN": "All permissions (63 codes, superset)",
       "OPERATOR": "All read/write permissions, excluding system management, security management manage, and infrastructure",
       "USER": "Dashboard + configuration read-only + traffic governance + monitoring read-only + tracing search + AI playground",
-      "VIEWER": "Read-only: all :read permissions only"
+      "VIEWER": "Read-only: all :read permissions only",
+      "AUDITOR": "Third-party audit minimum: overview, audit events, console operations; no business data, no writes",
+      "SLA_READONLY": "SLA inspection, read-only: monitoring and config read surfaces; no key/account/permission management",
+      "SLA_OPERATOR": "SLA inspection with control-plane writes: read surfaces plus rate-limit/circuit-breaker/monitoring/tracing writes"
     },
     "groups": {
       "overview": "Overview",
@@ -88,7 +91,8 @@
       "view": "View",
       "write": "Edit",
       "manage": "Manage",
-      "use": "Use"
+      "use": "Use",
+      "self:read": "Own read"
     },
     "messages": {
       "loadRolesFailed": "Failed to load role permissions, please retry",

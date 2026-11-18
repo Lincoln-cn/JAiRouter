@@ -1,4 +1,5 @@
 import { useUserStore } from '@/stores/user'
+import type { Audience } from '@/stores/user'
 import type { MenuGroup, MenuItem } from '@/config/menu'
 
 /**
@@ -70,6 +71,22 @@ export function usePermission() {
   }
 
   /**
+   * 判断当前用户的 audience 是否命中菜单声明（数组语义为「或」）
+   *
+   * 与 permission 是**且**关系：角色不对或权限码不足都不显示。
+   * 未声明 audience（或缺省/空数组）表示不按 audience 收窄。
+   *
+   * @param audience 允许的 audience 列表
+   */
+  const hasAudience = (audience?: Audience[]): boolean => {
+    if (!audience || audience.length === 0) {
+      return true
+    }
+    const mine = userStore.audiences
+    return audience.some(a => mine.includes(a))
+  }
+
+  /**
    * 菜单项是否对当前用户可见：角色命中，且**至少有一个可进的 tab**
    *
    * 不能只判 `item.permission`：那是 tabs 的「或」聚合，可能出现「菜单项可点、
@@ -77,6 +94,9 @@ export function usePermission() {
    * 路由守卫弹回仪表板 —— 2026-11-16 收口时改成本判定。
    */
   const canAccessItem = (item: MenuItem): boolean => {
+    if (!hasAudience(item.audience)) {
+      return false
+    }
     if (!hasRouteRoles(item.roles)) {
       return false
     }
@@ -118,6 +138,7 @@ export function usePermission() {
   const getAccessibleTabs = (item: MenuItem) => {
     return item.tabs.filter(
       tab =>
+        hasAudience(tab.audience ?? item.audience) &&
         hasAnyPermission(tab.permission ?? item.permission) &&
         hasRouteRoles(tab.roles ?? item.roles)
     )
@@ -135,6 +156,7 @@ export function usePermission() {
   }
 
   return {
+    hasAudience,
     hasPermission,
     hasAnyPermission,
     hasRouteRoles,

@@ -36,6 +36,9 @@ interface LoginResponseData {
   timestamp: string
 }
 
+/** 菜单 audience（与 menu.ts 的 Audience 同名同义）。 */
+export type Audience = 'admin' | 'maintainer' | 'user' | 'observer' | 'auditor'
+
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(localStorage.getItem('admin_token'))
   const userInfo = ref<UserInfo | null>(null)
@@ -104,6 +107,39 @@ export const useUserStore = defineStore('user', () => {
     if (!userInfo.value?.roles) return false
     return roles.some(role => userInfo.value!.roles!.includes(role))
   }
+
+  // 角色 → 菜单 audience 的映射（与后端角色模板一一对应；未知角色不映射任何 audience）
+  const AUDIENCE_BY_ROLE: Record<string, Audience> = {
+    ADMIN: 'admin',
+    OPERATOR: 'maintainer',
+    USER: 'user',
+    VIEWER: 'observer',
+    AUDITOR: 'auditor',
+    SLA_READONLY: 'maintainer',
+    SLA_OPERATOR: 'maintainer'
+  }
+
+  /**
+   * 当前用户所属的 audience 集合
+   *
+   * 未知角色不做映射（宁可少给可见面）：若某天新增角色模板而这里没登记，
+   * 该角色只会看到「未声明 audience」的菜单项（概览、客户端接入）。
+   */
+  const audiences = computed<Audience[]>(() => {
+    const roles = (userInfo.value?.roles ?? []).map(role => role.trim().toUpperCase())
+    // ADMIN 是权限超集，也是「身份超集」：jwt.yml 里的 admin 账号同时挂了 USER，
+    // 若按角色逐个累加，概览组会同时给出「仪表板」和「我的用量」两套首页，
+    // 用户每次登录都要判断自己现在是谁。这里让 ADMIN 只保留 admin 身份。
+    if (roles.includes('ADMIN')) {
+      return ['admin']
+    }
+    const set = new Set<Audience>()
+    roles.forEach(role => {
+      const audience = AUDIENCE_BY_ROLE[role]
+      if (audience) set.add(audience)
+    })
+    return Array.from(set)
+  })
 
   // v2.9.8 RBAC: 检查是否拥有指定权限码（menu/路由守卫过滤用）
   const hasPermission = (code: string): boolean => {
@@ -261,6 +297,7 @@ export const useUserStore = defineStore('user', () => {
     isAuthenticated,
     hasRole,
     hasAnyRole,
+    audiences,
     hasPermission,
     login,
     logout,

@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { reportPageView } from '@/api/uiAccess'
+import { menuGroups } from '@/config/menu'
+import type { Audience } from '@/config/menu'
+import { usePermission } from '@/composables/usePermission'
 import { i18n } from '@/i18n'
 
 /**
@@ -21,6 +25,13 @@ declare module 'vue-router' {
     roles?: string[]
     /** 需要的权限码（任一命中即可；ADMIN 恒通过） */
     permissions?: string[]
+    /**
+     * 页面级 audience（与菜单项同一套取值）。
+     *
+     * 目前只有「角色专属首页」声明它：概览组的四个首页互斥，路由层必须与菜单层同口径，
+     * 否则用户手输别人的首页地址仍能进去（菜单藏了、路由放行 = 假门控）。
+     */
+    audience?: Audience[]
   }
 }
 
@@ -80,7 +91,30 @@ const router = createRouter({
           path: 'main',
           name: 'dashboard-main',
           component: () => import('../views/Dashboard.vue'),
-          meta: { titleKey: 'route.dashboardMain', icon: 'house', permissions: ['overview:dashboard:read'] }
+          meta: { titleKey: 'route.dashboardMain', icon: 'house', permissions: ['overview:dashboard:read'], audience: ['admin'] }
+        },
+        {
+          path: 'operations',
+          name: 'dashboard-operations',
+          component: () => import('../views/dashboard/OperationsBoard.vue'),
+          meta: { titleKey: 'route.dashboardOps', icon: 'data-analysis', permissions: ['overview:dashboard:read'], audience: ['maintainer'] }
+        },
+        {
+          path: 'mine',
+          name: 'dashboard-mine',
+          component: () => import('../views/dashboard/MyUsage.vue'),
+          meta: {
+            titleKey: 'route.dashboardMine',
+            icon: 'user',
+            permissions: ['callhistory:self:read', 'callhistory:read'],
+            audience: ['user']
+          }
+        },
+        {
+          path: 'trends',
+          name: 'dashboard-trends',
+          component: () => import('../views/dashboard/TrendsReport.vue'),
+          meta: { titleKey: 'route.dashboardTrends', icon: 'data-line', permissions: ['overview:dashboard:read'], audience: ['observer'] }
         }
       ]
     },
@@ -304,6 +338,14 @@ const router = createRouter({
           component: () => import('../views/system/SlaAccessManagement.vue'),
           // 看账号列表只需读码；签发/吊销/删除按钮各自挂 system:sla:manage。
           meta: { titleKey: 'route.slaAccess', icon: 'link', permissions: ['system:sla:read', 'system:sla:manage'] }
+        },
+        {
+          // B4（2026-11-18）：页面访问热度（只读集合页）。
+          // 数据是「别人的访问记录」，因此和审计日志同一把门：security:audit:read。
+          path: 'page-heat',
+          name: 'page-access-heat',
+          component: () => import('../views/system/PageAccessHeat.vue'),
+          meta: { titleKey: 'route.pageHeat', icon: 'data-line', permissions: ['security:audit:read'] }
         }
       ]
     },
@@ -478,13 +520,13 @@ const router = createRouter({
           path: 'dashboard',
           name: 'call-history-dashboard',
           component: () => import('../views/callHistory/Dashboard.vue'),
-          meta: { titleKey: 'route.callHistoryDashboard', icon: 'data-analysis', permissions: ['callhistory:read'] }
+          meta: { titleKey: 'route.callHistoryDashboard', icon: 'data-analysis', permissions: ['callhistory:read', 'callhistory:self:read'] }
         },
         {
           path: 'list',
           name: 'call-history-list',
           component: () => import('../views/callHistory/CallHistoryList.vue'),
-          meta: { titleKey: 'route.callHistoryList', icon: 'list', permissions: ['callhistory:read'] }
+          meta: { titleKey: 'route.callHistoryList', icon: 'list', permissions: ['callhistory:read', 'callhistory:self:read'] }
         },
         {
           path: 'slow-calls',
@@ -532,12 +574,33 @@ router.beforeEach((to, from, next) => {
    * vue-router 会抛「Infinite redirect in navigation guard」而整页白屏。
    * 所以已经在落地页上时直接放行，由页面自身呈现（数据请求失败也可降级展示）。
    */
-  const denyToDashboard = (): void => {
-    if (to.name === 'dashboard-main') {
+  /**
+   * 拿不到权限时的去处：本角色第一个可访问页面。
+   *
+   * 五个角色各有首页（ADMIN 治理指挥台 / OPERATOR 运营看板 / USER 我的用量 /
+   * VIEWER 趋势报表 / AUDITOR 审计），固定回 dashboard-main 会让后三者停在一个
+   * 自己没有权限的页面上（旧实现靠 `to.name === 'dashboard-main'` 时放行兜住，
+   * 代价是 USER 也能看到治理指挥台）。
+   */
+  const denyToLanding = (): void => {
+    const landing = landingPath()
+    if (to.path === landing) {
       next()
       return
     }
-    next({ name: 'dashboard-main' })
+    next({ path: landing })
+  }
+
+  const landingPath = (): string => {
+    const { filterMenuByPermission, resolveLandingPath } = usePermission()
+    const groups = filterMenuByPermission(menuGroups)
+    for (const group of groups) {
+      const first = group.children[0]
+      if (first) {
+        return resolveLandingPath(first)
+      }
+    }
+    return '/dashboard/main'
   }
 
   // 特殊处理根路径的重定向
@@ -569,7 +632,18 @@ router.beforeEach((to, from, next) => {
       const hasRole = requiredRoles.some(role => userRoles.includes(role))
       if (!hasRole) {
         // 无权限，跳转到仪表板
-        denyToDashboard()
+        denyToLanding()
+        return
+      }
+    }
+
+    // 页面级 audience（仅角色专属首页声明）：与菜单层同口径，
+    // 否则用户手输别人的首页地址仍能进去（菜单藏了、路由放行 = 假门控）
+    const requiredAudience = to.meta.audience
+    if (requiredAudience && requiredAudience.length > 0) {
+      const { hasAudience } = usePermission()
+      if (!hasAudience(requiredAudience)) {
+        denyToLanding()
         return
       }
     }
@@ -580,7 +654,7 @@ router.beforeEach((to, from, next) => {
       const hasAnyPermission = requiredPermissions.some(code => userStore.hasPermission(code))
       if (!hasAnyPermission) {
         // 无权限，跳转到仪表板
-        denyToDashboard()
+        denyToLanding()
         return
       }
     }
@@ -607,6 +681,19 @@ const { t: tTitle } = i18n.global as unknown as { t: (key: string) => string }
 router.afterEach((to) => {
   const titleKey = to.meta.titleKey as string | undefined
   document.title = titleKey ? `${tTitle(titleKey)} · JAiRouter` : 'JAiRouter'
+
+  // B4（2026-11-18）：页面访问统计——回答「哪些页面真的有人用、哪些角色的入口形同虚设」。
+  // 只上报已认证后的页面：登录页由 userStore.isLoggedIn() 判掉。
+  // 节流（同路径 60s 一次）与失败静默都在 api 层做，这里不 await、不处理结果。
+  if (to.name !== 'login') {
+    const userStore = useUserStore()
+    const roles = userStore.userInfo?.roles ?? []
+    // 只上报「已认证后」的页面：登录页与未拿到角色时一律跳过，
+    // 避免把登录过程或异常态混进热度表
+    if (roles.length > 0) {
+      reportPageView(to.fullPath, roles[0])
+    }
+  }
 })
 
 export default router

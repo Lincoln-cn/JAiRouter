@@ -1,87 +1,50 @@
 /**
- * 菜单配置（2026-11-18「一页一事」重构：8 组 / 49 项 / 49 个页面）
+ * 控制台菜单结构（单一数据源）。
  *
- * 组的顺序：
- * - 概览(1)：仪表板
- * - 运行观测(12)：调用记录 / 调用统计 / 慢调用 / 链路搜索 / 链路统计 /
- *   异常列表 / 异常统计 / 慢 SQL / 审计日志 / 操作记录 / Token 用量 / 配额使用
- * - 流量治理(9)：负载均衡监控 / 限流监控 / 熔断监控 / 熔断历史 /
- *   路由规则 / 负载均衡策略 / 限流配置 / 熔断配置 / 资源池
- * - 模型与实例(4)：适配器 / 服务 / 实例 / 版本
- * - 安全(6)：API 密钥 / JWT 令牌 / 黑名单 / PII 脱敏 / 记录治理 / 登录保护
- * - 访问与身份(3)：账户 / 权限 / SLA 接入
- * - 平台设置(8)：监控配置 / 监控运行时 / 追踪配置 / 响应缓存 / 配额运行时 /
- *   状态持久化 / 集群设置 / 健康探针设置
- * - 开发工具(6)：对话测试 / 向量生成 / 重排序 / 语音服务 / 图像服务 / 客户端接入
- *
- * **一个菜单项 = 一个页面（单 tab）**：不再用 tab 把「看」与「改」多种形态塞进同一项。
- * 每组内部按用途用 `section` 分节（观测类成节、策略/配置类成节），节标题不参与点击，
- * 由 `Layout.vue` 按 `children[i-1].section !== children[i].section` 渲染。
- *
- * **URL 一律不变**：平铺只是把原来藏在 tab 里的页面提升为独立菜单项，
- * 路由、权限码、后端接口都没动。
+ * 设计规则（2026-11-18 信息架构治理）：
+ * - 一个菜单项 = 一个对象；同一对象的不同视图用页内分段（放在内容区顶部），URL 各自独立；
+ * - 每组 ≤8 项（menu.spec.ts 有预算测试守住）；
+ * - audience 与 permission 是「且」关系：角色不对或权限码不足都不显示；
+ * - audience 取值 admin / maintainer / user / observer / auditor，与后端角色模板一一对应；
+ * - 新增能力时先问：是新对象（加项，需过预算）还是新视图（加分段，不加项）。
  *
  * 权限语义：
- * - `permission` 缺省 = 所有已登录用户可见；
- * - 数组 = **或**（任一命中即显示）；
- * - `roles` 字段保留（与 `permission` 是**且**关系，必须与路由守卫的 `meta.roles` 同口径），
- *   但**当前没有任何菜单项声明它**：授权边界统一交给权限码 + 路由 `meta.permissions`；
- * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 76 个）。
- *
- * `icon` 为 Element Plus 图标 kebab-case 名称，Layout.vue 中映射为图标组件。
+ * - permission 缺省 = 已登录可见；数组 = 任一命中即可；
+ * - tab.permission 缺省沿用菜单项；
+ * - 角色（roles）与路由守卫同口径，见 usePermission.hasRouteRoles。
  */
 
-/** 菜单项内的 tab（一个 tab = 一条真实路由；URL 与单独成项时完全一致） */
+export type Audience = 'admin' | 'maintainer' | 'user' | 'observer' | 'auditor'
+
 export interface MenuTab {
-  /** tab 标识（同一菜单项内唯一，供高亮/面包屑判定与测试使用） */
   key: string
-  /** tab 标题（i18n key；单页 tab 直接复用菜单项 key，面包屑会自动去重） */
   labelKey: string
-  /** tab 对应路由（必须是 router/index.ts 里存在的路径） */
   to: string
-  /** tab 级权限码；缺省时沿用菜单项的 permission。数组同样为「或」 */
   permission?: string | string[]
-  /** tab 级角色限制；缺省时沿用菜单项的 roles */
   roles?: string[]
+  /** 视图级 audience（缺省沿用菜单项）。 */
+  audience?: Audience[]
 }
 
 export interface MenuItem {
-  /** 菜单项主路由（= tabs[0].to），也是 el-menu-item 的 index */
   path: string
-  /** 菜单标题（i18n key，如 menu.callHistory） */
   title: string
-  /** 权限码；数组表示「任一命中即显示」。缺省表示所有已登录用户可见 */
-  permission?: string | string[]
-  /**
-   * 允许访问的角色名（任一命中即可）；缺省表示不限制。
-   *
-   * 与 `permission` 是**且**关系，且必须与路由守卫的 `meta.roles` 同口径：
-   * 菜单只按权限码过滤、路由按角色拦截时，会造出「看得见但点不进」的死入口。
-   *
-   * **当前没有任何菜单项使用它**：`/security`、`/system` 父级的 `meta.roles` 已撤掉，
-   * 授权边界统一交给权限码（否则会反过来出现「后端放行、前端藏入口」）。
-   */
-  roles?: string[]
-  /** 菜单项图标名（Element Plus 图标 kebab-case 名，可选） */
   icon?: string
-  /**
-   * 组内小节标题（i18n key，如 menu.sections.access）。
-   *
-   * 只用于「项太多、需要组内再分节」的组（当前仅平台设置组：访问与身份 / 运行时配置 /
-   * 部署与基础设施 / 审计）。渲染规则见 `Layout.vue` 的 `showSectionHeader`：同一个小节
-   * 只出现一次标题。缺省表示不分组。
-   */
+  permission?: string | string[]
+  roles?: string[]
+  /** 哪些 audience 可见（与 permission 取交集）。 */
+  audience?: Audience[]
+  /** 对象标识，用于文档与访问统计归档。 */
+  object?: string
+  /** 组内小节标题（项多到需要分节的组才用）。 */
   section?: string
-  /** tab 列表，顺序即「tab 顺序」；第一个是默认落地页（无权限时取第一个有权限的） */
+  /** 视图列表：长度 1 即单页，>1 时页面内用分段控件切换。 */
   tabs: MenuTab[]
 }
 
 export interface MenuGroup {
-  /** 组标识（el-sub-menu index，defaultOpeneds 引用） */
   index: string
-  /** 组标题（i18n key，如 menu.observability） */
   title: string
-  /** 组图标名（Element Plus 图标 kebab-case 名） */
   icon: string
   children: MenuItem[]
 }
@@ -93,18 +56,48 @@ export const menuGroups: MenuGroup[] = [
     icon: 'house',
     children: [
       {
+        // 五个角色各有自己的落地页：同一组里互斥出现，任何角色只看到一项。
+        // AUDITOR 不在这里 —— 它的首页是「运行观测 → 审计」，不给概览位。
         path: '/dashboard/main',
         title: 'menu.dashboardMain',
+        object: 'overview',
         permission: 'overview:dashboard:read',
+        audience: ['admin'],
         tabs: [
-          {
-            key: 'main',
-            labelKey: 'menu.dashboardMain',
-            to: '/dashboard/main'
-          }
-        ]
-      }
-    ]
+          { key: 'dashboard-main', labelKey: 'menu.dashboardMain', to: '/dashboard/main' },
+        ],
+      },
+      {
+        path: '/dashboard/operations',
+        title: 'menu.dashboardOps',
+        object: 'overview',
+        permission: 'overview:dashboard:read',
+        audience: ['maintainer'],
+        tabs: [
+          { key: 'dashboard-operations', labelKey: 'menu.dashboardOps', to: '/dashboard/operations' },
+        ],
+      },
+      {
+        path: '/dashboard/mine',
+        title: 'menu.dashboardMine',
+        object: 'overview',
+        permission: ['callhistory:self:read', 'callhistory:read'],
+        audience: ['user'],
+        tabs: [
+          { key: 'dashboard-mine', labelKey: 'menu.dashboardMine', to: '/dashboard/mine' },
+        ],
+      },
+      {
+        path: '/dashboard/trends',
+        title: 'menu.dashboardTrends',
+        object: 'overview',
+        permission: 'overview:dashboard:read',
+        audience: ['observer'],
+        tabs: [
+          { key: 'dashboard-trends', labelKey: 'menu.dashboardTrends', to: '/dashboard/trends' },
+        ],
+      },
+    ],
   },
   {
     index: 'observability',
@@ -114,160 +107,77 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/call-history/list',
         title: 'menu.callRecords',
-        permission: 'callhistory:read',
+        object: 'call',
         section: 'menu.sections.calls',
+        // 或语义：运维/观察者持全局读码，普通用户持本人读码（服务端按 userId 与密钥并集过滤）
+        permission: ['callhistory:read', 'callhistory:self:read'],
+        audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
-          {
-            key: 'records',
-            labelKey: 'menu.callRecords',
-            to: '/call-history/list'
-          }
-        ]
-      },
-      {
-        path: '/call-history/dashboard',
-        title: 'menu.callStats',
-        permission: 'callhistory:read',
-        section: 'menu.sections.calls',
-        tabs: [
-          {
-            key: 'dashboard',
-            labelKey: 'menu.callStats',
-            to: '/call-history/dashboard'
-          }
-        ]
+          { key: 'call-history-list', labelKey: 'menu.callRecords', to: '/call-history/list' },
+          { key: 'call-history-dashboard', labelKey: 'menu.callStats', to: '/call-history/dashboard' },
+        ],
       },
       {
         path: '/call-history/slow-calls',
-        title: 'menu.slowCalls',
-        permission: 'monitoring:slowquery:read',
+        title: 'menu.slowRequests',
+        object: 'slow',
         section: 'menu.sections.calls',
+        permission: 'monitoring:slowquery:read',
+        audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
-          {
-            key: 'slow-calls',
-            labelKey: 'menu.slowCalls',
-            to: '/call-history/slow-calls'
-          }
-        ]
+          { key: 'call-history-slow-calls', labelKey: 'menu.slowCalls', to: '/call-history/slow-calls' },
+          { key: 'monitoring-slow-queries', labelKey: 'menu.slowSql', to: '/monitoring/slow-queries' },
+        ],
       },
       {
         path: '/tracing/search',
-        title: 'menu.tracingSearch',
+        title: 'menu.tracing',
+        object: 'trace',
+        section: 'menu.sections.tracing',
         permission: 'tracing:search:read',
-        section: 'menu.sections.tracing',
+        audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
-          {
-            key: 'search',
-            labelKey: 'menu.tracingSearch',
-            to: '/tracing/search'
-          }
-        ]
-      },
-      {
-        path: '/tracing/dashboard',
-        title: 'menu.tracingStats',
-        permission: 'tracing:dashboard:read',
-        section: 'menu.sections.tracing',
-        tabs: [
-          {
-            key: 'dashboard',
-            labelKey: 'menu.tracingStats',
-            to: '/tracing/dashboard'
-          }
-        ]
+          { key: 'tracing-search', labelKey: 'menu.tracingSearch', to: '/tracing/search' },
+          { key: 'tracing-dashboard', labelKey: 'menu.tracingStats', to: '/tracing/dashboard', permission: 'tracing:dashboard:read' },
+        ],
       },
       {
         path: '/exceptions/list',
-        title: 'menu.exceptionList',
+        title: 'menu.exceptions',
+        object: 'exception',
+        section: 'menu.sections.health',
         permission: 'monitoring:exceptions:read',
-        section: 'menu.sections.health',
+        audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
-          {
-            key: 'list',
-            labelKey: 'menu.exceptionList',
-            to: '/exceptions/list'
-          }
-        ]
-      },
-      {
-        path: '/exceptions/statistics',
-        title: 'menu.exceptionStats',
-        permission: 'monitoring:exceptions:read',
-        section: 'menu.sections.health',
-        tabs: [
-          {
-            key: 'statistics',
-            labelKey: 'menu.exceptionStats',
-            to: '/exceptions/statistics'
-          }
-        ]
-      },
-      {
-        path: '/monitoring/slow-queries',
-        title: 'menu.slowSql',
-        permission: 'monitoring:slowquery:read',
-        section: 'menu.sections.health',
-        tabs: [
-          {
-            key: 'slow-sql',
-            labelKey: 'menu.slowSql',
-            to: '/monitoring/slow-queries'
-          }
-        ]
+          { key: 'exceptions-list', labelKey: 'menu.exceptionList', to: '/exceptions/list' },
+          { key: 'exceptions-statistics', labelKey: 'menu.exceptionStats', to: '/exceptions/statistics' },
+        ],
       },
       {
         path: '/security/audit-logs',
-        title: 'menu.auditLogs',
+        title: 'menu.audit',
+        object: 'audit',
+        section: 'menu.sections.health',
         permission: 'security:audit:read',
-        section: 'menu.sections.health',
+        audience: ['admin', 'maintainer', 'observer', 'auditor'],
         tabs: [
-          {
-            key: 'audit-logs',
-            labelKey: 'menu.auditLogs',
-            to: '/security/audit-logs'
-          }
-        ]
-      },
-      {
-        path: '/system/console-operations',
-        title: 'menu.consoleOperations',
-        permission: ['monitoring:console:read'],
-        section: 'menu.sections.health',
-        tabs: [
-          {
-            key: 'console-operations',
-            labelKey: 'menu.consoleOperations',
-            to: '/system/console-operations'
-          }
-        ]
+          { key: 'security-audit-logs', labelKey: 'menu.auditLogs', to: '/security/audit-logs' },
+          { key: 'system-console-operations', labelKey: 'menu.consoleOperations', to: '/system/console-operations', permission: ['monitoring:console:read'] },
+        ],
       },
       {
         path: '/call-history/token-usage',
-        title: 'menu.tokenUsage',
+        title: 'menu.usage',
+        object: 'usage',
+        section: 'menu.sections.usage',
         permission: 'monitoring:tokenusage:read',
-        section: 'menu.sections.usage',
+        audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
-          {
-            key: 'token-usage',
-            labelKey: 'menu.tokenUsage',
-            to: '/call-history/token-usage'
-          }
-        ]
+          { key: 'call-history-token-usage', labelKey: 'menu.tokenUsage', to: '/call-history/token-usage' },
+          { key: 'monitoring-quota', labelKey: 'menu.quotaUsage', to: '/monitoring/quota', permission: 'monitoring:quota:read' },
+        ],
       },
-      {
-        path: '/monitoring/quota',
-        title: 'menu.quotaUsage',
-        permission: 'monitoring:quota:read',
-        section: 'menu.sections.usage',
-        tabs: [
-          {
-            key: 'quota',
-            labelKey: 'menu.quotaUsage',
-            to: '/monitoring/quota'
-          }
-        ]
-      }
-    ]
+    ],
   },
   {
     index: 'traffic',
@@ -276,177 +186,102 @@ export const menuGroups: MenuGroup[] = [
     children: [
       {
         path: '/load-balancers/monitoring',
-        title: 'menu.lbMonitoring',
-        permission: 'lb:monitoring:read',
+        title: 'menu.loadBalancing',
+        object: 'lb',
         section: 'menu.sections.monitor',
+        permission: 'lb:monitoring:read',
+        audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
-          {
-            key: 'monitoring',
-            labelKey: 'menu.lbMonitoring',
-            to: '/load-balancers/monitoring'
-          }
-        ]
+          { key: 'load-balancers-monitoring', labelKey: 'menu.lbMonitoring', to: '/load-balancers/monitoring' },
+          { key: 'load-balancers-strategy-config', labelKey: 'menu.lbStrategy', to: '/load-balancers/strategy-config', permission: ['lb:config:read', 'lb:config:write'] },
+        ],
       },
       {
         path: '/rate-limiters/monitoring',
-        title: 'menu.rlMonitoring',
-        permission: 'rl:monitoring:read',
+        title: 'menu.rateLimiting',
+        object: 'ratelimit',
         section: 'menu.sections.monitor',
+        permission: 'rl:monitoring:read',
+        audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
-          {
-            key: 'monitoring',
-            labelKey: 'menu.rlMonitoring',
-            to: '/rate-limiters/monitoring'
-          }
-        ]
+          { key: 'rate-limiters-monitoring', labelKey: 'menu.rlMonitoring', to: '/rate-limiters/monitoring' },
+          { key: 'rate-limiters-config', labelKey: 'menu.rateLimitingConfig', to: '/rate-limiters/config', permission: 'config:ratelimit:read' },
+        ],
       },
       {
         path: '/circuit-breakers/monitoring',
-        title: 'menu.cbMonitoring',
+        title: 'menu.circuitBreaking',
+        object: 'circuitbreaker',
+        section: 'menu.sections.monitor',
         permission: 'cb:monitoring:read',
-        section: 'menu.sections.monitor',
+        audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
-          {
-            key: 'monitoring',
-            labelKey: 'menu.cbMonitoring',
-            to: '/circuit-breakers/monitoring'
-          }
-        ]
-      },
-      {
-        path: '/circuit-breakers/history',
-        title: 'menu.cbHistory',
-        permission: 'cb:history:read',
-        section: 'menu.sections.monitor',
-        tabs: [
-          {
-            key: 'history',
-            labelKey: 'menu.cbHistory',
-            to: '/circuit-breakers/history'
-          }
-        ]
+          { key: 'circuit-breakers-monitoring', labelKey: 'menu.cbMonitoring', to: '/circuit-breakers/monitoring' },
+          { key: 'circuit-breakers-history', labelKey: 'menu.cbHistory', to: '/circuit-breakers/history', permission: 'cb:history:read' },
+          { key: 'circuit-breakers-global-config', labelKey: 'menu.cbConfig', to: '/circuit-breakers/global-config', permission: 'config:circuitbreaker:read' },
+        ],
       },
       {
         path: '/config/rules',
         title: 'menu.configRules',
+        object: 'rule',
+        section: 'menu.sections.policy',
         permission: 'config:rules:read',
-        section: 'menu.sections.policy',
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'rules',
-            labelKey: 'menu.configRules',
-            to: '/config/rules'
-          }
-        ]
-      },
-      {
-        path: '/load-balancers/strategy-config',
-        title: 'menu.lbStrategy',
-        permission: ['lb:config:read', 'lb:config:write'],
-        section: 'menu.sections.policy',
-        tabs: [
-          {
-            key: 'strategy',
-            labelKey: 'menu.lbStrategy',
-            to: '/load-balancers/strategy-config'
-          }
-        ]
-      },
-      {
-        path: '/rate-limiters/config',
-        title: 'menu.rateLimitingConfig',
-        permission: 'config:ratelimit:read',
-        section: 'menu.sections.policy',
-        tabs: [
-          {
-            key: 'config',
-            labelKey: 'menu.rateLimitingConfig',
-            to: '/rate-limiters/config'
-          }
-        ]
-      },
-      {
-        path: '/circuit-breakers/global-config',
-        title: 'menu.cbConfig',
-        permission: 'config:circuitbreaker:read',
-        section: 'menu.sections.policy',
-        tabs: [
-          {
-            key: 'global-config',
-            labelKey: 'menu.cbConfig',
-            to: '/circuit-breakers/global-config'
-          }
-        ]
+          { key: 'config-rules', labelKey: 'menu.configRules', to: '/config/rules' },
+        ],
       },
       {
         path: '/config/pools',
         title: 'menu.configPools',
-        permission: 'config:pools:read',
+        object: 'pool',
         section: 'menu.sections.policy',
+        permission: 'config:pools:read',
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'pools',
-            labelKey: 'menu.configPools',
-            to: '/config/pools'
-          }
-        ]
-      }
-    ]
+          { key: 'config-pools', labelKey: 'menu.configPools', to: '/config/pools' },
+        ],
+      },
+    ],
   },
   {
     index: 'model-services',
     title: 'menu.modelServices',
-    icon: 'hourse',
+    icon: 'cpu',
     children: [
       {
         path: '/config/adapters',
         title: 'menu.configAdapters',
+        object: 'adapter',
         permission: 'config:adapters:read',
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'adapters',
-            labelKey: 'menu.configAdapters',
-            to: '/config/adapters'
-          }
-        ]
+          { key: 'config-adapters', labelKey: 'menu.configAdapters', to: '/config/adapters' },
+        ],
       },
       {
         path: '/config/services',
         title: 'menu.configServices',
+        object: 'service',
         permission: 'config:services:read',
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'services',
-            labelKey: 'menu.configServices',
-            to: '/config/services'
-          }
-        ]
+          { key: 'config-services', labelKey: 'menu.configServices', to: '/config/services' },
+          { key: 'config-versions', labelKey: 'menu.configVersions', to: '/config/versions', permission: 'config:versions:read' },
+        ],
       },
       {
         path: '/config/instances',
         title: 'menu.configInstances',
+        object: 'instance',
         permission: 'config:instances:read',
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'instances',
-            labelKey: 'menu.configInstances',
-            to: '/config/instances'
-          }
-        ]
+          { key: 'config-instances', labelKey: 'menu.configInstances', to: '/config/instances' },
+        ],
       },
-      {
-        path: '/config/versions',
-        title: 'menu.configVersions',
-        permission: 'config:versions:read',
-        tabs: [
-          {
-            key: 'versions',
-            labelKey: 'menu.configVersions',
-            to: '/config/versions'
-          }
-        ]
-      }
-    ]
+    ],
   },
   {
     index: 'security',
@@ -456,76 +291,64 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/security/api-keys',
         title: 'menu.apiKeys',
+        object: 'apikey',
         permission: ['security:apikeys:read', 'security:apikeys:manage'],
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'api-keys',
-            labelKey: 'menu.apiKeys',
-            to: '/security/api-keys'
-          }
-        ]
+          { key: 'security-api-keys', labelKey: 'menu.apiKeys', to: '/security/api-keys' },
+        ],
       },
       {
         path: '/security/jwt-tokens',
         title: 'menu.jwtTokens',
+        object: 'jwttoken',
         permission: ['security:jwttokens:read', 'security:jwttokens:manage'],
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'jwt-tokens',
-            labelKey: 'menu.jwtTokens',
-            to: '/security/jwt-tokens'
-          }
-        ]
+          { key: 'security-jwt-tokens', labelKey: 'menu.jwtTokens', to: '/security/jwt-tokens' },
+        ],
       },
       {
         path: '/security/blacklist',
         title: 'menu.blacklist',
+        object: 'blacklist',
         permission: ['security:blacklist:read', 'security:blacklist:manage'],
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'blacklist',
-            labelKey: 'menu.blacklist',
-            to: '/security/blacklist'
-          }
-        ]
+          { key: 'security-blacklist', labelKey: 'menu.blacklist', to: '/security/blacklist' },
+        ],
       },
       {
         path: '/security/sanitization',
         title: 'menu.sanitization',
+        object: 'sanitization',
         permission: ['security:sanitization:read', 'security:sanitization:manage'],
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'sanitization',
-            labelKey: 'menu.sanitization',
-            to: '/security/sanitization'
-          }
-        ]
+          { key: 'security-sanitization', labelKey: 'menu.sanitization', to: '/security/sanitization' },
+        ],
       },
       {
         path: '/security/record-governance',
         title: 'menu.recordGovernance',
+        object: 'recordgovernance',
         permission: ['config:callhistory:read', 'config:callhistory:write'],
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'record-governance',
-            labelKey: 'menu.recordGovernance',
-            to: '/security/record-governance'
-          }
-        ]
+          { key: 'security-record-governance', labelKey: 'menu.recordGovernance', to: '/security/record-governance' },
+        ],
       },
       {
         path: '/security/login-guard',
         title: 'menu.loginGuard',
+        object: 'loginguard',
         permission: ['security:loginguard:read', 'security:loginguard:manage'],
+        audience: ['admin'],
         tabs: [
-          {
-            key: 'login-guard',
-            labelKey: 'menu.loginGuard',
-            to: '/security/login-guard'
-          }
-        ]
-      }
-    ]
+          { key: 'security-login-guard', labelKey: 'menu.loginGuard', to: '/security/login-guard' },
+        ],
+      },
+    ],
   },
   {
     index: 'access',
@@ -535,40 +358,47 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/accounts',
         title: 'menu.accounts',
+        object: 'account',
         permission: ['system:accounts:read', 'system:accounts:manage'],
+        audience: ['admin'],
         tabs: [
-          {
-            key: 'accounts',
-            labelKey: 'menu.accounts',
-            to: '/system/accounts'
-          }
-        ]
+          { key: 'system-accounts', labelKey: 'menu.accounts', to: '/system/accounts' },
+        ],
       },
       {
         path: '/system/permissions',
         title: 'menu.permissions',
+        object: 'permission',
         permission: ['system:permissions:read', 'system:permissions:manage'],
+        audience: ['admin'],
         tabs: [
-          {
-            key: 'permissions',
-            labelKey: 'menu.permissions',
-            to: '/system/permissions'
-          }
-        ]
+          { key: 'system-permissions', labelKey: 'menu.permissions', to: '/system/permissions' },
+        ],
       },
       {
         path: '/system/sla',
         title: 'menu.slaAccess',
+        object: 'sla',
         permission: ['system:sla:read', 'system:sla:manage'],
+        audience: ['admin'],
         tabs: [
-          {
-            key: 'sla-access',
-            labelKey: 'menu.slaAccess',
-            to: '/system/sla'
-          }
-        ]
-      }
-    ]
+          { key: 'system-sla', labelKey: 'menu.slaAccess', to: '/system/sla' },
+        ],
+      },
+      {
+        // B4（2026-11-18）：页面访问热度。与「权限管理」同组相邻，因为它们是同一个问题的两面
+        // ——权限管理决定「谁应该看到什么」，访问热度回答「谁实际在用」。
+        // 只读、无写动作；审计员与管理员可见（权限码 security:audit:read）。
+        path: '/system/page-heat',
+        title: 'menu.pageHeat',
+        object: 'page-access',
+        permission: ['security:audit:read'],
+        audience: ['admin', 'auditor'],
+        tabs: [
+          { key: 'system-page-heat', labelKey: 'menu.pageHeat', to: '/system/page-heat' },
+        ],
+      },
+    ],
   },
   {
     index: 'platform',
@@ -578,200 +408,134 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/monitoring/config',
         title: 'menu.monitoringConfig',
-        permission: ['monitoring:config:read'],
+        object: 'monitoring',
         section: 'menu.sections.runtime',
-        tabs: [
-          {
-            key: 'monitoring-config',
-            labelKey: 'menu.monitoringConfig',
-            to: '/monitoring/config'
-          }
-        ]
-      },
-      {
-        path: '/monitoring/config/runtime',
-        title: 'menu.monitoringRuntime',
         permission: ['monitoring:config:read'],
-        section: 'menu.sections.runtime',
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'monitoring-runtime',
-            labelKey: 'menu.monitoringRuntime',
-            to: '/monitoring/config/runtime'
-          }
-        ]
+          { key: 'monitoring-config', labelKey: 'menu.monitoringConfig', to: '/monitoring/config' },
+          { key: 'monitoring-config-runtime', labelKey: 'menu.monitoringRuntime', to: '/monitoring/config/runtime' },
+        ],
       },
       {
         path: '/tracing/management',
         title: 'menu.tracingManagement',
-        permission: ['tracing:config:read', 'tracing:config:manage'],
+        object: 'tracingconfig',
         section: 'menu.sections.runtime',
+        permission: ['tracing:config:read', 'tracing:config:manage'],
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'management',
-            labelKey: 'menu.tracingManagement',
-            to: '/tracing/management'
-          }
-        ]
+          { key: 'tracing-management', labelKey: 'menu.tracingManagement', to: '/tracing/management' },
+        ],
       },
       {
         path: '/config/cache',
         title: 'menu.responseCache',
-        permission: ['config:cache:read', 'config:cache:write'],
+        object: 'cache',
         section: 'menu.sections.runtime',
+        permission: ['config:cache:read', 'config:cache:write'],
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'cache',
-            labelKey: 'menu.responseCache',
-            to: '/config/cache'
-          }
-        ]
+          { key: 'config-cache', labelKey: 'menu.responseCache', to: '/config/cache' },
+        ],
       },
       {
         path: '/config/quota',
         title: 'menu.quotaConfig',
-        permission: 'config:quota:read',
+        object: 'quotaruntime',
         section: 'menu.sections.runtime',
+        permission: 'config:quota:read',
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'quota',
-            labelKey: 'menu.quotaConfig',
-            to: '/config/quota'
-          }
-        ]
+          { key: 'config-quota', labelKey: 'menu.quotaConfig', to: '/config/quota' },
+        ],
       },
       {
         path: '/config/state-persistence',
-        title: 'menu.statePersistence',
+        title: 'menu.deployment',
+        object: 'deployment',
+        section: 'menu.sections.deployment',
         permission: 'config:persistence:read',
-        section: 'menu.sections.deployment',
+        audience: ['admin', 'maintainer'],
         tabs: [
-          {
-            key: 'state-persistence',
-            labelKey: 'menu.statePersistence',
-            to: '/config/state-persistence'
-          }
-        ]
+          { key: 'config-state-persistence', labelKey: 'menu.statePersistence', to: '/config/state-persistence' },
+          { key: 'system-cluster', labelKey: 'menu.clusterConfig', to: '/system/cluster', permission: ['config:cluster:read', 'config:cluster:write'] },
+          { key: 'system-health', labelKey: 'menu.healthConfig', to: '/system/health', permission: ['config:health:read', 'config:health:write'] },
+        ],
       },
-      {
-        path: '/system/cluster',
-        title: 'menu.clusterConfig',
-        permission: ['config:cluster:read', 'config:cluster:write'],
-        section: 'menu.sections.deployment',
-        tabs: [
-          {
-            key: 'cluster-config',
-            labelKey: 'menu.clusterConfig',
-            to: '/system/cluster'
-          }
-        ]
-      },
-      {
-        path: '/system/health',
-        title: 'menu.healthConfig',
-        permission: ['config:health:read', 'config:health:write'],
-        section: 'menu.sections.deployment',
-        tabs: [
-          {
-            key: 'health-config',
-            labelKey: 'menu.healthConfig',
-            to: '/system/health'
-          }
-        ]
-      }
-    ]
+    ],
   },
   {
     index: 'dev-tools',
     title: 'menu.devTools',
     icon: 'tools',
     children: [
+      // AI 试验场：5 个并列工具，不是一个对象的 5 个视图。
+      // 合并成一项时头部要挤 5 连段（与右侧操作区抢空间），且用户「想直接点图像服务」的诉求落空，
+      // 因此拆回独立菜单项；组内 6 项仍在「每组 ≤8 项」预算内。
       {
         path: '/playground/chat',
         title: 'menu.playgroundChat',
+        object: 'playground-chat',
         permission: 'ai:playground:use',
-        section: 'menu.sections.playground',
+        audience: ['admin', 'maintainer', 'user'],
         tabs: [
-          {
-            key: 'chat',
-            labelKey: 'menu.playgroundChat',
-            to: '/playground/chat'
-          }
-        ]
+          { key: 'playground-chat', labelKey: 'menu.playgroundChat', to: '/playground/chat' },
+        ],
       },
       {
         path: '/playground/embedding',
         title: 'menu.playgroundEmbedding',
+        object: 'playground-embedding',
         permission: 'ai:playground:use',
-        section: 'menu.sections.playground',
+        audience: ['admin', 'maintainer', 'user'],
         tabs: [
-          {
-            key: 'embedding',
-            labelKey: 'menu.playgroundEmbedding',
-            to: '/playground/embedding'
-          }
-        ]
+          { key: 'playground-embedding', labelKey: 'menu.playgroundEmbedding', to: '/playground/embedding' },
+        ],
       },
       {
         path: '/playground/rerank',
         title: 'menu.playgroundRerank',
+        object: 'playground-rerank',
         permission: 'ai:playground:use',
-        section: 'menu.sections.playground',
+        audience: ['admin', 'maintainer', 'user'],
         tabs: [
-          {
-            key: 'rerank',
-            labelKey: 'menu.playgroundRerank',
-            to: '/playground/rerank'
-          }
-        ]
+          { key: 'playground-rerank', labelKey: 'menu.playgroundRerank', to: '/playground/rerank' },
+        ],
       },
       {
         path: '/playground/audio',
         title: 'menu.playgroundAudio',
+        object: 'playground-audio',
         permission: 'ai:playground:use',
-        section: 'menu.sections.playground',
+        audience: ['admin', 'maintainer', 'user'],
         tabs: [
-          {
-            key: 'audio',
-            labelKey: 'menu.playgroundAudio',
-            to: '/playground/audio'
-          }
-        ]
+          { key: 'playground-audio', labelKey: 'menu.playgroundAudio', to: '/playground/audio' },
+        ],
       },
       {
         path: '/playground/image',
         title: 'menu.playgroundImage',
+        object: 'playground-image',
         permission: 'ai:playground:use',
-        section: 'menu.sections.playground',
+        audience: ['admin', 'maintainer', 'user'],
         tabs: [
-          {
-            key: 'image',
-            labelKey: 'menu.playgroundImage',
-            to: '/playground/image'
-          }
-        ]
+          { key: 'playground-image', labelKey: 'menu.playgroundImage', to: '/playground/image' },
+        ],
       },
       {
         path: '/tools/client-access',
         title: 'menu.clientAccess',
+        object: 'guide',
+        audience: ['admin', 'maintainer', 'user', 'observer', 'auditor'],
         tabs: [
-          {
-            key: 'client-access',
-            labelKey: 'menu.clientAccess',
-            to: '/tools/client-access'
-          }
-        ]
-      }
-    ]
-  }
+          { key: 'tools-client-access', labelKey: 'menu.clientAccess', to: '/tools/client-access' },
+        ],
+      },
+    ],
+  },
 ]
 
-/**
- * 深链 → 菜单项 的反查表（设计文档 §3.4）。
- *
- * 由 `menuGroups` 的 tabs 派生，**不手写**：新增 tab 即自动获得高亮，不会出现
- * 「配置里加了页面、高亮表忘加」的漂移。键是真实路由，值是菜单项主路径。
- */
 export const ROUTE_TO_MENU: Record<string, string> = Object.fromEntries(
   menuGroups.flatMap(group => group.children.flatMap(item => item.tabs.map(tab => [tab.to, item.path])))
 ) as Record<string, string>
@@ -818,6 +582,16 @@ export function findMenuEntry(path: string): { group: MenuGroup; item: MenuItem 
 }
 
 /** 精确匹配当前路由对应的 tab（详情页等无 tab 的页面返回 undefined） */
+/**
+ * 给定的路由是不是该菜单项的某个视图。
+ *
+ * 点侧栏菜单项时用它判断「要不要跳」：用户已经停在这一项的某个视图上（例如「AI 试验场 / 图像服务」）
+ * 就不该被打回第一个视图——那种「点了菜单却又回到别处」的体验会被读成「菜单点不动」。
+ */
+export function isMenuItemView(item: MenuItem, path: string): boolean {
+  return item.tabs.some(tab => tab.to === path)
+}
+
 export function findMenuTab(path: string): MenuTab | undefined {
   for (const group of menuGroups) {
     for (const item of group.children) {

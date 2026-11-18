@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import router from '@/router'
@@ -38,43 +38,49 @@ const mountAt = async (path: string, permissions: string[], roles: string[] = ['
   })
 }
 
-describe('Layout 多 tab 切换条', () => {
+describe('Layout 多视图切换条', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     i18n.global.locale.value = 'zh-CN'
   })
 
-  it('一页一事之后调用记录是独立菜单项，不渲染切换条', async () => {
-    const wrapper = await mountAt('/call-history/list', ['callhistory:read'])
+  it('调用项合并后有两个视图：切换条渲染「调用记录 / 调用统计」', async () => {
+    const wrapper = await mountAt('/call-history/list', [], ['ADMIN'])
 
-    // 平铺重构后「调用记录」与「调用统计」是两个独立菜单项，切换条机制退出业务场景
-    expect(wrapper.findAll('.nav-tabs .nav-tab')).toHaveLength(0)
-    expect(router.currentRoute.value.path).toBe('/call-history/list')
+    const tabs = wrapper.findAll('.nav-tabs .nav-tab').map(node => node.text())
+    expect(tabs).toEqual(['调用记录', '调用统计'])
+    expect(wrapper.find('.nav-tabs .nav-tab.active').text()).toBe('调用记录')
     wrapper.unmount()
   })
 
-  it('熔断历史是独立菜单项，只持 cb:history:read 也能直达', async () => {
-    const wrapper = await mountAt('/circuit-breakers/history', ['cb:history:read'])
+  it('熔断项合并后有三个视图：点「熔断历史」跳到它自己的 URL', async () => {
+    const wrapper = await mountAt('/circuit-breakers/monitoring', [], ['ADMIN'])
 
+    const tabs = wrapper.findAll('.nav-tabs .nav-tab')
+    expect(tabs.map(node => node.text())).toEqual(['熔断监控', '熔断历史', '熔断配置'])
+
+    // 每个视图的 URL 各自独立：直接导航到历史视图仍然可达，且当前项高亮随之切换
+    await router.push('/circuit-breakers/history')
+    await flushPromises()
     expect(router.currentRoute.value.path).toBe('/circuit-breakers/history')
-    expect(wrapper.findAll('.nav-tabs .nav-tab')).toHaveLength(0)
+    expect(wrapper.find('.nav-tabs .nav-tab.active').text()).toBe('熔断历史')
     wrapper.unmount()
   })
 
-  it('单 tab 菜单项不渲染切换条', async () => {
-    const wrapper = await mountAt('/config/services', ['config:services:read'])
+  it('单视图菜单项不渲染切换条', async () => {
+    const wrapper = await mountAt('/config/cache', [], ['ADMIN'])
 
     expect(wrapper.find('.nav-tabs').exists()).toBe(false)
     wrapper.unmount()
   })
 
-  it('面包屑为「组 → 菜单项」，最后一段不可点', async () => {
-    const wrapper = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
+  it('面包屑为「组 → 菜单项 → 视图」，末段不可点（合并视图带回第三段）', async () => {
+    const wrapper = await mountAt('/monitoring/quota', [], ['ADMIN'])
 
-    // 单 tab 项的 tab 与菜单项同名，末段去重 ⇒ 只剩「组 → 项」两段
     const crumbs = wrapper.findAll('.el-breadcrumb__inner').map(crumb => crumb.text())
-    expect(crumbs).toEqual(['运行观测', '配额使用'])
-    expect(wrapper.findAll('.el-breadcrumb__inner a')).toHaveLength(1)
+    expect(crumbs).toEqual(['运行观测', '用量', '配额使用'])
+    // 组与菜单项可点，视图段不可点
+    expect(wrapper.findAll('.el-breadcrumb__inner a')).toHaveLength(2)
     expect(wrapper.findAll('.el-breadcrumb__item').at(-1)?.find('a').exists()).toBe(false)
     wrapper.unmount()
   })
@@ -110,7 +116,10 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       'config:health:read',
       'monitoring:console:read',
       'monitoring:config:read',
-      'monitoring:config:write'
+      'monitoring:config:write',
+      'tracing:config:read',
+      'config:cache:read',
+      'config:quota:read'
     ], ['OPERATOR'])
 
     const groups = sidebarGroups(wrapper)
@@ -118,12 +127,13 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     // （API Key / PII 脱敏 / JWT 令牌 / 黑名单 / 登录保护 仍需各自的 read 码，OPERATOR 不持有）。
     expect(groups.find(group => group.title === '安全')?.items).toEqual(['记录治理'])
     // 平台设置组（原「系统」组）按小节排序：运行时配置 → 部署与基础设施 → 审计
+    // 合并后：监控（配置 + 运行时）、追踪配置、响应缓存、配额运行时、部署（三合一）
     expect(groups.find(group => group.title === '平台设置')?.items).toEqual([
       '监控配置',
-      '运行时与应急',
-      '状态持久化',
-      '集群设置',
-      '健康探针设置'
+      '追踪配置',
+      '响应缓存管理',
+      '配额运行时配置',
+      '部署'
     ])
     // 小节标题：只渲染「当前可见项所属」的小节，且同一小节只出现一次
     // （操作记录已移到运行观测组，所以平台设置只剩两节）
@@ -135,7 +145,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     wrapper.unmount()
   })
 
-  it('ADMIN 视角：八组齐全，安全 6 项、访问与身份 3 项与平台设置 8 项都在（反证不是整栏都没渲染）', async () => {
+  it('ADMIN 视角：八组齐全，安全 6 项、访问与身份 3 项与平台设置 5 项都在（反证不是整栏都没渲染）', async () => {
     const wrapper = await mountAt('/system/cluster', [], ['ADMIN'])
 
     const groups = sidebarGroups(wrapper)
@@ -160,9 +170,10 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     expect(groups.find(group => group.title === '访问与身份')?.items).toEqual([
       '账户管理',
       '权限管理',
-      'SLA 接入'
+      'SLA 接入',
+      '页面访问热度'
     ])
-    expect(groups.find(group => group.title === '平台设置')?.items).toHaveLength(8)
+    expect(groups.find(group => group.title === '平台设置')?.items).toHaveLength(5)
     // 平台设置组两节，各出现一次（观测组与流量治理组的小节也会渲染，这里只比对集合）
     const sectionTitles = wrapper.findAll('.menu-section-title').map(node => node.text())
     expect(sectionTitles).toContain('运行时配置')

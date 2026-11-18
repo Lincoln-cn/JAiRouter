@@ -16,7 +16,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.permission.PermissionCodes;
 import org.unreal.modelrouter.common.constants.ErrorCode;
+import org.unreal.modelrouter.auth.security.permission.DataScope;
+import org.unreal.modelrouter.auth.security.permission.DataScopeResolver;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import reactor.core.publisher.Mono;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryQueryDTO;
@@ -60,8 +63,20 @@ class ApiCallHistoryControllerRbacTest {
     @Mock
     private SecurityAuditService securityAuditService;
 
+    @Mock
+    private DataScopeResolver dataScopeResolver;
+
     @InjectMocks
     private ApiCallHistoryController controller;
+
+    @org.junit.jupiter.api.BeforeEach
+    void stubUnrestrictedScope() {
+        org.mockito.Mockito.lenient().when(dataScopeResolver.resolveWithKeys(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()))
+                .thenReturn(Mono.just(DataScope.unrestricted()));
+    }
 
     // ==================== 认证主体工具 ====================
 
@@ -128,7 +143,7 @@ class ApiCallHistoryControllerRbacTest {
             when(callHistoryService.findById(1L)).thenReturn(Optional.of(entity));
 
             ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response =
-                    controller.getDetail(1L, withCodes(PermissionCodes.CALLHISTORY_READ));
+                    controller.getDetail(1L, withCodes(PermissionCodes.CALLHISTORY_READ)).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -149,7 +164,7 @@ class ApiCallHistoryControllerRbacTest {
 
             ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response =
                     controller.getDetail(2L, withCodes(
-                            PermissionCodes.CALLHISTORY_READ, PermissionCodes.CALLHISTORY_FULL_CONTENT));
+                            PermissionCodes.CALLHISTORY_READ, PermissionCodes.CALLHISTORY_FULL_CONTENT)).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -172,7 +187,7 @@ class ApiCallHistoryControllerRbacTest {
             when(callHistoryService.findById(3L)).thenReturn(Optional.of(entity));
             when(securityAuditService.recordEvent(any())).thenReturn(reactor.core.publisher.Mono.empty());
 
-            controller.getDetail(3L, admin());
+            controller.getDetail(3L, admin()).block();
 
             verify(callHistoryService).decryptBodies(entity);
             verify(securityAuditService).recordEvent(argThat(event -> "admin".equals(event.getUserId())));
@@ -184,7 +199,7 @@ class ApiCallHistoryControllerRbacTest {
             ApiCallHistoryEntity entity = record(4L, RecordLevel.SUMMARY);
             when(callHistoryService.findById(4L)).thenReturn(Optional.of(entity));
 
-            controller.getDetail(4L, withCodes(PermissionCodes.CALLHISTORY_FULL_CONTENT));
+            controller.getDetail(4L, withCodes(PermissionCodes.CALLHISTORY_FULL_CONTENT)).block();
 
             verify(callHistoryService).decryptBodies(entity);
             verifyNoInteractions(securityAuditService);
@@ -196,7 +211,7 @@ class ApiCallHistoryControllerRbacTest {
             when(callHistoryService.findById(999L)).thenReturn(Optional.empty());
 
             ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response =
-                    controller.getDetail(999L, withCodes(PermissionCodes.CALLHISTORY_READ));
+                    controller.getDetail(999L, withCodes(PermissionCodes.CALLHISTORY_READ)).block();
 
             assertNotNull(response.getBody());
             assertFalse(response.getBody().isSuccess());
@@ -216,11 +231,11 @@ class ApiCallHistoryControllerRbacTest {
         @DisplayName("GET /api/call-history 分页结果不返回密文")
         void queryRedactsBodies() {
             ApiCallHistoryEntity entity = record(10L, RecordLevel.FULL);
-            when(callHistoryService.query(any(CallHistoryQueryDTO.class)))
+            when(callHistoryService.query(any(CallHistoryQueryDTO.class), any(DataScope.class)))
                     .thenReturn(new PageImpl<>(List.of(entity)));
 
             ResponseEntity<RouterResponse<org.springframework.data.domain.Page<ApiCallHistoryEntity>>> response =
-                    controller.query(new CallHistoryQueryDTO(), withCodes(PermissionCodes.CALLHISTORY_READ));
+                    controller.query(new CallHistoryQueryDTO(), withCodes(PermissionCodes.CALLHISTORY_READ)).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -232,9 +247,9 @@ class ApiCallHistoryControllerRbacTest {
         @DisplayName("GET /recent 对无 full-content 主体清空密文")
         void recentRedactsBodies() {
             ApiCallHistoryEntity entity = record(11L, RecordLevel.FULL);
-            when(callHistoryService.findRecent(20)).thenReturn(List.of(entity));
+            when(callHistoryService.findRecent(eq(20), any(DataScope.class))).thenReturn(List.of(entity));
 
-            controller.findRecent(20, withCodes(PermissionCodes.CALLHISTORY_READ));
+            controller.findRecent(20, withCodes(PermissionCodes.CALLHISTORY_READ)).block();
 
             assertNull(entity.getRequestBodyEncrypted());
             assertNull(entity.getResponseBodyEncrypted());
@@ -244,9 +259,9 @@ class ApiCallHistoryControllerRbacTest {
         @DisplayName("持 full-content 的列表不做裁剪")
         void listKeepsCiphertextForFullContent() {
             ApiCallHistoryEntity entity = record(12L, RecordLevel.FULL);
-            when(callHistoryService.findRecent(20)).thenReturn(List.of(entity));
+            when(callHistoryService.findRecent(eq(20), any(DataScope.class))).thenReturn(List.of(entity));
 
-            controller.findRecent(20, admin());
+            controller.findRecent(20, admin()).block();
 
             assertEquals("encrypted-request", entity.getRequestBodyEncrypted());
             assertEquals("encrypted-response", entity.getResponseBodyEncrypted());
@@ -352,10 +367,10 @@ class ApiCallHistoryControllerRbacTest {
         @DisplayName("获取统计信息 - 正常返回")
         void statisticsSuccess() {
             CallHistoryStatisticsDTO stats = CallHistoryStatisticsDTO.builder().build();
-            when(callHistoryService.getStatistics(any(), any())).thenReturn(stats);
+            when(callHistoryService.getStatistics(any(), any(), any())).thenReturn(stats);
 
             ResponseEntity<RouterResponse<CallHistoryStatisticsDTO>> response =
-                    controller.getStatistics(null, null);
+                    controller.getStatistics(null, null, admin()).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());

@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PermissionCodesTest {
 
     /**
-     * 权威总数：76 = 43 个 :read + 21 个 :write + 10 个 manage + ai:playground:use + callhistory:full-content。
+     * 权威总数：79 = 46 个 :read + 21 个 :write + 10 个 manage + ai:playground:use + callhistory:full-content。
      *
      * <p>调用历史拆码（2026-11-16）后 70 → 71：原 {@code callhistory:view} 换成
      * {@code callhistory:read}（并进 :read 计数）+ {@code callhistory:full-content}（单独一项）。
@@ -48,10 +48,10 @@ class PermissionCodesTest {
      * <p>#1176（2026-11-17）74 → 76：新增 {@code security:loginguard:read} / {@code security:loginguard:manage}，
      * 把登录保护的查看（含被锁主体）与改阈值/解锁分开。
      */
-    private static final int EXPECTED_TOTAL = 76;
+    private static final int EXPECTED_TOTAL = 79;
 
     @Test
-    @DisplayName("权限码总数为 76")
+    @DisplayName("权限码总数为 79")
     void totalCodeCountMatchesDocumentedValue() {
         assertEquals(EXPECTED_TOTAL, PermissionCodes.ALL_PERMISSION_CODES.size(),
                 "权限码总数变化必须同步 README 与 docs/{zh,en}/security/rbac-permissions.md 的计数");

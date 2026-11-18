@@ -142,6 +142,9 @@ export interface TraceChainResponse {
 
 /** `GET /tracing/query/services` 的单个服务统计（页面只读服务名与计数类字段） */
 export interface TracingServiceStat {
+  /** 后端 `GET /tracing/query/services` 实际返回的字段 */
+  name?: string
+  /** 早期命名；后端现在用 `name`，两者都认以免一侧改名就丢数据 */
   serviceName?: string
   traceCount?: number
   errorCount?: number

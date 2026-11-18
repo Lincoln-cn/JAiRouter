@@ -17,7 +17,7 @@ const MENU_GROUPS = [
 ]
 
 // 每组菜单项数（合计 49）：原被页签收起的 14 个页面已提升为独立项
-const MENU_ITEMS_PER_GROUP = [1, 12, 9, 4, 6, 3, 8, 6]
+const MENU_ITEMS_PER_GROUP = [1, 6, 5, 3, 6, 4, 5, 6]
 
 export default {
   id: 'layout-nav',
@@ -52,9 +52,9 @@ export default {
     const subCount = await subMenus.count()
     check('layout-menu-groups', subCount === 8, `sub-menus=${subCount}`)
 
-    // 菜单项总数与逐组项数（8 组 49 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
+    // 菜单项总数与逐组项数（8 组 36 项 / 50 个页面；增删菜单时这里与 MENU_GROUPS 都要同步改）
     const allItems = await page.locator('.layout-menu .el-menu-item').count()
-    check('layout-menu-item-total', allItems === 49, `items=${allItems}`)
+    check('layout-menu-item-total', allItems === 36, `items=${allItems}`)
     for (let i = 0; i < MENU_GROUPS.length; i++) {
       const group = page.locator('.layout-menu .el-sub-menu').nth(i)
       const count = await group.locator('.el-menu-item').count()
@@ -168,13 +168,19 @@ export default {
     // 面包屑存在
     check('layout-breadcrumb', (await page.locator('.el-breadcrumb').count()) > 0)
 
-    // 一页一事之后不再有页签切换条：同一组内的页面各占一个菜单项，直接可达
-    await gotoApp(page, '/call-history/list', { waitMs: 400 })
-    const tabStrip = page.locator('.nav-tabs .nav-tab')
+    // 视图切换条在「内容区顶部」（2026-11-18 从页头下移）：调用记录/调用统计是同一对象的两个视图
+    await gotoApp(page, '/call-history/list', { waitMs: 500 })
+    const tabStrip = page.locator('.layout-main .view-switch-bar .nav-tab')
     const tabCount = await tabStrip.count()
-    check('layout-tabs-render', tabCount === 0, `tabs=${tabCount}`)
-    if (tabCount === 0) {
-      await gotoApp(page, '/call-history/dashboard', { waitMs: 400 })
+    check('layout-tabs-render', tabCount === 2, `tabs=${tabCount}`)
+    check(
+      'layout-tabs-in-content',
+      (await page.locator('.layout-header .nav-tabs').count()) === 0,
+      'header 不应再有切换条'
+    )
+    if (tabCount === 2) {
+      await tabStrip.nth(1).click()
+      await page.waitForFunction(() => location.pathname.endsWith('/call-history/dashboard'), { timeout: 10000 }).catch(() => {})
       check(
         'layout-tabs-switch',
         currentPathname(page).endsWith('/call-history/dashboard'),
@@ -182,9 +188,9 @@ export default {
       )
     }
 
-    // 单 tab 菜单项不渲染切换条（视觉与改造前一致）
-    await gotoApp(page, '/config/services', { waitMs: 400 })
-    const singleStrips = await page.locator('.nav-tabs').count()
+    // 单视图菜单项（AI 试验场拆成 5 个独立项后各自单视图）不渲染切换条
+    await gotoApp(page, '/playground/image', { waitMs: 500 })
+    const singleStrips = await page.locator('.view-switch-bar').count()
     check('layout-tabs-single-hidden', singleStrips === 0, `strips=${singleStrips}`)
 
     // 所有路由可通过直接 URL 访达（与菜单权限无关的兜底已在 route-smoke）

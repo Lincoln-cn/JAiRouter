@@ -57,14 +57,6 @@
               <span v-else>{{ displayTitle(item.title) }}</span>
             </el-breadcrumb-item>
           </el-breadcrumb>
-          <!-- 多 tab 菜单项的切换条：40 → 28 后被收起的页面在这里进入，URL 不变 -->
-          <div v-if="currentTabs.length > 1" class="nav-tabs" role="tablist">
-            <button v-for="tab in currentTabs" :key="tab.key" type="button" role="tab" class="nav-tab"
-              :class="{ active: tab.to === route.path }" :aria-selected="tab.to === route.path"
-              @click="handleTabSelect(tab.to)">
-              {{ displayTitle(tab.labelKey) }}
-            </button>
-          </div>
         </div>
         <div class="header-right">
           <StatusBar />
@@ -92,6 +84,18 @@
       </el-header>
 
       <el-main class="layout-main">
+        <!-- 视图切换条：同一对象的多个视图（调用/熔断/部署…）。
+             放在内容区顶部而不是页头 —— 页头只有 60px 高，塞 3~5 段会和右侧操作区抢空间。 -->
+        <div v-if="currentTabs.length > 1" class="view-switch-bar">
+          <span class="view-switch-label">{{ t('layout.viewSwitch') }}</span>
+          <div class="nav-tabs" role="tablist">
+            <button v-for="tab in currentTabs" :key="tab.key" type="button" role="tab" class="nav-tab"
+              :class="{ active: tab.to === route.path }" :aria-selected="tab.to === route.path"
+              @click="handleTabSelect(tab.to)">
+              {{ displayTitle(tab.labelKey) }}
+            </button>
+          </div>
+        </div>
         <router-view :key="route.fullPath" />
       </el-main>
     </el-container>
@@ -107,9 +111,10 @@ import { useTheme } from '@/composables/useTheme'
 import { usePermission } from '@/composables/usePermission'
 import { useViewport } from '@/composables/useViewport'
 import {
-  menuGroups,
   findMenuEntry,
   findMenuTab,
+  isMenuItemView,
+  menuGroups,
   resolveMenuPath
 } from '@/config/menu'
 import type { MenuGroup, MenuItem } from '@/config/menu'
@@ -124,6 +129,7 @@ import {
   Key,
   Connection,
   DataAnalysis,
+  Cpu,
   Tools,
   Moon,
   Sunny,
@@ -238,6 +244,7 @@ const groupIconMap: Record<string, Component> = {
   house: House,
   'data-analysis': DataAnalysis,
   connection: Connection,
+  cpu: Cpu,
   setting: Setting,
   lock: Lock,
   user: User,
@@ -338,7 +345,7 @@ const handleTabSelect = async (to: string) => {
   }
 }
 
-// 处理菜单选择：进入该菜单项下「第一个当前用户有权限的 tab」，无权限则回退第一个 tab
+// 处理菜单选择：已在该项的某个视图上则原地不动；否则进入「第一个当前用户有权限的 tab」
 const handleMenuSelect = async (index: string) => {
   // 防止快速连续点击
   if (isNavigating.value) {
@@ -346,6 +353,14 @@ const handleMenuSelect = async (index: string) => {
   }
 
   const item = findItemByPath(index)
+
+  // 已经停在这个菜单项的任一视图上：保持当前视图，不要弹回第一个。
+  // 「AI 试验场」有 5 个视图，此前从「图像服务」点侧栏会被打回「对话测试」，
+  // 看起来像菜单点不动，实际是被重置了。
+  if (item && isMenuItemView(item, route.path)) {
+    return
+  }
+
   const target = item ? resolveLandingPath(item) : index
 
   // 如果已经在目标路由，不进行跳转
@@ -566,28 +581,62 @@ const handleUserCommand = async (command: string) => {
   display: block;
 }
 
+/* 两列 grid：面包屑 | 操作区。视图切换条已下移到内容区顶部（见 .view-switch-bar），
+   页头只留全局操作，任何页面都不会被多段切换条撑满。 */
 .layout-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+  column-gap: 16px;
   background-color: var(--ja-bg-page);
   border-bottom: 1px solid var(--ja-border);
   padding: 0 20px;
 }
 
-/* 面包屑 + tab 切换条同排：多 tab 项才出现切换条，单 tab 项视觉不变 */
+/* 面包屑：单行不换行，超长时裁切，避免把中间列挤偏 */
 .header-left {
+  grid-column: 1;
   display: flex;
   align-items: center;
   gap: 16px;
   min-width: 0;
+  overflow: hidden;
+}
+
+.header-left :deep(.el-breadcrumb) {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* 内容区顶部的视图切换条：铺满内容区宽度、滚动时吸顶 */
+.view-switch-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 -20px 16px;
+  padding: 12px 20px;
+  background: var(--ja-main-bg);
+  border-bottom: 1px solid var(--ja-border);
+}
+
+.view-switch-label {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--ja-ink-3);
 }
 
 /* 右侧操作区：语言 / 主题 / 账户三项固定不换行，窄屏时由左侧 tab 让位 */
+/* 显式指定第 3 列：单视图页没有中间列（v-if 不渲染），
+   若靠 grid 自动排布，右侧操作区会掉进第 2 列贴着面包屑，右半边空一大块。 */
 .header-right {
+  grid-column: 2;
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-self: end;
   flex: 0 0 auto;
 }
 
@@ -595,8 +644,15 @@ const handleUserCommand = async (command: string) => {
    语言/主题/账户区，这里只保留 tab 切换条；路由位置由 tab 与侧栏高亮表达。 */
 @media (max-width: 767px) {
   .layout-header {
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 0 12px;
-    gap: 8px;
+    column-gap: 8px;
+  }
+
+  .view-switch-bar {
+    margin: 0 -12px 12px;
+    padding: 10px 12px;
+    overflow-x: auto;
   }
 
   .header-left :deep(.el-breadcrumb) {
@@ -609,14 +665,25 @@ const handleUserCommand = async (command: string) => {
   }
 
   .nav-tabs {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    min-width: 0;
   }
 }
 
+/* 视图切换（分段控件）：一个菜单项下的多视图（调用记录 / 调用统计、部署三视图）
+   在这里切换。第一版做成「文字 + 下划线」太安静，运维第一次几乎发现不了它，
+   所以改成看得见的分段槽：容器有底与边框，选中项抬成一张小卡片，
+   并在左侧用「切换视图」说明它不是二级导航。 */
 .nav-tabs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 3px;
+  background: var(--ja-surface-2);
+  border: 1px solid var(--ja-border);
+  border-radius: 8px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -627,25 +694,33 @@ const handleUserCommand = async (command: string) => {
 
 .nav-tab {
   flex: 0 0 auto;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: transparent;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
   font-size: 13px;
   line-height: 1;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 5px 12px;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  white-space: nowrap;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
 }
 
 .nav-tab:hover {
-  background-color: var(--el-fill-color-light);
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
+}
+
+.nav-tab:focus-visible {
+  outline: 2px solid var(--ja-accent);
+  outline-offset: 1px;
 }
 
 .nav-tab.active {
-  background-color: var(--ja-primary);
-  color: #fff;
+  background: var(--ja-segment-active);
+  border-color: var(--ja-border);
+  box-shadow: var(--ja-shadow-sm);
+  color: var(--ja-ink);
+  font-weight: 600;
 }
 
 .sidebar-toggle {

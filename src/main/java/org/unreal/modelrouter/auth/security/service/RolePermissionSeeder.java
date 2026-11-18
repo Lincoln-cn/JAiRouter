@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * {@link PermissionRule#permissionCode()}，使后续版本新增权限码并登记 URL 规则后，
  * 已初始化部署不再因种子跳过而静默失去访问（#144）。
  *
- * <p>角色模板（权限码共 76 个，以实现 {@link PermissionCodes} 为准）：
+ * <p>角色模板（权限码共 79 个，以实现 {@link PermissionCodes} 为准）：
  * <ul>
  *   <li>ADMIN：全量权限码（超集，兼容现有 ADMIN）</li>
  *   <li>OPERATOR：所有 :read + :write（排除 system:* / security:*:manage / actuator:*）</li>
@@ -158,7 +158,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
      */
     private void reconcileUntouchedRoles() {
         Set<String> requiredByRules = permissionRuleRegistry.getRules().stream()
-                .map(PermissionRule::permissionCode)
+                .flatMap(rule -> rule.permissionCodes().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         Map<String, Set<String>> heldByRole = rolePermissionRepository
@@ -243,6 +243,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
         templates.put("OPERATOR", operatorCodes());
         templates.put("USER", userCodes());
         templates.put("VIEWER", viewerCodes());
+        templates.put(AUDITOR_ROLE, auditorCodes());
         templates.put(SLA_READONLY_ROLE, slaReadonlyCodes());
         templates.put(SLA_OPERATOR_ROLE, slaOperatorCodes());
         return Collections.unmodifiableMap(templates);
@@ -259,6 +260,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
     private static List<String> operatorCodes() {
         List<String> base = PermissionCodes.ALL_PERMISSION_CODES.stream()
                 .filter(code -> code.endsWith(":read") || code.endsWith(":write"))
+                .filter(code -> !code.contains(":self:"))
                 .filter(code -> !code.startsWith("system:"))
                 .filter(code -> !code.startsWith("actuator:"))
                 .filter(code -> !(code.startsWith("security:") && code.endsWith(":manage")))
@@ -293,6 +295,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.CB_MONITORING_READ,
                 PermissionCodes.CB_HISTORY_READ,
                 PermissionCodes.RL_MONITORING_READ,
+                PermissionCodes.CALLHISTORY_SELF_READ,
                 PermissionCodes.MONITORING_METRICS_READ,
                 PermissionCodes.MONITORING_SLOWQUERY_READ,
                 PermissionCodes.MONITORING_TOKENUSAGE_READ,
@@ -312,6 +315,15 @@ public class RolePermissionSeeder implements ApplicationRunner {
     }
 
     /** SLA 只读角色名（外部巡检工具的运行主体，issue #1174）。 */
+    /**
+     * 第三方审计角色（issue #1183）。
+     *
+     * <p>用户明确要求「给第三方用就严格一点」⇒ 只给三件：能看概览、能查审计事件、能看管理操作记录。
+     * <b>不含</b>调用记录明细（那是业务数据，不是审计证据）、不含任何写码、不含配置读码、
+     * 不含密钥/会话/黑名单等安全对象的读码。
+     */
+    public static final String AUDITOR_ROLE = "AUDITOR";
+
     public static final String SLA_READONLY_ROLE = "SLA_READONLY";
 
     /** SLA 运维角色名（只读 + 配置写，供升级后回归与场景编排使用，issue #1174）。 */
@@ -411,7 +423,24 @@ public class RolePermissionSeeder implements ApplicationRunner {
         return PermissionCodes.ALL_PERMISSION_CODES.stream()
                 .filter(code -> code.endsWith(":read"))
                 .filter(code -> !MANAGE_PAIRED_READ_CODES.contains(code))
-                .filter(code -> !PermissionCodes.CALLHISTORY_READ.equals(code))
+                // 本人读码是给「只能看自己」的角色用的；VIEWER 已有全局读码，不需要
+                .filter(code -> !code.contains(":self:"))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * AUDITOR：第三方审计最小集（严格只读）。
+     *
+     * <p>只含三码 —— 概览（知道平台活着）、审计事件（{@code security:audit:read}）、
+     * 管理操作记录（{@code monitoring:console:read}）。刻意不给：
+     * 调用记录（含请求/响应正文风险）、任何 {@code config:*:read}（能看到业务配置就等于能看到上游地址与密钥前缀）、
+     * 任何写码。加码属于对外授权面变更，需要单独评审。
+     */
+    private static List<String> auditorCodes() {
+        return List.of(
+                PermissionCodes.OVERVIEW_DASHBOARD_READ,
+                PermissionCodes.SECURITY_AUDIT_READ,
+                PermissionCodes.MONITORING_CONSOLE_READ
+        );
     }
 }

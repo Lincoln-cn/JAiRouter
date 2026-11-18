@@ -1,9 +1,17 @@
 package org.unreal.modelrouter.monitor.callhistory;
 
+import org.unreal.modelrouter.auth.security.permission.DataScope;
+import org.unreal.modelrouter.persistence.jpa.repository.spec.ApiCallHistorySpecifications;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,6 +97,21 @@ public class ApiCallHistoryService {
      */
     @Transactional(readOnly = true)
     public Page<ApiCallHistoryEntity> query(CallHistoryQueryDTO query) {
+        return query(query, DataScope.unrestricted());
+    }
+
+    /**
+     * 分页查询，带数据面归属范围。
+     *
+     * <p>{@code scope} 受限时只返回「本人」的记录（userId 命中或密钥属于本人），
+     * 并在同一处覆盖前端传入的 userId，避免出现「前端传别人 id 就能看别人数据」的越权。</p>
+     *
+     * @param query 查询条件
+     * @param scope 数据面范围
+     * @return 分页结果
+     */
+    @Transactional(readOnly = true)
+    public Page<ApiCallHistoryEntity> query(final CallHistoryQueryDTO query, final DataScope scope) {
         LocalDateTime startTime = parseTime(query.getStartTime());
         LocalDateTime endTime = parseTime(query.getEndTime());
 
@@ -116,7 +139,10 @@ public class ApiCallHistoryService {
                         query.getServiceType(),
                         query.getApiKeyId(),
                         query.getIsSuccess(),
-                        query.getHttpStatusCode()),
+                        query.getHttpStatusCode(),
+                        // 受限主体强制用服务端解析的账号名，忽略前端传的 userId，避免越权查询
+                        scope.filterByUser() ? scope.userId() : query.getUserId(),
+                        scope.filterByKeys() ? scope.apiKeyIds() : null),
                 pageRequest);
     }
 
@@ -137,6 +163,65 @@ public class ApiCallHistoryService {
      * @param limit 最大数量
      * @return 调用记录列表
      */
+    /**
+     * 最近调用，带数据面范围。
+     *
+     * @param limit 最大数量
+     * @param scope 数据面范围
+     * @return 记录列表
+     */
+    @Transactional(readOnly = true)
+    public List<ApiCallHistoryEntity> findRecent(final int limit, final DataScope scope) {
+        return findScoped(ApiCallHistorySpecifications.withFilters(null, null, null, null, null, null, null,
+                scope.filterByUser() ? scope.userId() : null,
+                scope.filterByKeys() ? scope.apiKeyIds() : null), limit);
+    }
+
+    /**
+     * 失败调用，带数据面范围。
+     *
+     * @param startTime 起始时间
+     * @param endTime   结束时间
+     * @param limit     最大数量
+     * @param scope     数据面范围
+     * @return 记录列表
+     */
+    @Transactional(readOnly = true)
+    public List<ApiCallHistoryEntity> findErrors(final LocalDateTime startTime, final LocalDateTime endTime,
+                                                 final int limit, final DataScope scope) {
+        return findScoped(ApiCallHistorySpecifications.errors(startTime, endTime)
+                .and(ApiCallHistorySpecifications.ownership(
+                        scope.filterByUser() ? scope.userId() : null,
+                        scope.filterByKeys() ? scope.apiKeyIds() : null)), limit);
+    }
+
+    /**
+     * 慢调用，带数据面范围。
+     *
+     * @param threshold 阈值毫秒
+     * @param startTime 起始时间
+     * @param endTime   结束时间
+     * @param limit     最大数量
+     * @param scope     数据面范围
+     * @return 记录列表
+     */
+    @Transactional(readOnly = true)
+    public List<ApiCallHistoryEntity> findSlowCalls(final Long threshold, final LocalDateTime startTime,
+                                                    final LocalDateTime endTime, final int limit,
+                                                    final DataScope scope) {
+        return findScoped(ApiCallHistorySpecifications.slowCalls(threshold, startTime, endTime)
+                .and(ApiCallHistorySpecifications.ownership(
+                        scope.filterByUser() ? scope.userId() : null,
+                        scope.filterByKeys() ? scope.apiKeyIds() : null)), limit);
+    }
+
+    private List<ApiCallHistoryEntity> findScoped(final Specification<ApiCallHistoryEntity> spec,
+                                                  final int limit) {
+        final PageRequest pageRequest = PageRequest.of(0, Math.max(1, Math.min(limit, 200)),
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        return repository.findAll(spec, pageRequest).getContent();
+    }
+
     @Transactional(readOnly = true)
     public List<ApiCallHistoryEntity> findRecent(int limit) {
         PageRequest pageRequest = PageRequest.of(0, Math.min(limit, 100),
@@ -191,6 +276,173 @@ public class ApiCallHistoryService {
      */
     @Transactional(readOnly = true)
     public CallHistoryStatisticsDTO getStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+        // 曾经这里委托 3 参重载、3 参在 unrestricted 时又委托回 2 参 ⇒ 无限递归（StackOverflowError）。
+        // 全局聚合只有一个实现（getStatisticsGlobal），两个入口都直接调它。
+        return getStatisticsGlobal(startTime, endTime);
+    }
+
+    /**
+     * 统计信息，带数据面归属范围。
+     *
+     * <p>全局读走原有的聚合查询；「本人读」走窗口内记录的内存聚合（上限 {@value #SELF_SCOPE_MAX_ROWS} 行）。
+     * 之所以不把八个 {@code @Query} 聚合全部加参数：那要改 8 条 JPQL、且每条都要重复一遍归属条件，
+     * 改动面与出错概率都远大于按需拉一份个人记录在内存里聚合。数据量上界由常量兜住，超出部分截断并记日志。</p>
+     *
+     * @param startTime 起始时间
+     * @param endTime   结束时间
+     * @param scope     数据面范围
+     * @return 统计结果
+     */
+    @Transactional(readOnly = true)
+    public CallHistoryStatisticsDTO getStatistics(final LocalDateTime startTime,
+                                                  final LocalDateTime endTime,
+                                                  final DataScope scope) {
+        if (!scope.restricted()) {
+            return getStatisticsGlobal(startTime, endTime);
+        }
+        final LocalDateTime effectiveStart = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
+        final LocalDateTime effectiveEnd = endTime != null ? endTime : LocalDateTime.now();
+        final List<ApiCallHistoryEntity> rows = repository.findAll(
+                ApiCallHistorySpecifications.withFilters(effectiveStart, effectiveEnd, null, null, null, null, null,
+                        scope.filterByUser() ? scope.userId() : null,
+                        scope.filterByKeys() ? scope.apiKeyIds() : null),
+                PageRequest.of(0, SELF_SCOPE_MAX_ROWS, Sort.by(Sort.Direction.ASC, "createdAt")))
+                .getContent();
+        if (rows.size() >= SELF_SCOPE_MAX_ROWS) {
+            log.warn("本人读统计达到上限 {} 行，结果按前 N 行计算：user={}", SELF_SCOPE_MAX_ROWS, scope.userId());
+        }
+        return aggregateInMemory(rows, effectiveStart, effectiveEnd);
+    }
+
+    private CallHistoryStatisticsDTO aggregateInMemory(final List<ApiCallHistoryEntity> rows,
+                                                       final LocalDateTime startTime,
+                                                       final LocalDateTime endTime) {
+        final long total = rows.size();
+        final long success = rows.stream().filter(row -> Boolean.TRUE.equals(row.getIsSuccess())).count();
+        final long tokens = rows.stream().mapToLong(row -> row.getTotalTokens() == null ? 0L : row.getTotalTokens()).sum();
+        final double avgResponse = rows.stream()
+                .mapToDouble(row -> row.getResponseTimeMs() == null ? 0D : row.getResponseTimeMs())
+                .average().orElse(0D);
+        final CallHistoryStatisticsDTO dto = CallHistoryStatisticsDTO.builder()
+                .startTime(startTime.format(FORMATTER))
+                .endTime(endTime.format(FORMATTER))
+                .totalRequests(total)
+                .successfulRequests(success)
+                .failedRequests(total - success)
+                .successRate(total == 0 ? 0D : (double) success / total * 100)
+                .totalTokens(tokens)
+                .avgResponseTimeMs(avgResponse)
+                .avgTokensPerRequest(total == 0 ? 0D : (double) tokens / total)
+                .byModel(groupByModel(rows))
+                .byServiceType(groupByServiceType(rows))
+                .byDay(groupByDay(rows))
+                .byHour(groupByHour(rows))
+                .byStatusCode(groupByStatusCode(rows))
+                .byErrorCode(groupByErrorCode(rows))
+                .build();
+        return dto;
+    }
+
+    private static List<CallHistoryStatisticsDTO.ModelStats> groupByModel(final List<ApiCallHistoryEntity> rows) {
+        return rows.stream()
+                .collect(Collectors.groupingBy(row -> nullSafe(row.getModelName())))
+                .entrySet().stream()
+                .map(entry -> {
+                    final List<ApiCallHistoryEntity> group = entry.getValue();
+                    final long groupSuccess = group.stream().filter(row -> Boolean.TRUE.equals(row.getIsSuccess())).count();
+                    return CallHistoryStatisticsDTO.ModelStats.builder()
+                            .modelName(entry.getKey())
+                            .requestCount((long) group.size())
+                            .totalTokens(group.stream().mapToLong(row -> row.getTotalTokens() == null ? 0L : row.getTotalTokens()).sum())
+                            .avgResponseTimeMs(group.stream().mapToDouble(row -> row.getResponseTimeMs() == null ? 0D : row.getResponseTimeMs()).average().orElse(0D))
+                            .successCount(groupSuccess)
+                            .successRate((double) groupSuccess / group.size() * 100)
+                            .build();
+                })
+                .sorted(Comparator.comparing(CallHistoryStatisticsDTO.ModelStats::getRequestCount).reversed())
+                .toList();
+    }
+
+    private static List<CallHistoryStatisticsDTO.ServiceTypeStats> groupByServiceType(final List<ApiCallHistoryEntity> rows) {
+        return rows.stream()
+                .collect(Collectors.groupingBy(row -> nullSafe(row.getServiceType())))
+                .entrySet().stream()
+                .map(entry -> CallHistoryStatisticsDTO.ServiceTypeStats.builder()
+                        .serviceType(entry.getKey())
+                        .requestCount((long) entry.getValue().size())
+                        .totalTokens(entry.getValue().stream().mapToLong(row -> row.getTotalTokens() == null ? 0L : row.getTotalTokens()).sum())
+                        .avgResponseTimeMs(entry.getValue().stream().mapToDouble(row -> row.getResponseTimeMs() == null ? 0D : row.getResponseTimeMs()).average().orElse(0D))
+                        .build())
+                .sorted(Comparator.comparing(CallHistoryStatisticsDTO.ServiceTypeStats::getRequestCount).reversed())
+                .toList();
+    }
+
+    private static List<CallHistoryStatisticsDTO.DailyStats> groupByDay(final List<ApiCallHistoryEntity> rows) {
+        return rows.stream()
+                .filter(row -> row.getCreatedAt() != null)
+                .collect(Collectors.groupingBy(row -> row.getCreatedAt().toLocalDate().toString()))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> CallHistoryStatisticsDTO.DailyStats.builder()
+                        .date(entry.getKey())
+                        .requestCount((long) entry.getValue().size())
+                        .totalTokens(entry.getValue().stream().mapToLong(row -> row.getTotalTokens() == null ? 0L : row.getTotalTokens()).sum())
+                        .build())
+                .toList();
+    }
+
+    private static List<CallHistoryStatisticsDTO.HourlyStats> groupByHour(final List<ApiCallHistoryEntity> rows) {
+        final Map<Integer, Long> counts = new TreeMap<>();
+        for (ApiCallHistoryEntity row : rows) {
+            if (row.getCreatedAt() != null) {
+                counts.merge(row.getCreatedAt().getHour(), 1L, Long::sum);
+            }
+        }
+        return counts.entrySet().stream()
+                .map(entry -> CallHistoryStatisticsDTO.HourlyStats.builder()
+                        .hour(entry.getKey())
+                        .label(String.format("%02d:00", entry.getKey()))
+                        .requestCount(entry.getValue())
+                        .build())
+                .toList();
+    }
+
+    private static List<CallHistoryStatisticsDTO.StatusCodeStats> groupByStatusCode(final List<ApiCallHistoryEntity> rows) {
+        return rows.stream()
+                .filter(row -> row.getHttpStatusCode() != null)
+                .collect(Collectors.groupingBy(ApiCallHistoryEntity::getHttpStatusCode, TreeMap::new, Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> CallHistoryStatisticsDTO.StatusCodeStats.builder()
+                        .statusCode(entry.getKey())
+                        .count(entry.getValue())
+                        .build())
+                .toList();
+    }
+
+    private static List<CallHistoryStatisticsDTO.ErrorCodeStats> groupByErrorCode(final List<ApiCallHistoryEntity> rows) {
+        return rows.stream()
+                .filter(row -> row.getErrorCode() != null && !row.getErrorCode().isBlank())
+                .collect(Collectors.groupingBy(ApiCallHistoryEntity::getErrorCode, Collectors.counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .map(entry -> CallHistoryStatisticsDTO.ErrorCodeStats.builder()
+                        .errorCode(entry.getKey())
+                        .count(entry.getValue())
+                        .build())
+                .toList();
+    }
+
+    private static String nullSafe(final String value) {
+        return value == null || value.isBlank() ? "unknown" : value;
+    }
+
+    /**
+     * 本人读统计的行数上限：个人记录量级远小于全局，超过说明样本不典型，截断并告警。
+     */
+    private static final int SELF_SCOPE_MAX_ROWS = 5000;
+
+    @Transactional(readOnly = true)
+    public CallHistoryStatisticsDTO getStatisticsGlobal(LocalDateTime startTime, LocalDateTime endTime) {
         // 默认查询最近7天
         LocalDateTime effectiveStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();

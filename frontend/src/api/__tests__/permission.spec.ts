@@ -19,7 +19,7 @@ import en from '@/locales/en-US/permissions.json'
 
 const ACTIONS = ['read', 'view', 'write', 'manage', 'use']
 /** 后端 PermissionCodes.ALL_PERMISSION_CODES 的当前规模（#1176 新增 security:loginguard:read/manage 后 76） */
-const EXPECTED_TOTAL = 76
+const EXPECTED_TOTAL = 79
 
 interface SplitCode {
   module: string
@@ -30,10 +30,14 @@ interface SplitCode {
 function splitCode(code: string): SplitCode {
   const segments = code.split(':')
   const last = segments[segments.length - 1]
-  const action = ACTIONS.includes(last) ? last : ''
   const module = segments[0]
+  // #1183：本人读码是「module:resource:self:read」四段，action 是复合的 self:read，
+  // 不能把 self 当成资源名（否则权限树里会冒出「self」这种无意义节点）
+  const selfScoped = segments.includes('self')
+  const action = ACTIONS.includes(last) ? (selfScoped ? `self:${last}` : last) : ''
+  const tailStart = selfScoped ? -2 : -1
   const resource = action
-    ? segments.slice(1, -1).join(':') || module
+    ? segments.slice(1, tailStart).join(':') || module
     : segments.slice(1).join(':') || module
   return { module, resource, action }
 }
@@ -44,7 +48,7 @@ const localeWordMaps = [
 ] as const
 
 describe('permission codes wiring', () => {
-  it('covers all 76 backend permission codes exactly once', () => {
+  it('covers all 79 backend permission codes exactly once', () => {
     expect(ALL_PERMISSION_CODES).toHaveLength(EXPECTED_TOTAL)
     expect(new Set(ALL_PERMISSION_CODES).size).toBe(EXPECTED_TOTAL)
   })

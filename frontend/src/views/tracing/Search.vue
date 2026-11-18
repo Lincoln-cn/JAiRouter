@@ -43,6 +43,7 @@
               :placeholder="t('tracing.search.serviceNamePlaceholder')"
               clearable
               filterable
+              :no-data-text="t('tracing.search.serviceNameEmpty')"
             >
               <el-option
                 v-for="service in availableServices"
@@ -316,9 +317,7 @@ import type { TraceSearchParams } from '@/api/tracing'
 import type {
   TraceChainResponse,
   TraceSearchResult,
-  TraceSpan,
-  TracingServiceListResult,
-  TracingServiceStat
+  TraceSpan
 } from '@/types/tracing'
 import ListPageLayout from '@/components/ListPageLayout.vue'
 import FilterBar from '@/components/FilterBar.vue'
@@ -326,6 +325,7 @@ import TimeText from '@/components/TimeText.vue'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
+import { FALLBACK_SERVICE_OPTIONS, normalizeServiceOptions } from './serviceOptions'
 
 const { getChartTheme } = useChartTheme()
 const { t } = useI18n()
@@ -858,18 +858,13 @@ const getTraceChainChartOption = () => {
 const loadAvailableServices = async () => {
   try {
     const response = await getServiceStats()
-    const data = (response.data?.data || response.data) as TraceSearchResult | TraceSpan[] | undefined
-
-    if (Array.isArray(data)) {
-      availableServices.value = (data as TracingServiceStat[]).map((item) => item.serviceName || '')
-    } else if (!Array.isArray(data) && (data as TracingServiceListResult).services) {
-      availableServices.value = (data as TracingServiceListResult).services || []
-    } else {
-      availableServices.value = ['jairouter', 'model-adapter-service', 'load-balancer-service', 'rate-limiter-service']
-    }
+    const data = response.data?.data ?? response.data
+    const options = normalizeServiceOptions(data)
+    // 后端重启/追踪关闭时会返回空列表：这时给一组已知服务名兜底，避免下拉变成空白。
+    availableServices.value = options.length > 0 ? options : [...FALLBACK_SERVICE_OPTIONS]
   } catch (error) {
     console.error('加载服务列表失败:', error)
-    availableServices.value = ['jairouter-gateway', 'model-adapter-service', 'load-balancer-service', 'rate-limiter-service']
+    availableServices.value = [...FALLBACK_SERVICE_OPTIONS]
   }
 }
 

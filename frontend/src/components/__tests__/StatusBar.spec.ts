@@ -5,6 +5,9 @@
  * 60s 轮询、页面隐藏暂停 / 恢复立即刷新、卸载 abort、窄屏不显示文字。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import type { Pinia } from 'pinia'
+import { useUserStore } from '@/stores/user'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
@@ -51,9 +54,14 @@ const i18n = createI18n({
 
 const ok = <T>(data: T) => Promise.resolve({ data })
 
-const mountBar = () =>
+/**
+ * StatusBar 现在按权限决定要不要发请求（缺码不发，否则浏览器会对 403 打红字），
+ * 所以 usePermission → userStore 需要 pinia 在场；权限相关用例要把**同一个** pinia
+ * 传进来，否则 store 与组件挂的不是一个实例，spy 不生效。
+ */
+const mountBar = (pinia: Pinia = createPinia()) =>
   mount(StatusBar, {
-    global: { plugins: [i18n], stubs: { 'el-icon': true } }
+    global: { plugins: [i18n, pinia], stubs: { 'el-icon': true } }
   })
 
 const instances = (states: string[]) => ok(states.map(state => ({ state })))
@@ -235,5 +243,30 @@ describe('StatusBar', () => {
 
     expect(wrapper.find('.status-bar__label').exists()).toBe(false)
     expect(wrapper.find('.status-bar__pill--breakers').text()).toContain('1')
+  })
+
+  it('缺熔断读权限时不请求该端点（避免 403 在控制台刷红字）', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const store = useUserStore()
+    vi.spyOn(store, 'hasPermission').mockImplementation(
+      (code?: string) => code === 'monitoring:exceptions:read'
+    )
+    wrapper = mountBar(pinia)
+    await flushPromises()
+    const urls = mocks.get.mock.calls.map(call => String(call[0]))
+    expect(urls).toContain('/exceptions/statistics')
+    expect(urls.some(url => url.includes('circuit-breaker-monitor'))).toBe(false)
+  })
+
+  it('两个读权限都缺时不发任何请求、整条不渲染', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const store = useUserStore()
+    vi.spyOn(store, 'hasPermission').mockReturnValue(false)
+    wrapper = mountBar(pinia)
+    await flushPromises()
+    expect(mocks.get).not.toHaveBeenCalled()
+    expect(wrapper.find('.status-bar').exists()).toBe(false)
   })
 })
