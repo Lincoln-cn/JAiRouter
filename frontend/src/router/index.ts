@@ -538,7 +538,8 @@ const router = createRouter({
           path: 'token-usage',
           name: 'call-history-token-usage',
           component: () => import('../views/callHistory/TokenUsageStatistics.vue'),
-          meta: { titleKey: 'route.callHistoryTokenUsage', icon: 'DataAnalysis', permissions: ['monitoring:tokenusage:read', 'monitoring:quota:read'] }
+          // #1185：持「本人读」码的账号（USER）也能进，后端按 DataScope 只返回自己的用量
+          meta: { titleKey: 'route.callHistoryTokenUsage', icon: 'DataAnalysis', permissions: ['monitoring:tokenusage:read', 'monitoring:tokenusage:self:read', 'monitoring:quota:read'] }
         }
       ]
     },

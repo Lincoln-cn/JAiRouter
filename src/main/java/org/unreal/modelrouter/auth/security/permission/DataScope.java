@@ -53,4 +53,21 @@ public record DataScope(boolean restricted, String userId, Set<String> apiKeyIds
     public boolean filterByKeys() {
         return restricted && !apiKeyIds.isEmpty();
     }
+
+    /**
+     * 判断一条记录是否落在当前范围内 —— {@code userId} 命中<b>或</b> {@code apiKeyId} 在本人密钥集合里。
+     *
+     * @param ownerUserId   记录上的 {@code userId}
+     * @param ownerApiKeyId 记录上的 {@code apiKeyId}
+     * @return 不受限时恒为 {@code true}
+     */
+    public boolean owns(final String ownerUserId, final String ownerApiKeyId) {
+        if (!restricted) {
+            return true;
+        }
+        if (filterByUser() && userId.equals(ownerUserId)) {
+            return true;
+        }
+        return ownerApiKeyId != null && apiKeyIds.contains(ownerApiKeyId);
+    }
 }

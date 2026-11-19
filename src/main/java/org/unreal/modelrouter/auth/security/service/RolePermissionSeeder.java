@@ -96,6 +96,19 @@ public class RolePermissionSeeder implements ApplicationRunner {
     private static final Set<String> MANAGE_PAIRED_READ_CODES = MANAGE_PAIRED_READ_TO_WRITE.keySet();
 
     /**
+     * 角色模板撤销清单：模板里已经删掉、但存量库里可能还持有的权限码（#1185）。
+     *
+     * <p>为什么需要单独一张清单：{@link #reconcileUntouchedRoles()} 的既有契约是「只增不删」，
+     * 持有模板外权限码的角色会被判成「手工定制」而整角色跳过收敛。若模板删码后不主动回收，
+     * 从旧版本升级上来的库会继续让 USER 持有全局 {@code monitoring:tokenusage:read}
+     * 与 {@code monitoring:exceptions:read}，表现为「改完之后 USER 仍然看得到全平台用量」。</p>
+     */
+    private static final Map<String, Set<String>> REVOKED_BY_ROLE = Map.of(
+            "USER", Set.of(
+                    PermissionCodes.MONITORING_TOKENUSAGE_READ,
+                    PermissionCodes.MONITORING_EXCEPTIONS_READ));
+
+    /**
      * 默认角色模板：角色名（大写）→ 权限码列表（顺序同 {@link PermissionCodes#ALL_PERMISSION_CODES}）。
      * 供种子写入与权限管理 API 校验角色名合法性使用。
      */
@@ -157,6 +170,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
      * 对未被手工定制的角色做增量补种：只插入 {@code 模板 ∩ 规则所需 − 已持有}，绝不删除或修改既有行。
      */
     private void reconcileUntouchedRoles() {
+        int revokedCount = revokeRetiredCodes();
         Set<String> requiredByRules = permissionRuleRegistry.getRules().stream()
                 .flatMap(rule -> rule.permissionCodes().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -223,8 +237,35 @@ public class RolePermissionSeeder implements ApplicationRunner {
             rolePermissionRepository.saveAll(toInsert);
             rolePermissionService.invalidateCache();
         }
-        log.info("RolePermissionSeeder: 增量收敛完成，补种 {} 条；跳过手工定制 {} 个角色、首次播种 {} 个角色、已齐备 {} 个角色",
-                toInsert.size(), skippedCustomized, seededNewRoles, alreadyCurrent);
+        log.info("RolePermissionSeeder: 增量收敛完成，补种 {} 条、回收 {} 条；跳过手工定制 {} 个角色、首次播种 {} 个角色、已齐备 {} 个角色",
+                toInsert.size(), revokedCount, skippedCustomized, seededNewRoles, alreadyCurrent);
+    }
+
+    /**
+     * 回收角色模板已撤销的权限码（#1185）。
+     *
+     * <p>必须在「手工定制」判定之前执行：否则这些过期码会让角色被判为定制、整角色跳过收敛，
+     * 模板改动在存量库上等于没生效。</p>
+     *
+     * @return 被回收的行数
+     */
+    private int revokeRetiredCodes() {
+        int removed = 0;
+        for (Map.Entry<String, Set<String>> entry : REVOKED_BY_ROLE.entrySet()) {
+            for (String code : entry.getValue()) {
+                int deleted = (int) rolePermissionRepository
+                        .deleteByRoleNameAndPermissionCode(entry.getKey(), code);
+                removed += deleted;
+                if (deleted > 0) {
+                    log.info("RolePermissionSeeder: 回收角色 {} 已撤销的权限码 {}（{} 条）",
+                            entry.getKey(), code, deleted);
+                }
+            }
+        }
+        if (removed > 0) {
+            rolePermissionService.invalidateCache();
+        }
+        return removed;
     }
 
     /**
@@ -298,7 +339,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.CALLHISTORY_SELF_READ,
                 PermissionCodes.MONITORING_METRICS_READ,
                 PermissionCodes.MONITORING_SLOWQUERY_READ,
-                PermissionCodes.MONITORING_TOKENUSAGE_READ,
+                PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ,
                 PermissionCodes.MONITORING_MODELSTATS_READ,
                 PermissionCodes.MONITORING_ROUTING_READ,
                 PermissionCodes.TRACING_DASHBOARD_READ,
@@ -309,7 +350,6 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.CONFIG_CLUSTER_READ,
                 PermissionCodes.CONFIG_HEALTH_READ,
                 PermissionCodes.MONITORING_QUOTA_READ,
-                PermissionCodes.MONITORING_EXCEPTIONS_READ,
                 PermissionCodes.MONITORING_CONSOLE_READ
         );
     }

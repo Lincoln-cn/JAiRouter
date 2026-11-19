@@ -20,13 +20,18 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.dto.TokenUsageRecordDTO;
 import org.unreal.modelrouter.monitor.dto.TokenUsageStatisticsDTO;
 import org.unreal.modelrouter.persistence.jpa.entity.TokenUsageEntity;
+import org.unreal.modelrouter.auth.security.permission.DataScope;
+import org.unreal.modelrouter.auth.security.permission.DataScopeResolver;
 import org.unreal.modelrouter.monitor.service.TokenUsageService;
+
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
@@ -46,6 +51,9 @@ class TokenUsageControllerTest {
     @Mock
     private TokenUsageService tokenUsageService;
 
+    @Mock
+    private DataScopeResolver dataScopeResolver;
+
     @InjectMocks
     private TokenUsageController controller;
 
@@ -55,6 +63,7 @@ class TokenUsageControllerTest {
 
     @BeforeEach
     void setUp() {
+        when(dataScopeResolver.resolveWithKeys(any(), any(), any())).thenReturn(Mono.just(DataScope.unrestricted()));
         testRecord = new TokenUsageRecordDTO();
         testRecord.setModelName("gpt-4");
         testRecord.setServiceType("chat");
@@ -241,10 +250,11 @@ class TokenUsageControllerTest {
         @DisplayName("TOKEN-003: 成功获取统计信息")
         void testGetTokenUsageStatistics_success() {
             // Given
-            when(tokenUsageService.getTokenUsageStatistics(any(), any())).thenReturn(testStats);
+            when(tokenUsageService.getTokenUsageStatistics(any(), any(), any())).thenReturn(testStats);
 
             // When
-            ResponseEntity<RouterResponse<TokenUsageStatisticsDTO>> result = controller.getTokenUsageStatistics(null, null);
+            ResponseEntity<RouterResponse<TokenUsageStatisticsDTO>> result =
+                    controller.getTokenUsageStatistics(null, null, mockAuth()).block();
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -263,14 +273,20 @@ class TokenUsageControllerTest {
         @DisplayName("TOKEN-004: 成功获取最近使用记录")
         void testGetRecentUsage_success() {
             // Given
-            when(tokenUsageService.getRecentUsage(20)).thenReturn(List.of(testEntity));
+            when(tokenUsageService.getRecentUsage(eq(20), any())).thenReturn(List.of(testEntity));
 
             // When
-            ResponseEntity<RouterResponse<List<TokenUsageEntity>>> result = controller.getRecentUsage(20);
+            ResponseEntity<RouterResponse<List<TokenUsageEntity>>> result =
+                    controller.getRecentUsage(20, mockAuth()).block();
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
             assertEquals(1, result.getBody().getData().size());
         }
+    }
+
+    /** 只用于打桩的认证对象：真实判定在 DataScopeResolver，这里被整块 stub。 */
+    private static Authentication mockAuth() {
+        return org.mockito.Mockito.mock(Authentication.class);
     }
 }
