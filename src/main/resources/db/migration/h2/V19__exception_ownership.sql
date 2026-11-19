@@ -1,0 +1,39 @@
+-- V19：异常事件补「归属」两列（issue #1189）
+--
+-- 背景：exception_events 一直没有「这条异常属于谁」，导致异常列表与异常统计无法按账号
+-- 切割 —— PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ 只能是死码（码表里有、没有
+-- 任何查询能按它过滤）。而异常本来就有归属：它是某个 API Key / 账号的请求触发的，
+-- api_call_history 里同一 trace_id 就记着 user_id 与 api_key_id。
+--
+-- 两步：
+--   1. 加两列（新异常由 ReactiveGlobalExceptionHandler 从 exchange 属性写入，
+--      该属性由 ServiceRequestHandler 在认证通过后写入）；
+--   2. 回填历史：按 trace_id 关联 api_call_history。同一 trace 可能有多行（重试/失败转移），
+--      取最早一行即可 —— 归属由调用主体决定，与第几次尝试无关。
+--      关联不上的行留空，这是事实上的「不知道属于谁」，不要瞎猜。
+--
+-- 幂等：H2 的两条路径（fresh 从 V1 起 / legacy 从既有快照起）可能一条已经带列，
+-- 所以列与索引都用 if not exists，重复执行不报错。
+alter table exception_events add column if not exists user_id varchar(255);
+alter table exception_events add column if not exists api_key_id varchar(255);
+
+update exception_events e
+   set user_id = (select h.user_id
+                    from api_call_history h
+                   where h.trace_id = e.trace_id
+                     and h.user_id is not null
+                   order by h.id
+                   limit 1)
+ where e.trace_id is not null;
+
+update exception_events e
+   set api_key_id = (select h.api_key_id
+                       from api_call_history h
+                      where h.trace_id = e.trace_id
+                        and h.api_key_id is not null
+                      order by h.id
+                      limit 1)
+ where e.trace_id is not null;
+
+create index if not exists idx_exception_user on exception_events (user_id);
+create index if not exists idx_exception_api_key on exception_events (api_key_id);

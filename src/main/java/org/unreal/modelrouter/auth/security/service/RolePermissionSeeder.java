@@ -106,7 +106,33 @@ public class RolePermissionSeeder implements ApplicationRunner {
     private static final Map<String, Set<String>> REVOKED_BY_ROLE = Map.of(
             "USER", Set.of(
                     PermissionCodes.MONITORING_TOKENUSAGE_READ,
-                    PermissionCodes.MONITORING_EXCEPTIONS_READ));
+                    PermissionCodes.MONITORING_EXCEPTIONS_READ,
+                    // 2026-11-20：USER 模板收窄，下列码在控制台里没有入口，一并从存量库回收
+                    PermissionCodes.OVERVIEW_DASHBOARD_READ,
+                    PermissionCodes.CONFIG_SERVICES_READ,
+                    PermissionCodes.CONFIG_INSTANCES_READ,
+                    PermissionCodes.CONFIG_VERSIONS_READ,
+                    PermissionCodes.CONFIG_PERSISTENCE_READ,
+                    PermissionCodes.CONFIG_ADAPTERS_READ,
+                    PermissionCodes.CONFIG_RULES_READ,
+                    PermissionCodes.CONFIG_POOLS_READ,
+                    PermissionCodes.CONFIG_CIRCUITBREAKER_READ,
+                    PermissionCodes.CONFIG_CALLHISTORY_READ,
+                    PermissionCodes.CONFIG_CACHE_READ,
+                    PermissionCodes.CONFIG_VALIDATION_READ,
+                    PermissionCodes.LB_CONFIG_READ,
+                    PermissionCodes.LB_CONFIG_WRITE,
+                    PermissionCodes.CB_HISTORY_READ,
+                    PermissionCodes.MONITORING_METRICS_READ,
+                    PermissionCodes.MONITORING_MODELSTATS_READ,
+                    PermissionCodes.MONITORING_ROUTING_READ,
+                    PermissionCodes.TRACING_DASHBOARD_READ,
+                    PermissionCodes.CONFIG_QUOTA_READ,
+                    PermissionCodes.CONFIG_RATELIMIT_READ,
+                    PermissionCodes.CONFIG_CLUSTER_READ,
+                    PermissionCodes.CONFIG_HEALTH_READ,
+                    PermissionCodes.MONITORING_QUOTA_READ,
+                    PermissionCodes.MONITORING_CONSOLE_READ));
 
     /**
      * 默认角色模板：角色名（大写）→ 权限码列表（顺序同 {@link PermissionCodes#ALL_PERMISSION_CODES}）。
@@ -316,41 +342,29 @@ public class RolePermissionSeeder implements ApplicationRunner {
      * USER：dashboard + config:*:read + lb/cb/rl + monitoring:*:read + tracing dashboard+search +
      * ai:playground:use（兼容现有 USER 默认集，开发计划2026 L1142）
      */
+    /**
+     * USER 模板：只保留「在控制台里有入口」的码。
+     *
+     * <p>历史包袱：早期 USER 还持有一批 {@code config:*:read} 与全局观测码，那时这些页面
+     * 对 USER 开放；信息架构治理把配置类页面收窄到 ADMIN / OPERATOR 之后，这些码就没有
+     * 任何页面能用了 —— 菜单进不去、后端也不该给他读配置的能力。权限管理页仍把它们算在
+     * USER 名下（34 个），与实际可见的 15 个菜单项对不上，2026-11-20 按用户裁定收窄。</p>
+     *
+     * <p>判定口径：菜单项的 {@code permission} 或对应路由的 {@code meta.permissions}
+     * 里出现过、且该菜单项的 audience 含 user。</p>
+     */
     private static List<String> userCodes() {
         return List.of(
-                PermissionCodes.OVERVIEW_DASHBOARD_READ,
-                PermissionCodes.CONFIG_SERVICES_READ,
-                PermissionCodes.CONFIG_INSTANCES_READ,
-                PermissionCodes.CONFIG_VERSIONS_READ,
-                PermissionCodes.CONFIG_PERSISTENCE_READ,
-                PermissionCodes.CONFIG_ADAPTERS_READ,
-                PermissionCodes.CONFIG_RULES_READ,
-                PermissionCodes.CONFIG_POOLS_READ,
-                PermissionCodes.CONFIG_CIRCUITBREAKER_READ,
-                PermissionCodes.CONFIG_CALLHISTORY_READ,
-                PermissionCodes.CONFIG_CACHE_READ,
-                PermissionCodes.CONFIG_VALIDATION_READ,
-                PermissionCodes.LB_MONITORING_READ,
-                PermissionCodes.LB_CONFIG_READ,
-                PermissionCodes.LB_CONFIG_WRITE,
-                PermissionCodes.CB_MONITORING_READ,
-                PermissionCodes.CB_HISTORY_READ,
-                PermissionCodes.RL_MONITORING_READ,
                 PermissionCodes.CALLHISTORY_SELF_READ,
-                PermissionCodes.MONITORING_METRICS_READ,
                 PermissionCodes.MONITORING_SLOWQUERY_READ,
-                PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ,
-                PermissionCodes.MONITORING_MODELSTATS_READ,
-                PermissionCodes.MONITORING_ROUTING_READ,
-                PermissionCodes.TRACING_DASHBOARD_READ,
                 PermissionCodes.TRACING_SEARCH_READ,
-                PermissionCodes.AI_PLAYGROUND_USE,
-                PermissionCodes.CONFIG_QUOTA_READ,
-                PermissionCodes.CONFIG_RATELIMIT_READ,
-                PermissionCodes.CONFIG_CLUSTER_READ,
-                PermissionCodes.CONFIG_HEALTH_READ,
-                PermissionCodes.MONITORING_QUOTA_READ,
-                PermissionCodes.MONITORING_CONSOLE_READ
+                // #1189 之后异常事件带归属两列，「本人读」码不再是死码
+                PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ,
+                PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ,
+                PermissionCodes.LB_MONITORING_READ,
+                PermissionCodes.RL_MONITORING_READ,
+                PermissionCodes.CB_MONITORING_READ,
+                PermissionCodes.AI_PLAYGROUND_USE
         );
     }
 

@@ -65,6 +65,12 @@ public final class ExceptionEventDTO {
      */
     private String traceId;
 
+    /** 触发该异常的账号（#1189）；API Key 调用可能只有 apiKeyId。 */
+    private String userId;
+
+    /** 触发该异常的 API Key（#1189）。 */
+    private String apiKeyId;
+
     /**
      * 客户端 IP
      */

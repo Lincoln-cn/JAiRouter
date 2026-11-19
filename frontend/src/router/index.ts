@@ -431,7 +431,7 @@ const router = createRouter({
           path: 'list',
           name: 'exception-list',
           component: () => import('../views/exception/ExceptionManagement.vue'),
-          meta: { titleKey: 'route.exceptionList', icon: 'warning', permissions: ['monitoring:exceptions:read'] }
+          meta: { titleKey: 'route.exceptionList', icon: 'warning', permissions: ['monitoring:exceptions:read', 'monitoring:exceptions:self:read'] }
         },
         {
           path: 'detail/:id',
@@ -443,7 +443,7 @@ const router = createRouter({
           path: 'statistics',
           name: 'exception-statistics',
           component: () => import('../views/exception/ExceptionStatistics.vue'),
-          meta: { titleKey: 'route.exceptionStatistics', icon: 'data-analysis', permissions: ['monitoring:exceptions:read'] }
+          meta: { titleKey: 'route.exceptionStatistics', icon: 'data-analysis', permissions: ['monitoring:exceptions:read', 'monitoring:exceptions:self:read'] }
         }
       ]
     },

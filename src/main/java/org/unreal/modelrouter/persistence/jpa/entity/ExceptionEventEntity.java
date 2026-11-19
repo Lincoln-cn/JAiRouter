@@ -34,6 +34,9 @@ import java.time.LocalDateTime;
     @Index(name = "idx_exception_operation", columnList = "operation"),
     @Index(name = "idx_exception_error_code", columnList = "error_code"),
     @Index(name = "idx_exception_error_category", columnList = "error_category"),
+    // #1189：异常带归属两列，按归属过滤是 self 读的唯一手段，必须走索引
+    @Index(name = "idx_exception_user", columnList = "user_id"),
+    @Index(name = "idx_exception_api_key", columnList = "api_key_id"),
     @Index(name = "idx_exception_trace_id", columnList = "trace_id"),
     @Index(name = "idx_exception_aggregated", columnList = "is_aggregated"),
     @Index(name = "idx_exception_last_occurrence", columnList = "last_occurrence")
@@ -97,6 +100,24 @@ public class ExceptionEventEntity {
      */
     @Column(name = "http_status", length = 10)
     private String httpStatus;
+
+    /**
+     * 触发该异常的账号（#1189）。
+     *
+     * <p>异常列表与异常统计要按账号切割（{@code monitoring:exceptions:self:read}），
+     * 而此前这张表只有 {@code trace_id}、没有归属 —— 导致「本人读」码只能是死码。
+     * 新异常由 {@code ReactiveGlobalExceptionHandler} 从 exchange 属性写入；
+     * 历史行由 V19 迁移按 {@code trace_id} 关联 {@code api_call_history} 回填，
+     * 关联不上的留空（那是事实上的「不知道属于谁」，不猜）。</p>
+     */
+    @Column(name = "user_id", length = 255)
+    private String userId;
+
+    /**
+     * 触发该异常的 API Key（#1189）。语义与 {@link #userId} 相同，二者至少有一个可为空。
+     */
+    @Column(name = "api_key_id", length = 255)
+    private String apiKeyId;
 
     /**
      * 追踪 ID

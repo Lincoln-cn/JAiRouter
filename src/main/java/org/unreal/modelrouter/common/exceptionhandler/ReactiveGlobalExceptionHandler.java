@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.NoAvailableInstanceException;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
@@ -86,7 +87,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
 
         try {
             // 记录异常到追踪系统
-            recordError(ex);
+            recordError(exchange, ex);
             
             // 根据异常类型设置响应
             if (ex instanceof SecurityException) {
@@ -274,7 +275,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 记录错误信息
      */
-    private void recordError(final Throwable ex) {
+    private void recordError(final ServerWebExchange exchange, final Throwable ex) {
         try {
             // 不记录认证相关的 401 错误（这是正常的安全机制）
             if (isAuthenticationError(ex)) {
@@ -284,6 +285,24 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
 
             Map<String, Object> additionalInfo = new HashMap<>();
             additionalInfo.put("handler", "ReactiveGlobalExceptionHandler");
+
+            // #1189：带上「这条异常属于谁」。异常列表与异常统计要按账号切割
+            // （monitoring:exceptions:self:read），而这张表此前没有任何归属列。
+            // 来源与网关写进 exchange 的属性同源：API Key 调用取 keyId，
+            // 控制台 JWT 调用取「jwt:<用户名>」再还原成账号名。
+            if (exchange != null) {
+                Object apiKeyId = exchange.getAttribute(ServiceRequestHandler.API_KEY_ID_ATTRIBUTE);
+                if (apiKeyId instanceof String key && !key.isBlank()) {
+                    additionalInfo.put("apiKeyId", key);
+                }
+                Object callerId = exchange.getAttribute(ServiceRequestHandler.CALLER_ID_ATTRIBUTE);
+                if (callerId instanceof String caller) {
+                    String account = ServiceRequestHandler.toAccountName(caller);
+                    if (account != null) {
+                        additionalInfo.put("userId", account);
+                    }
+                }
+            }
             
             TracingContext context = TracingContextHolder.getCurrentContext();
             if (context != null && context.isActive()) {
