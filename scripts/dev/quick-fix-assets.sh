@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# ⚠ 历史一次性脚本（仅存档，不保证仍适用）：写于静态资源版本混乱那次事故。
+# 日常启动请用 scripts/dev/run-dev.sh 或 dev-start.sh（见同目录 README.md）。
+# 已知问题：早期 `pkill -f 'modelrouter.ModelRouterApplication'` 匹配不到现在的进程命令行
+# （类名是 org.unreal.modelrouter…，命令行里出现的是 jar 名），已改为匹配 jar。
+
 
 # =============================================================================
 # JAiRouter 快速修复脚本 - 解决静态资源版本混乱问题
@@ -19,7 +25,7 @@ echo -e "${BLUE}[INFO]${NC} 正在修复静态资源版本混乱问题..."
 
 # 1. 停止服务
 echo -e "${BLUE}[INFO]${NC} 停止 Spring Boot 服务..."
-pkill -f 'modelrouter.ModelRouterApplication' 2>/dev/null || true
+pkill -f 'model-router-.*\.jar' 2>/dev/null || true
 sleep 2
 
 # 2. 清理所有静态资源

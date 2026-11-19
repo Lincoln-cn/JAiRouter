@@ -1,105 +1,110 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# JAiRouter 开发环境一键启动（后端 jar + 前端 Vite dev server）
+#
+# 旧版本是给某台 Linux 服务器写死的：`cd /home/ubuntu/jairouter/modelrouter`、
+# `target/model-router-1.2.5.jar`（当前版本 3.8.8，文件根本不存在）、
+# 以及 `pkill -f "model-router-1.2.5.jar"`。在任何其它机器上都必然失败。
+#
+# 现在改为：路径由脚本位置推导、jar 由通配符查找、端口可覆盖。
+#
+# 用法：
+#   ./scripts/dev/dev-start.sh                    # 后端 8080 + 前端 3000
+#   ./scripts/dev/dev-start.sh --backend-port 8081 --frontend-port 3001
+#   ./scripts/dev/dev-start.sh --no-frontend
+#   ./scripts/dev/dev-start.sh --admin-password 'Admin@123456'
+set -euo pipefail
 
-# ============================================================================
-# JAiRouter 快速启动脚本（开发环境）
-# ============================================================================
+BACKEND_PORT=8080
+FRONTEND_PORT=3000
+PROFILE=dev
+START_FRONTEND=1
+ADMIN_PASSWORD=""
+LOG_DIR="${TMPDIR:-/tmp}/jairouter-dev"
 
-echo "========================================"
-echo "  JAiRouter 开发环境启动"
-echo "========================================"
-echo ""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --backend-port) BACKEND_PORT="${2:?}"; shift 2 ;;
+    --frontend-port) FRONTEND_PORT="${2:?}"; shift 2 ;;
+    --profile) PROFILE="${2:?}"; shift 2 ;;
+    --admin-password) ADMIN_PASSWORD="${2:?}"; shift 2 ;;
+    --no-frontend) START_FRONTEND=0; shift ;;
+    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    *) echo "未知参数：$1" >&2; exit 2 ;;
+  esac
+done
 
-# 颜色定义
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+mkdir -p "$LOG_DIR"
+cd "$ROOT"
 
-# 检查 Java
-if ! command -v java &> /dev/null; then
-    echo -e "${RED}✗ Java 未安装${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓${NC} Java 已安装"
+say() { printf '\033[%sm%s\033[0m\n' "$1" "$2"; }
 
-# 检查 Node.js
-if ! command -v node &> /dev/null; then
-    echo -e "${RED}✗ Node.js 未安装${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓${NC} Node.js 已安装"
+command -v java >/dev/null || { say '0;31' "✗ 未找到 java（需要 JDK 17+）"; exit 1; }
+command -v node >/dev/null || { say '0;31' "✗ 未找到 node"; exit 1; }
 
-# 停止现有进程
-echo ""
-echo "停止现有进程..."
-pkill -f "model-router-1.2.5.jar" 2>/dev/null || true
-pkill -f "vite" 2>/dev/null || true
-sleep 2
+say '0;32' "✓ 环境检查通过（java / node）"
 
-# 启动后端
-echo ""
-echo "========================================"
-echo "  启动后端服务（端口 8080）"
-echo "========================================"
-cd /home/ubuntu/jairouter/modelrouter
-nohup java -jar target/model-router-1.2.5.jar \
-  --server.port=8080 \
-  --spring.profiles.active=dev \
-  --store.type=h2 \
-  > /tmp/backend.log 2>&1 &
+# 停旧进程：按 jar 名与 vite 匹配，避免误杀
+pkill -f 'model-router-.*\.jar' 2>/dev/null || true
+pkill -f 'node .*vite' 2>/dev/null || true
+sleep 1
 
-echo "后端启动中..."
-sleep 15
-
-# 检查后端状态
-if curl -s http://localhost:8080/actuator/health > /dev/null; then
-    echo -e "${GREEN}✓${NC} 后端启动成功 (http://localhost:8080)"
-else
-    echo -e "${RED}✗${NC} 后端启动失败，请查看日志：/tmp/backend.log"
-    exit 1
+if ! ls target/model-router-*.jar >/dev/null 2>&1; then
+  say '1;33' '未找到已构建的 jar，先构建一次（含前端静态资源）…'
+  case "${OSTYPE:-}$(uname -s 2>/dev/null)" in
+    msys*|cygwin*|MINGW*) ./mvnw.cmd package -Pdev -DskipTests ;;
+    *) ./mvnw package -Pdev -DskipTests ;;
+  esac
 fi
 
-# 启动前端
-echo ""
-echo "========================================"
-echo "  启动前端服务（端口 3000）"
-echo "========================================"
-cd /home/ubuntu/jairouter/modelrouter/frontend
+JAR="$(ls -1t target/model-router-*.jar 2>/dev/null | grep -Ev -- '-(sources|javadoc|tests)\.jar$' | head -n1 || true)"
+[ -n "$JAR" ] || { say '0;31' '✗ target 下没有 model-router-*.jar'; exit 1; }
 
-# 检查 node_modules
-if [ ! -d "node_modules" ]; then
-    echo "安装依赖..."
-    npm install
+say '0;32' "✓ 后端 jar：$(basename "$JAR")"
+[ -n "$ADMIN_PASSWORD" ] && export INITIAL_ADMIN_PASSWORD="$ADMIN_PASSWORD"
+
+say '1;33' "启动后端（端口 $BACKEND_PORT，profile $PROFILE）…"
+nohup java -jar "$JAR" "--server.port=$BACKEND_PORT" "--spring.profiles.active=$PROFILE" \
+  > "$LOG_DIR/backend.log" 2>&1 &
+BACKEND_PID=$!
+
+for i in $(seq 1 60); do
+  if curl -fsS "http://localhost:$BACKEND_PORT/actuator/health" >/dev/null 2>&1; then
+    say '0;32' "✓ 后端就绪（${i}0s 内）http://localhost:$BACKEND_PORT"
+    break
+  fi
+  sleep 2
+  [ "$i" -eq 60 ] && { say '0;31' "✗ 后端未就绪，日志：$LOG_DIR/backend.log"; exit 1; }
+done
+
+if [ "$START_FRONTEND" -eq 1 ]; then
+  cd "$ROOT/frontend"
+  [ -d node_modules ] || { say '1;33' '安装前端依赖…'; npm install; }
+  say '1;33' "启动前端（端口 $FRONTEND_PORT，代理到后端 $BACKEND_PORT）…"
+  # vite 的 dev 端口由 vite.config.ts 的 server.port 决定；用 --port 覆盖
+  VITE_API_URL="http://127.0.0.1:$BACKEND_PORT" nohup npx vite --port "$FRONTEND_PORT" \
+    > "$LOG_DIR/frontend.log" 2>&1 &
+  sleep 6
+  if curl -fsS "http://localhost:$FRONTEND_PORT/admin/" >/dev/null 2>&1; then
+    say '0;32' "✓ 前端就绪 http://localhost:$FRONTEND_PORT/admin/"
+  else
+    say '1;33' "⚠ 前端可能仍在启动，日志：$LOG_DIR/frontend.log"
+  fi
+  cd "$ROOT"
 fi
 
-nohup npm run dev > /tmp/frontend.log 2>&1 &
+cat <<EOF
 
-echo "前端启动中..."
-sleep 10
+================================================
+  JAiRouter 开发环境
+================================================
+  控制台（后端集成）: http://localhost:$BACKEND_PORT/admin/
+  控制台（Vite HMR） : http://localhost:$FRONTEND_PORT/admin/
+  后端 API          : http://localhost:$BACKEND_PORT
+  Swagger           : http://localhost:$BACKEND_PORT/swagger-ui.html
+  健康检查          : http://localhost:$BACKEND_PORT/actuator/health
 
-# 检查前端状态
-if curl -s http://localhost:3000/admin/ > /dev/null; then
-    echo -e "${GREEN}✓${NC} 前端启动成功 (http://localhost:3000/admin/)"
-else
-    echo -e "${YELLOW}⚠${NC} 前端可能还未完全启动，请查看日志：/tmp/frontend.log"
-fi
-
-# 总结
-echo ""
-echo "========================================"
-echo "  启动完成"
-echo "========================================"
-echo ""
-echo "访问地址:"
-echo "  前端管理页面：http://localhost:8080/admin/index.html"
-echo "  后端 API: http://localhost:8080"
-echo "  Swagger 文档：http://localhost:8080/swagger-ui.html"
-echo ""
-echo "日志文件:"
-echo "  后端：/tmp/backend.log"
-echo "  前端：/tmp/frontend.log"
-echo ""
-echo "停止服务:"
-echo "  pkill -f 'model-router-1.2.5.jar'"
-echo "  pkill -f 'vite'"
-echo ""
+  日志: $LOG_DIR/backend.log , $LOG_DIR/frontend.log
+  停止: kill $BACKEND_PID$( [ "$START_FRONTEND" -eq 1 ] && echo ' ; pkill -f "node .*vite"' )
+================================================
+EOF
