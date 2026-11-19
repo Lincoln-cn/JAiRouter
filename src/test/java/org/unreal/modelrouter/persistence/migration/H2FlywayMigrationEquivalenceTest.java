@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,16 +61,23 @@ class H2FlywayMigrationEquivalenceTest {
                     "「fresh」与「legacy」的 " + section + " 不一致");
         }
 
-        assertEquals(List.of("1|SQL|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
-                        "6|SQL|true", "7|SQL|true", "8|SQL|true", "9|SQL|true", "10|SQL|true", "11|SQL|true", "12|SQL|true", "13|SQL|true", "14|SQL|true", "15|SQL|true", "16|SQL|true", "17|SQL|true", "18|SQL|true"), history(freshUrl),
+        List<Integer> h2Versions = MigrationScripts.h2Versions();
+        assertEquals(h2Versions.stream().map(version -> version + "|SQL|true")
+                        .collect(Collectors.toList()), history(freshUrl),
                 "空库应顺序执行 V1~V18（V4 = 脱敏配置持久化，V5 = 移除请求侧脱敏配置面，"
                         + "V6 = JWT 账户软删除列，V7 = 审计事件类型取值补齐，V8 = 时间戳列补 NOT NULL，V9 = 可逆脱敏映射表，"
                         + "V10 = 可逆脱敏访问审计表，V11 = 语义缓存跨用户命中审计表，V12 = 配置版本号分配器表，V13 = 异常链路归档表，"
                         + "V14 = 配置审计链路号列，V15 = 监控配置审计事件，V16 = SLA 接入凭据，V17 = 登录保护配置，"
                         + "V18 = 控制台页面访问记录）");
-        assertEquals(List.of("1|BASELINE|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
-                        "6|SQL|true", "7|SQL|true", "8|SQL|true", "9|SQL|true", "10|SQL|true", "11|SQL|true", "12|SQL|true", "13|SQL|true", "14|SQL|true", "15|SQL|true", "16|SQL|true", "17|SQL|true", "18|SQL|true"), history(legacyUrl),
-                "老库应记为基线 1 且不重放 V1，再执行 V2~V18");
+        List<String> legacyExpected = new ArrayList<>();
+        legacyExpected.add("1|BASELINE|true");
+        for (Integer version : h2Versions) {
+            if (version != 1) {
+                legacyExpected.add(version + "|SQL|true");
+            }
+        }
+        assertEquals(legacyExpected, history(legacyUrl),
+                "老库应记为基线 1 且不重放 V1，再执行其余版本");
     }
 
     // ==================== 迁移执行 ====================

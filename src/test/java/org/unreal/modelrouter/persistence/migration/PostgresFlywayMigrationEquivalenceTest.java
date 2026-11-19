@@ -16,6 +16,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -101,19 +102,24 @@ class PostgresFlywayMigrationEquivalenceTest {
                 assertEquals(fresh.keySet(), other.keySet(), "快照分节不同");
             }
 
-            // 迁移历史：空库 = V1 + V2..V5 都是 SQL；老库 = 基线 1 + V2..V5
-            assertEquals(List.of("1|SQL|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
-                        "6|SQL|true", "7|SQL|true", "8|SQL|true", "9|SQL|true", "10|SQL|true", "11|SQL|true",
-                        "12|SQL|true", "13|SQL|true", "14|SQL|true", "15|SQL|true", "16|SQL|true", "17|SQL|true", "18|SQL|true"),
+            // 迁移历史：版本号从 db/migration/postgres 目录读，不在这里写死
+            // （否则每加一个迁移都要同步改这份期望，漏改就红）。
+            List<Integer> postgresVersions = MigrationScripts.versions("postgres");
+            assertEquals(postgresVersions.stream().map(version -> version + "|SQL|true")
+                        .collect(Collectors.toList()),
                     history(connection, FRESH),
                     "空库应顺序执行 V1~V18（V4 = 脱敏配置持久化，V5 = 移除请求侧脱敏配置面，"
                         + "V6 = JWT 账户软删除列，V7 = 审计事件类型取值补齐，V8 = 时间戳列补 NOT NULL，V9 = 可逆脱敏映射表，V10 = 可逆脱敏访问审计表，V11 = 语义缓存跨用户命中审计表，V12 = 配置版本号分配器表）");
             for (String legacy : List.of(LEGACY_MISSING, LEGACY_DIVERGENT)) {
-                assertEquals(List.of("1|BASELINE|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
-                        "6|SQL|true", "7|SQL|true", "8|SQL|true", "9|SQL|true", "10|SQL|true", "11|SQL|true",
-                        "12|SQL|true", "13|SQL|true", "14|SQL|true", "15|SQL|true", "16|SQL|true", "17|SQL|true", "18|SQL|true"),
-                        history(connection, legacy),
-                        "老库应记为基线 1 且不重放 V1，再执行 V2~V18");
+                List<String> legacyExpected = new ArrayList<>();
+                legacyExpected.add("1|BASELINE|true");
+                for (Integer version : postgresVersions) {
+                    if (version != 1) {
+                        legacyExpected.add(version + "|SQL|true");
+                    }
+                }
+                assertEquals(legacyExpected, history(connection, legacy),
+                        "老库应记为基线 1 且不重放 V1，再执行其余版本");
             }
         }
     }
