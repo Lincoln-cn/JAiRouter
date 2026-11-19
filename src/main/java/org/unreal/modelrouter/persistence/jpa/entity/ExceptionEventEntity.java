@@ -34,6 +34,9 @@ import java.time.LocalDateTime;
     @Index(name = "idx_exception_operation", columnList = "operation"),
     @Index(name = "idx_exception_error_code", columnList = "error_code"),
     @Index(name = "idx_exception_error_category", columnList = "error_category"),
+    // #1189：异常带归属两列，按归属过滤是 self 读的唯一手段，必须走索引
+    @Index(name = "idx_exception_user", columnList = "user_id"),
+    @Index(name = "idx_exception_api_key", columnList = "api_key_id"),
     @Index(name = "idx_exception_trace_id", columnList = "trace_id"),
     @Index(name = "idx_exception_aggregated", columnList = "is_aggregated"),
     @Index(name = "idx_exception_last_occurrence", columnList = "last_occurrence")
