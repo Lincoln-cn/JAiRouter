@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,9 +89,10 @@ class RolePermissionSeederTest {
             // #1173：monitoring:config:read 与 write 配对（MANAGE_PAIRED_READ_TO_WRITE）⇒
             // OPERATOR 持 write 故保留 read（+1 ⇒ 55），VIEWER 不持写码故被排除 ⇒ 仍 31
             assertEquals(55L, counts.get("OPERATOR"));
-            // #1185：USER 的 tokenusage 全局读码换成本人读码（仍然 1 个），
-            // 异常读码移除（异常记录没有归属字段，无法按本人隔离）⇒ 34 - 1 = 33
-            assertEquals(34L, counts.get("USER"));
+            // 2026-11-20：USER 模板按「控制台里有入口的码」收窄，34 ⇒ 9。
+            // 原先持有的 config:*:read 与全局观测码在信息架构治理后已无任何页面可用，
+            // 留着只会让权限管理页显示一串用不上的条目（用户裁定：收窄码表与菜单一致）。
+            assertEquals(9L, counts.get("USER"));
             assertEquals(32L, counts.get("VIEWER"));
             // #1174：系统里第一组「不是人」的角色模板。SLA_READONLY = 35 个只读码（不含
             // callhistory:full-content、security:*:manage、system:*）；SLA_OPERATOR 再加 18 个
@@ -140,54 +142,35 @@ class RolePermissionSeederTest {
         }
 
         @Test
-        @DisplayName("USER 模板 = dashboard + config:*:read + lb/cb/rl + monitoring:*:read "
-                + "+ tracing dashboard/search + ai")
+        @DisplayName("USER 模板 = 9 个「有控制台入口」的码（2026-11-20 收窄）")
         void userTemplateMatchesSpec() {
+            // USER 在菜单里能看到 15 项：我的用量 / 调用记录 / 慢请求 / 链路 / 异常 / 用量 /
+            // 负载均衡监控 / 限流监控 / 熔断监控 / 5 个试验场 / 客户端接入指南。
+            // 下面的 9 个码就是这些入口实际用到的，其余（config:*:read 等）USER 没有任何页面，
+            // 已在 REVOKED_BY_ROLE 里从存量库回收。
             List<String> codes = codesOf("USER");
+            assertEquals(Set.of(
+                    PermissionCodes.CALLHISTORY_SELF_READ,
+                    PermissionCodes.MONITORING_SLOWQUERY_READ,
+                    PermissionCodes.TRACING_SEARCH_READ,
+                    PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ,
+                    PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ,
+                    PermissionCodes.LB_MONITORING_READ,
+                    PermissionCodes.RL_MONITORING_READ,
+                    PermissionCodes.CB_MONITORING_READ,
+                    PermissionCodes.AI_PLAYGROUND_USE), new HashSet<>(codes),
+                    "USER 模板应与控制台入口一一对应");
 
-            assertTrue(codes.contains(PermissionCodes.OVERVIEW_DASHBOARD_READ));
-            for (String configRead : configReadCodes()) {
-                assertTrue(codes.contains(configRead), "USER 应包含 " + configRead);
-            }
-            assertTrue(codes.contains(PermissionCodes.LB_MONITORING_READ));
-            assertTrue(codes.contains(PermissionCodes.LB_CONFIG_WRITE));
-            assertTrue(codes.contains(PermissionCodes.LB_CONFIG_READ),
-                    "#567/B11：持 lb:config:write 必须同时持 lb:config:read");
-            assertTrue(codes.contains(PermissionCodes.CB_MONITORING_READ));
-            assertTrue(codes.contains(PermissionCodes.CB_HISTORY_READ));
-            assertTrue(codes.contains(PermissionCodes.RL_MONITORING_READ));
-            for (String monitoringRead : monitoringReadCodes()) {
-                assertTrue(codes.contains(monitoringRead), "USER 应包含 " + monitoringRead);
-            }
-            // #1183 / #1185：USER 的三处「本人读」面
-            //   callhistory:self:read  —— ApiCallHistoryController 已按 DataScope 过滤
-            //   monitoring:tokenusage:self:read —— TokenUsageController 已按 DataScope 过滤（本轮）
-            //   monitoring:exceptions:self:read —— 不发：异常记录没有归属字段，过滤不了
-            assertTrue(codes.contains(PermissionCodes.CALLHISTORY_SELF_READ));
             assertFalse(codes.contains(PermissionCodes.CALLHISTORY_READ),
-                    "#1183：USER 持本人读码时不发全局调用记录读码");
-            assertTrue(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ),
-                    "#1185：Token 用量按本人过滤，发本人读码");
+                    "#1183：持本人读码时不发全局调用记录读码");
             assertFalse(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ),
-                    "#1185：持本人读码时不发全局 Token 用量读码，否则能看到全平台用量");
+                    "#1185：持本人读码时不发全局 Token 用量读码");
             assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ),
-                    "#1189：异常记录带上归属后，USER 仍不发全局读码（否则看得到全平台异常）");
-            assertTrue(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ),
-                    "#1189：发本人读码，后端按归属两列过滤");
-            assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_WRITE));
-            assertTrue(codes.contains(PermissionCodes.TRACING_DASHBOARD_READ));
-            assertTrue(codes.contains(PermissionCodes.TRACING_SEARCH_READ));
-            assertTrue(codes.contains(PermissionCodes.AI_PLAYGROUND_USE));
-            // 排除项：config 写、security 读/管理、system、actuator、callhistory
-            assertFalse(codes.contains(PermissionCodes.CONFIG_SERVICES_WRITE));
-            assertFalse(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
-            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_READ));
-            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_FULL_CONTENT));
-            assertFalse(codes.contains(PermissionCodes.TRACING_CONFIG_MANAGE));
-            assertFalse(codes.contains(PermissionCodes.SYSTEM_PERMISSIONS_MANAGE));
-            assertFalse(codes.contains(PermissionCodes.ACTUATOR_ADMIN_MANAGE));
-            assertFalse(codes.contains(PermissionCodes.MONITORING_CONFIG_READ),
-                    "#1173：监控配置页只对运维/管理员开放，USER 不持该读码");
+                    "#1189：异常带上归属后 USER 仍不发全局读码");
+            assertFalse(codes.contains(PermissionCodes.OVERVIEW_DASHBOARD_READ),
+                    "首页 /dashboard/mine 走 callhistory:self:read，不需要概览全局码");
+            assertEquals(0, codes.stream().filter(c -> c.startsWith("config:")).count(),
+                    "配置类码对 USER 没有入口，不应发放");
         }
 
         @Test
@@ -244,7 +227,8 @@ class RolePermissionSeederTest {
             Map<String, Set<String>> expected = Map.of(
                     "ADMIN", Set.copyOf(MANAGE_PAIRED_READ_CODES),
                     "OPERATOR", Set.of(PermissionCodes.LB_CONFIG_READ),
-                    "USER", Set.of(PermissionCodes.LB_CONFIG_READ),
+                    // 2026-11-20：USER 模板收窄，lb:config:read / write 都已移除
+                    "USER", Set.of(),
                     "VIEWER", Set.of(),
                     "AUDITOR", Set.of(),
                     // #1174：SLA 模板是「巡检面」，只读角色需要看负载均衡策略、链路配置与监控
@@ -277,7 +261,7 @@ class RolePermissionSeederTest {
         void staleSubsetBackfillsOnlyMissingRuleRequiredCodes() {
             // OPERATOR 旧部署快照：只持有 2 个早期码（均为模板子集）
             repository.seed("OPERATOR", PermissionCodes.CONFIG_SERVICES_READ, PermissionCodes.CONFIG_SERVICES_WRITE);
-            repository.seed("USER", PermissionCodes.OVERVIEW_DASHBOARD_READ);
+            repository.seed("USER", PermissionCodes.CALLHISTORY_SELF_READ);
             // #1174 后「库里一行都没有的角色」会按模板首次播种，为了让本用例只考察
             // 「陈旧子集的增量补种」，其余内置角色先各持一个所有模板共有的基线码。
             seedBaselineForRoles("ADMIN", "VIEWER", "SLA_READONLY", "SLA_OPERATOR");
@@ -315,8 +299,8 @@ class RolePermissionSeederTest {
             assertTrue(operatorCodes.contains(PermissionCodes.MONITORING_EXCEPTIONS_WRITE));
             assertTrue(operatorCodes.contains(PermissionCodes.MONITORING_CONFIG_WRITE));
             assertTrue(operatorCodes.contains(PermissionCodes.SECURITY_AUDIT_WRITE));
-            // USER 的模板内规则所需码也应补齐
-            assertTrue(repository.codesOf("USER").contains(PermissionCodes.CONFIG_CACHE_READ));
+            // USER 的模板内规则所需码也应补齐（收窄后取模板内的慢查询读码）
+            assertTrue(repository.codesOf("USER").contains(PermissionCodes.MONITORING_SLOWQUERY_READ));
         }
 
         @Test
@@ -338,7 +322,9 @@ class RolePermissionSeederTest {
                     "回收后应按新模板补上本人读码");
             assertTrue(user.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ),
                     "#1189：异常本人读码随模板补种");
-            assertTrue(user.contains(PermissionCodes.CONFIG_CACHE_READ), "模板内既有码不受影响");
+            assertFalse(user.contains(PermissionCodes.CONFIG_CACHE_READ),
+                    "2026-11-20：config:cache:read 对 USER 已无入口，一并回收");
+            assertTrue(user.contains(PermissionCodes.CALLHISTORY_SELF_READ), "模板内既有码不受影响");
         }
 
         @Test
@@ -417,7 +403,7 @@ class RolePermissionSeederTest {
             assertFalse(decorative.isEmpty(), "前置条件：USER 模板存在不被任何规则需要的装饰性码");
 
             // 只保留一个模板内码，使装饰性码和规则所需码都处于缺失状态
-            repository.seed("USER", PermissionCodes.OVERVIEW_DASHBOARD_READ);
+            repository.seed("USER", PermissionCodes.CALLHISTORY_SELF_READ);
             seedBaselineForRoles("ADMIN", "OPERATOR", "VIEWER", "SLA_READONLY", "SLA_OPERATOR");
 
             seeder.seedIfEmpty();
@@ -431,7 +417,7 @@ class RolePermissionSeederTest {
             Set<String> userTemplateSet = new LinkedHashSet<>(userTemplate);
             List<String> expected = userTemplate.stream()
                     .filter(required::contains)
-                    .filter(code -> !code.equals(PermissionCodes.OVERVIEW_DASHBOARD_READ))
+                    .filter(code -> !code.equals(PermissionCodes.CALLHISTORY_SELF_READ))
                     .collect(Collectors.toList());
             for (String code : expected) {
                 assertTrue(repository.codesOf("USER").contains(code),
@@ -451,7 +437,7 @@ class RolePermissionSeederTest {
 
             seeder.seedIfEmpty();
 
-            assertTrue(repository.codesOf("USER").contains(PermissionCodes.CONFIG_QUOTA_READ),
+            assertTrue(repository.codesOf("USER").contains(PermissionCodes.CALLHISTORY_SELF_READ),
                     "无行角色应按模板播种完整权限集合");
             assertTrue(repository.rows().stream()
                             .anyMatch(row -> "SLA_READONLY".equals(row.getRoleName())),
@@ -488,7 +474,10 @@ class RolePermissionSeederTest {
      */
     private void seedBaselineForRoles(String... roles) {
         for (String role : roles) {
-            repository.seed(role, PermissionCodes.OVERVIEW_DASHBOARD_READ);
+            // 2026-11-20：USER 模板收窄后不再含 overview:dashboard:read，基线码改取各模板首码
+            List<String> template = RolePermissionSeeder.DEFAULT_ROLE_TEMPLATES.get(role);
+            assertFalse(template.isEmpty(), role + " 模板不应为空");
+            repository.seed(role, template.get(0));
         }
     }
 
