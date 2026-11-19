@@ -174,7 +174,10 @@ public class ExceptionPersistenceService {
                    .modelName(getStringValue(additionalInfo, "modelName"))
                    .provider(getStringValue(additionalInfo, "provider"))
                    .instanceName(getStringValue(additionalInfo, "instanceName"))
-                   .responseTimeMs(getLongValue(additionalInfo, "responseTimeMs"));
+                   .responseTimeMs(getLongValue(additionalInfo, "responseTimeMs"))
+                    // #1189：归属由 ReactiveGlobalExceptionHandler 从 exchange 属性带进来
+                    .userId(getStringValue(additionalInfo, "userId"))
+                    .apiKeyId(getStringValue(additionalInfo, "apiKeyId"));
 
             // 尝试解析元数据为 JSON
             try {

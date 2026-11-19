@@ -13,10 +13,13 @@ import org.unreal.modelrouter.monitor.dto.ExceptionStatisticsDTO;
 import org.unreal.modelrouter.common.dto.PagedResult;
 import org.unreal.modelrouter.persistence.jpa.entity.ExceptionEventEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ExceptionEventRepository;
+import org.springframework.data.jpa.domain.Specification;
+import org.unreal.modelrouter.auth.security.permission.DataScope;
 import org.unreal.modelrouter.persistence.jpa.repository.spec.ExceptionEventSpecifications;
 import org.unreal.modelrouter.monitor.monitoring.error.ExceptionPersistenceService;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +41,29 @@ public class ExceptionManagementService {
     private final ExceptionEventRepository exceptionEventRepository;
     private final ExceptionPersistenceService exceptionPersistenceService;
 
+
+    /**
+     * 受限视角下内存聚合的行数上限 —— 与 TokenUsage 的取舍一致：超过上限按前 N 行计算并打 warn，
+     * 宁可有界地少算，也不要无界地把整表拉进内存。
+     */
+    private static final int MAX_SCOPED_ROWS = 20_000;
+
+    /** 计数字段累加（键为 null 时不计入）。 */
+    private static void merge(final Map<String, Long> target, final String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        target.merge(key, 1L, Long::sum);
+    }
+
+    /** 取计数最大的前 N 项（保持降序）。 */
+    private static List<Map.Entry<String, Long>> topN(final Map<String, Long> counts, final int limit) {
+        return counts.entrySet().stream()
+                .sorted(Comparator.<Map.Entry<String, Long>>comparingLong(Map.Entry::getValue).reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 查询异常事件列表
      * 
@@ -45,7 +71,22 @@ public class ExceptionManagementService {
      * @return 分页结果
      */
     @Transactional(readOnly = true)
-    public PagedResult<ExceptionEventDTO> queryExceptionEvents(ExceptionQueryRequest request) {
+    public PagedResult<ExceptionEventDTO> queryExceptionEvents(final ExceptionQueryRequest request) {
+        return queryExceptionEvents(request, DataScope.unrestricted());
+    }
+
+    /**
+     * 查询异常事件列表（带数据范围，issue #1189）。
+     *
+     * <p>受限范围（本人读码）只返回「本人 userId 或本人创建的 API Key」触发的异常。</p>
+     *
+     * @param request 查询请求
+     * @param scope   数据范围；{@code null} 等价于不受限
+     * @return 分页结果
+     */
+    @Transactional(readOnly = true)
+    public PagedResult<ExceptionEventDTO> queryExceptionEvents(final ExceptionQueryRequest request,
+                                                              final DataScope scope) {
         // 设置默认时间范围
         LocalDateTime startTime = request.getStartTime();
         LocalDateTime endTime = request.getEndTime();
@@ -67,8 +108,7 @@ public class ExceptionManagementService {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
         // 执行查询
-        Page<ExceptionEventEntity> entityPage = exceptionEventRepository.findAll(
-                ExceptionEventSpecifications.of(
+        Specification<ExceptionEventEntity> spec = ExceptionEventSpecifications.of(
                         startTime,
                         endTime,
                         request.getExceptionType(),
@@ -78,10 +118,13 @@ public class ExceptionManagementService {
                         request.getTraceId(),
                         request.getClientIp(),
                         request.getAggregatedOnly(),
-                        request.getServiceType(),
-                        request.getModelName()),
-                pageRequest
-        );
+                request.getServiceType(),
+                request.getModelName());
+        Specification<ExceptionEventEntity> ownership = ExceptionEventSpecifications.ownership(scope);
+        if (ownership != null) {
+            spec = spec.and(ownership);
+        }
+        Page<ExceptionEventEntity> entityPage = exceptionEventRepository.findAll(spec, pageRequest);
 
         // 转换为 DTO
         List<ExceptionEventDTO> content = entityPage.getContent().stream()
@@ -110,8 +153,25 @@ public class ExceptionManagementService {
      * @return 异常事件 DTO，不存在返回 null
      */
     @Transactional(readOnly = true)
-    public ExceptionEventDTO getExceptionEventById(String eventId) {
+    public ExceptionEventDTO getExceptionEventById(final String eventId) {
+        return getExceptionEventById(eventId, DataScope.unrestricted());
+    }
+
+    /**
+     * 按 ID 查异常详情（带数据范围，issue #1189）。
+     *
+     * <p>越界返回 {@code null}，由控制器转成 404 —— 不返回 403，
+     * 否则等于告诉调用方「这个 ID 存在，只是不给你看」。</p>
+     *
+     * @param eventId 事件 ID
+     * @param scope   数据范围
+     * @return 详情；不存在或越界返回 {@code null}
+     */
+    @Transactional(readOnly = true)
+    public ExceptionEventDTO getExceptionEventById(final String eventId, final DataScope scope) {
         return exceptionEventRepository.findByEventId(eventId)
+                .filter(entity -> scope == null || !scope.restricted()
+                        || scope.owns(entity.getUserId(), entity.getApiKeyId()))
                 .map(this::convertToDTO)
                 .orElse(null);
     }
@@ -124,7 +184,93 @@ public class ExceptionManagementService {
      * @return 统计信息 DTO
      */
     @Transactional(readOnly = true)
-    public ExceptionStatisticsDTO getExceptionStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+    public ExceptionStatisticsDTO getExceptionStatistics(final LocalDateTime startTime, final LocalDateTime endTime) {
+        return getExceptionStatistics(startTime, endTime, DataScope.unrestricted());
+    }
+
+    /**
+     * 异常统计（带数据范围，issue #1189）。
+     *
+     * <p>受限视角（本人读码）不复用库内聚合 SQL —— 那 6 个 count 方法都不带归属条件，
+     * 逐个加参数会散到 6 处且易漏。这里改为「按归属拉行 + 内存聚合」，口径与不受限版
+     * 逐项对齐（总数/按类型/按分类/按操作/按状态码/Top IP/小时分布/聚合与未聚合数）。</p>
+     *
+     * @param startTime 起始时间，{@code null} 表示近 7 天
+     * @param endTime   结束时间，{@code null} 表示当前
+     * @param scope     数据范围
+     * @return 统计信息
+     */
+    @Transactional(readOnly = true)
+    public ExceptionStatisticsDTO getExceptionStatistics(final LocalDateTime startTime, final LocalDateTime endTime,
+                                                          final DataScope scope) {
+        if (scope == null || !scope.restricted()) {
+            return getExceptionStatisticsUnrestricted(startTime, endTime);
+        }
+        LocalDateTime effectiveStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
+        LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
+
+        Specification<ExceptionEventEntity> spec = ExceptionEventSpecifications.of(
+                effectiveStartTime, effectiveEndTime, null, null, null, null, null, null, null, null, null);
+        Specification<ExceptionEventEntity> ownership = ExceptionEventSpecifications.ownership(scope);
+        if (ownership != null) {
+            spec = spec.and(ownership);
+        }
+        PageRequest page = PageRequest.of(0, MAX_SCOPED_ROWS, Sort.by(Sort.Direction.DESC, "occurredAt"));
+        List<ExceptionEventEntity> rows = exceptionEventRepository.findAll(spec, page).getContent().stream()
+                .filter(entity -> scope.owns(entity.getUserId(), entity.getApiKeyId()))
+                .collect(Collectors.toList());
+        if (rows.size() >= MAX_SCOPED_ROWS) {
+            log.warn("本人视角异常统计达到上限 {} 行，结果按前 N 行计算：user={}", MAX_SCOPED_ROWS, scope.userId());
+        }
+
+        Map<String, Long> byType = new HashMap<>();
+        Map<String, Long> byCategory = new HashMap<>();
+        Map<String, Long> byOperation = new HashMap<>();
+        Map<String, Long> byHttpStatus = new HashMap<>();
+        Map<String, Long> byClientIp = new HashMap<>();
+        Map<String, Long> byHour = new HashMap<>();
+        long aggregated = 0L;
+        long unaggregated = 0L;
+        for (ExceptionEventEntity row : rows) {
+            merge(byType, row.getExceptionType());
+            merge(byCategory, row.getErrorCategory());
+            merge(byOperation, row.getOperation());
+            merge(byHttpStatus, row.getHttpStatus());
+            merge(byClientIp, row.getClientIp());
+            if (row.getOccurredAt() != null) {
+                merge(byHour, String.format("%02d", row.getOccurredAt().getHour()));
+            }
+            if (Boolean.TRUE.equals(row.getIsAggregated())) {
+                aggregated++;
+            } else {
+                unaggregated++;
+            }
+        }
+
+        ExceptionStatisticsDTO dto = ExceptionStatisticsDTO.builder()
+                .startTime(effectiveStartTime)
+                .endTime(effectiveEndTime)
+                .totalCount((long) rows.size())
+                .totalTypes(byType.size())
+                .byType(byType)
+                .byCategory(byCategory)
+                .build();
+        dto.setAggregatedCount(aggregated);
+        dto.setUnaggregatedCount(unaggregated);
+        dto.setByOperation(byOperation);
+        dto.setByHttpStatus(byHttpStatus);
+        dto.setTopClientIps(topN(byClientIp, 10).stream()
+                .map(entry -> new ExceptionStatisticsDTO.ClientIpStats(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList()));
+        dto.setHourlyDistribution(topN(byHour, 24).stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new ExceptionStatisticsDTO.HourlyStats(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList()));
+        return dto;
+    }
+
+    private ExceptionStatisticsDTO getExceptionStatisticsUnrestricted(final LocalDateTime startTime,
+                                                                      final LocalDateTime endTime) {
         // 设置默认时间范围
         LocalDateTime effectiveStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
@@ -190,9 +336,32 @@ public class ExceptionManagementService {
      * @return 异常事件列表
      */
     @Transactional(readOnly = true)
-    public List<ExceptionEventDTO> getRecentExceptionEvents(int limit) {
-        return exceptionEventRepository.findRecentEvents(Math.min(limit, 100))
-                .stream()
+    public List<ExceptionEventDTO> getRecentExceptionEvents(final int limit) {
+        return getRecentExceptionEvents(limit, DataScope.unrestricted());
+    }
+
+    /**
+     * 最近的异常事件（带数据范围，issue #1189）。
+     *
+     * @param limit 最大数量
+     * @param scope 数据范围
+     * @return 异常事件列表
+     */
+    @Transactional(readOnly = true)
+    public List<ExceptionEventDTO> getRecentExceptionEvents(final int limit, final DataScope scope) {
+        int effectiveLimit = Math.min(limit, 100);
+        if (scope == null || !scope.restricted()) {
+            return exceptionEventRepository.findRecentEvents(effectiveLimit)
+                    .stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        }
+        Specification<ExceptionEventEntity> ownership = ExceptionEventSpecifications.ownership(scope);
+        // 多取一些再截断：受限过滤发生在内存里，否则可能不足 limit 条
+        PageRequest page = PageRequest.of(0, effectiveLimit * 5, Sort.by(Sort.Direction.DESC, "occurredAt"));
+        return exceptionEventRepository.findAll(ownership, page).getContent().stream()
+                .filter(entity -> scope.owns(entity.getUserId(), entity.getApiKeyId()))
+                .limit(effectiveLimit)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -205,9 +374,34 @@ public class ExceptionManagementService {
      * @return 异常事件列表
      */
     @Transactional(readOnly = true)
-    public List<ExceptionEventDTO> getRecentExceptionEventsByType(String exceptionType, int limit) {
-        return exceptionEventRepository.findRecentEventsByType(exceptionType, Math.min(limit, 100))
-                .stream()
+    public List<ExceptionEventDTO> getRecentExceptionEventsByType(final String exceptionType, final int limit) {
+        return getRecentExceptionEventsByType(exceptionType, limit, DataScope.unrestricted());
+    }
+
+    /**
+     * 按类型取最近异常（带数据范围，issue #1189）。
+     *
+     * @param exceptionType 异常类型
+     * @param limit         最大数量
+     * @param scope         数据范围
+     * @return 异常事件列表
+     */
+    @Transactional(readOnly = true)
+    public List<ExceptionEventDTO> getRecentExceptionEventsByType(final String exceptionType, final int limit,
+                                                                 final DataScope scope) {
+        int effectiveLimit = Math.min(limit, 100);
+        if (scope == null || !scope.restricted()) {
+            return exceptionEventRepository.findRecentEventsByType(exceptionType, effectiveLimit)
+                    .stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        }
+        Specification<ExceptionEventEntity> ownership = ExceptionEventSpecifications.ownership(scope);
+        PageRequest page = PageRequest.of(0, effectiveLimit * 5, Sort.by(Sort.Direction.DESC, "occurredAt"));
+        return exceptionEventRepository.findAll(ownership, page).getContent().stream()
+                .filter(entity -> exceptionType == null || exceptionType.equals(entity.getExceptionType()))
+                .filter(entity -> scope.owns(entity.getUserId(), entity.getApiKeyId()))
+                .limit(effectiveLimit)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -250,6 +444,8 @@ public class ExceptionManagementService {
                 .errorCategory(entity.getErrorCategory())
                 .httpStatus(entity.getHttpStatus())
                 .traceId(entity.getTraceId())
+                .userId(entity.getUserId())
+                .apiKeyId(entity.getApiKeyId())
                 .clientIp(entity.getClientIp())
                 .serviceName(entity.getServiceName())
                 .serviceType(entity.getServiceType())

@@ -146,10 +146,10 @@ export const menuGroups: MenuGroup[] = [
         title: 'menu.exceptions',
         object: 'exception',
         section: 'menu.sections.health',
-        permission: 'monitoring:exceptions:read',
-        // USER 不在列：异常记录没有归属字段，无法按本人隔离（issue #1185），
-        // 与其让它看全局异常，不如不给入口 —— 自己的失败数在「我的用量」页里。
-        audience: ['admin', 'maintainer', 'observer'],
+        // #1189 之后异常事件带归属两列（user_id / api_key_id），
+        // 持「本人读」码的账号也能进，后端按 DataScope 只返回自己的异常。
+        permission: ['monitoring:exceptions:read', 'monitoring:exceptions:self:read'],
+        audience: ['admin', 'maintainer', 'observer', 'user'],
         tabs: [
           { key: 'exceptions-list', labelKey: 'menu.exceptionList', to: '/exceptions/list' },
           { key: 'exceptions-statistics', labelKey: 'menu.exceptionStats', to: '/exceptions/statistics' },

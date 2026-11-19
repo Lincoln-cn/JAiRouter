@@ -2,6 +2,7 @@ package org.unreal.modelrouter.persistence.jpa.repository.spec;
 
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
+import org.unreal.modelrouter.auth.security.permission.DataScope;
 import org.unreal.modelrouter.persistence.jpa.entity.ExceptionEventEntity;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,35 @@ public final class ExceptionEventSpecifications {
     private static final String OCCURRED_AT = "occurredAt";
 
     private ExceptionEventSpecifications() {
+    }
+
+    /**
+     * 归属过滤（issue #1189）：只看「本人 userId 或本人创建的 API Key」触发的异常。
+     *
+     * <p>不受限或范围为空时返回 {@code null}（不改变原查询）。两列都可能为空的存量行
+     * 在受限视角下不可见 —— 这是有意的：不知道属于谁的异常，不该出现在「我的」列表里。</p>
+     *
+     * @param scope 数据范围，可为 {@code null}
+     * @return 归属条件；不需要限制时返回 {@code null}
+     */
+    public static Specification<ExceptionEventEntity> ownership(final DataScope scope) {
+        if (scope == null || !scope.restricted()) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            List<Predicate> owned = new ArrayList<>();
+            if (scope.userId() != null && !scope.userId().isBlank()) {
+                owned.add(cb.equal(root.get("userId"), scope.userId()));
+            }
+            if (!scope.apiKeyIds().isEmpty()) {
+                owned.add(root.get("apiKeyId").in(scope.apiKeyIds()));
+            }
+            if (owned.isEmpty()) {
+                // 受限但既无 userId 也无密钥 ⇒ 什么都看不到（返回恒假，而不是放开）
+                return cb.disjunction();
+            }
+            return cb.or(owned.toArray(new Predicate[0]));
+        };
     }
 
     /**

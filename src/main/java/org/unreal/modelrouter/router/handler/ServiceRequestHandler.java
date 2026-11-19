@@ -756,6 +756,24 @@ public class ServiceRequestHandler {
      * @param authentication 已认证主体
      * @return 调用主体标识；不可识别时返回 {@code null}
      */
+    /**
+     * 把 {@link #CALLER_ID_ATTRIBUTE} 的主体标识还原成「账号名」（issue #1189）。
+     *
+     * <p>异常记录要按账号切割，而 exchange 属性里的主体标识有两种形态：API Key 调用是
+     * {@code keyId}，控制台 JWT 调用是带 {@code jwt:} 前缀的用户名。只有后者能还原成账号；
+     * 前者（keyId）的属主信息不在这条链路上，调用方应改用 {@link #API_KEY_ID_ATTRIBUTE}。</p>
+     *
+     * @param callerId {@link #CALLER_ID_ATTRIBUTE} 的取值，可为 {@code null}
+     * @return 账号名；无法还原（空值或 keyId 形态）时返回 {@code null}
+     */
+    public static String toAccountName(final String callerId) {
+        if (callerId == null || callerId.isBlank() || !callerId.startsWith(JWT_CALLER_ID_PREFIX)) {
+            return null;
+        }
+        String name = callerId.substring(JWT_CALLER_ID_PREFIX.length()).trim();
+        return name.isEmpty() ? null : name;
+    }
+
     private static String resolveCallerId(final Authentication authentication) {
         if (authentication == null) {
             return null;

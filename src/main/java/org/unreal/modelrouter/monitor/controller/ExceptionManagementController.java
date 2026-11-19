@@ -41,13 +41,15 @@ import org.unreal.modelrouter.common.exception.ApiException;
 public class ExceptionManagementController {
 
     private final ExceptionManagementService exceptionManagementService;
+    /** 数据范围解析（issue #1189）：持本人读码时只看「本人或本人密钥」触发的异常。 */
+    private final org.unreal.modelrouter.auth.security.permission.DataScopeResolver dataScopeResolver;
 
     /**
      * 查询异常事件列表
      */
     @GetMapping
     @Operation(summary = "查询异常事件列表", description = "根据条件查询异常事件，支持分页、筛选和排序")
-    public ResponseEntity<RouterResponse<PagedResult<ExceptionEventDTO>>> queryExceptionEvents(
+    public reactor.core.publisher.Mono<ResponseEntity<RouterResponse<PagedResult<ExceptionEventDTO>>>> queryExceptionEvents(
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -108,7 +110,8 @@ public class ExceptionManagementController {
 
             @Parameter(description = "排序方向 (asc 或 desc)")
             @RequestParam(defaultValue = "desc")
-            final String sortDirection) {
+            final String sortDirection,
+            final org.springframework.security.core.Authentication authentication) {
 
         // 构建查询请求
         ExceptionQueryRequest request = ExceptionQueryRequest.builder()
@@ -130,9 +133,11 @@ public class ExceptionManagementController {
                 .build();
 
         // 执行查询
-        PagedResult<ExceptionEventDTO> result = exceptionManagementService.queryExceptionEvents(request);
+        return dataScopeResolver
+                .resolveWithKeys(authentication, "monitoring:exceptions:read", "monitoring:exceptions:self:read")
+                .map(scope -> ResponseEntity.ok(
+                        RouterResponse.success(exceptionManagementService.queryExceptionEvents(request, scope))));
 
-        return ResponseEntity.ok(RouterResponse.success(result));
     }
 
     /**
@@ -140,17 +145,22 @@ public class ExceptionManagementController {
      */
     @GetMapping("/{eventId}")
     @Operation(summary = "查询异常事件详情", description = "根据事件 ID 查询异常事件的完整信息")
-    public ResponseEntity<RouterResponse<ExceptionEventDTO>> getExceptionEvent(
+    public reactor.core.publisher.Mono<ResponseEntity<RouterResponse<ExceptionEventDTO>>> getExceptionEvent(
             @Parameter(description = "事件 ID")
-            @PathVariable final String eventId) {
+            @PathVariable final String eventId,
+            final org.springframework.security.core.Authentication authentication) {
 
-        ExceptionEventDTO event = exceptionManagementService.getExceptionEventById(eventId);
-        
-        if (event == null) {
-            return ResponseEntity.status(ApiException.resolveStatus("404")).body(RouterResponse.error("事件不存在", "404"));
-        }
-
-        return ResponseEntity.ok(RouterResponse.success(event));
+        return dataScopeResolver
+                .resolveWithKeys(authentication, "monitoring:exceptions:read", "monitoring:exceptions:self:read")
+                .map(scope -> {
+                    // 注意：Reactor 的 map 不允许返回 null，越界/不存在都在这里就地转成 404
+                    ExceptionEventDTO event = exceptionManagementService.getExceptionEventById(eventId, scope);
+                    if (event == null) {
+                        return ResponseEntity.status(ApiException.resolveStatus("404"))
+                                .body(RouterResponse.error("事件不存在", "404"));
+                    }
+                    return ResponseEntity.ok(RouterResponse.success(event));
+                });
     }
 
     /**
@@ -158,7 +168,7 @@ public class ExceptionManagementController {
      */
     @GetMapping("/statistics")
     @Operation(summary = "获取异常统计信息", description = "获取指定时间范围内的异常统计信息，包括按类型、分类、操作等维度的统计")
-    public ResponseEntity<RouterResponse<ExceptionStatisticsDTO>> getExceptionStatistics(
+    public reactor.core.publisher.Mono<ResponseEntity<RouterResponse<ExceptionStatisticsDTO>>> getExceptionStatistics(
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -167,10 +177,13 @@ public class ExceptionManagementController {
             @Parameter(description = "结束时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            final LocalDateTime endTime) {
+            final LocalDateTime endTime,
+            final org.springframework.security.core.Authentication authentication) {
 
-        ExceptionStatisticsDTO statistics = exceptionManagementService.getExceptionStatistics(startTime, endTime);
-        return ResponseEntity.ok(RouterResponse.success(statistics));
+        return dataScopeResolver
+                .resolveWithKeys(authentication, "monitoring:exceptions:read", "monitoring:exceptions:self:read")
+                .map(scope -> ResponseEntity.ok(RouterResponse.success(
+                        exceptionManagementService.getExceptionStatistics(startTime, endTime, scope))));
     }
 
     /**
@@ -178,13 +191,16 @@ public class ExceptionManagementController {
      */
     @GetMapping("/recent")
     @Operation(summary = "获取最近的异常事件", description = "获取最近发生的异常事件列表")
-    public ResponseEntity<RouterResponse<List<ExceptionEventDTO>>> getRecentExceptionEvents(
+    public reactor.core.publisher.Mono<ResponseEntity<RouterResponse<List<ExceptionEventDTO>>>> getRecentExceptionEvents(
             @Parameter(description = "最大数量")
             @RequestParam(defaultValue = "10")
-            final int limit) {
+            final int limit,
+            final org.springframework.security.core.Authentication authentication) {
 
-        List<ExceptionEventDTO> events = exceptionManagementService.getRecentExceptionEvents(limit);
-        return ResponseEntity.ok(RouterResponse.success(events));
+        return dataScopeResolver
+                .resolveWithKeys(authentication, "monitoring:exceptions:read", "monitoring:exceptions:self:read")
+                .map(scope -> ResponseEntity.ok(
+                        RouterResponse.success(exceptionManagementService.getRecentExceptionEvents(limit, scope))));
     }
 
     /**
@@ -192,17 +208,19 @@ public class ExceptionManagementController {
      */
     @GetMapping("/recent/{exceptionType}")
     @Operation(summary = "获取指定类型的最近异常事件", description = "获取指定异常类型的最近事件列表")
-    public ResponseEntity<RouterResponse<List<ExceptionEventDTO>>> getRecentExceptionEventsByType(
+    public reactor.core.publisher.Mono<ResponseEntity<RouterResponse<List<ExceptionEventDTO>>>> getRecentExceptionEventsByType(
             @Parameter(description = "异常类型")
             @PathVariable final String exceptionType,
 
             @Parameter(description = "最大数量")
             @RequestParam(defaultValue = "10")
-            final int limit) {
+            final int limit,
+            final org.springframework.security.core.Authentication authentication) {
 
-        List<ExceptionEventDTO> events =
-                exceptionManagementService.getRecentExceptionEventsByType(exceptionType, limit);
-        return ResponseEntity.ok(RouterResponse.success(events));
+        return dataScopeResolver
+                .resolveWithKeys(authentication, "monitoring:exceptions:read", "monitoring:exceptions:self:read")
+                .map(scope -> ResponseEntity.ok(RouterResponse.success(
+                        exceptionManagementService.getRecentExceptionEventsByType(exceptionType, limit, scope))));
     }
 
     /**

@@ -340,6 +340,8 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.MONITORING_METRICS_READ,
                 PermissionCodes.MONITORING_SLOWQUERY_READ,
                 PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ,
+                // #1189 之后异常事件带归属两列，「本人读」码不再是死码
+                PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ,
                 PermissionCodes.MONITORING_MODELSTATS_READ,
                 PermissionCodes.MONITORING_ROUTING_READ,
                 PermissionCodes.TRACING_DASHBOARD_READ,

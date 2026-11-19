@@ -3,6 +3,7 @@ package org.unreal.modelrouter.monitor.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -11,10 +12,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.PagedResult;
+import org.unreal.modelrouter.auth.security.permission.DataScope;
+import org.unreal.modelrouter.auth.security.permission.DataScopeResolver;
 import org.unreal.modelrouter.monitor.dto.ExceptionEventDTO;
 import org.unreal.modelrouter.monitor.dto.ExceptionQueryRequest;
 import org.unreal.modelrouter.monitor.dto.ExceptionStatisticsDTO;
 import org.unreal.modelrouter.monitor.service.ExceptionManagementService;
+
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -35,8 +40,18 @@ class ExceptionManagementControllerTest {
     @Mock
     private ExceptionManagementService exceptionManagementService;
 
+    @Mock
+    private DataScopeResolver dataScopeResolver;
+
     @InjectMocks
     private ExceptionManagementController controller;
+
+    @BeforeEach
+    void stubDataScope() {
+        // #1189：控制器改成按登录主体解析数据范围；测试里统一按「不受限」走。
+        lenient().when(dataScopeResolver.resolveWithKeys(any(), any(), any()))
+                .thenReturn(Mono.just(DataScope.unrestricted()));
+    }
 
     private ExceptionEventDTO createExceptionEvent(String eventId) {
         return ExceptionEventDTO.builder()
@@ -62,16 +77,16 @@ class ExceptionManagementControllerTest {
             PagedResult<ExceptionEventDTO> pagedResult = new PagedResult<>(
                     List.of(createExceptionEvent("event-1")), 0, 20, 1
             );
-            when(exceptionManagementService.queryExceptionEvents(any(ExceptionQueryRequest.class)))
+            when(exceptionManagementService.queryExceptionEvents(any(ExceptionQueryRequest.class), any()))
                     .thenReturn(pagedResult);
 
             ResponseEntity<RouterResponse<PagedResult<ExceptionEventDTO>>> response =
-                    controller.queryExceptionEvents(null, null, null, null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
+                    controller.queryExceptionEvents(null, null, null, null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc", null).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
             assertEquals(1, response.getBody().getData().getContent().size());
-            verify(exceptionManagementService).queryExceptionEvents(any(ExceptionQueryRequest.class));
+            verify(exceptionManagementService).queryExceptionEvents(any(ExceptionQueryRequest.class), any());
         }
 
         @Test
@@ -80,11 +95,11 @@ class ExceptionManagementControllerTest {
             LocalDateTime startTime = LocalDateTime.now().minusHours(1);
             LocalDateTime endTime = LocalDateTime.now();
             PagedResult<ExceptionEventDTO> pagedResult = new PagedResult<>(Collections.emptyList(), 0, 20, 0);
-            when(exceptionManagementService.queryExceptionEvents(any(ExceptionQueryRequest.class)))
+            when(exceptionManagementService.queryExceptionEvents(any(ExceptionQueryRequest.class), any()))
                     .thenReturn(pagedResult);
 
             ResponseEntity<RouterResponse<PagedResult<ExceptionEventDTO>>> response =
-                    controller.queryExceptionEvents(startTime, endTime, null, null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
+                    controller.queryExceptionEvents(startTime, endTime, null, null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc", null).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -95,11 +110,11 @@ class ExceptionManagementControllerTest {
         @DisplayName("查询成功 - 带异常类型筛选")
         void querySuccess_withExceptionType() {
             PagedResult<ExceptionEventDTO> pagedResult = new PagedResult<>(Collections.emptyList(), 0, 20, 0);
-            when(exceptionManagementService.queryExceptionEvents(any(ExceptionQueryRequest.class)))
+            when(exceptionManagementService.queryExceptionEvents(any(ExceptionQueryRequest.class), any()))
                     .thenReturn(pagedResult);
 
             ResponseEntity<RouterResponse<PagedResult<ExceptionEventDTO>>> response =
-                    controller.queryExceptionEvents(null, null, "NullPointerException", null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
+                    controller.queryExceptionEvents(null, null, "NullPointerException", null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc", null).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -114,10 +129,10 @@ class ExceptionManagementControllerTest {
         @DisplayName("查询成功")
         void getSuccess() {
             ExceptionEventDTO event = createExceptionEvent("event-1");
-            when(exceptionManagementService.getExceptionEventById("event-1")).thenReturn(event);
+            when(exceptionManagementService.getExceptionEventById(eq("event-1"), any())).thenReturn(event);
 
             ResponseEntity<RouterResponse<ExceptionEventDTO>> response =
-                    controller.getExceptionEvent("event-1");
+                    controller.getExceptionEvent("event-1", null).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -127,10 +142,10 @@ class ExceptionManagementControllerTest {
         @Test
         @DisplayName("事件不存在")
         void eventNotFound() {
-            when(exceptionManagementService.getExceptionEventById("nonexistent")).thenReturn(null);
+            when(exceptionManagementService.getExceptionEventById(eq("nonexistent"), any())).thenReturn(null);
 
             ResponseEntity<RouterResponse<ExceptionEventDTO>> response =
-                    controller.getExceptionEvent("nonexistent");
+                    controller.getExceptionEvent("nonexistent", null).block();
 
             assertNotNull(response.getBody());
             assertFalse(response.getBody().isSuccess());
@@ -146,14 +161,14 @@ class ExceptionManagementControllerTest {
         @DisplayName("获取成功")
         void getSuccess() {
             ExceptionStatisticsDTO statistics = new ExceptionStatisticsDTO();
-            when(exceptionManagementService.getExceptionStatistics(any(), any())).thenReturn(statistics);
+            when(exceptionManagementService.getExceptionStatistics(any(), any(), any())).thenReturn(statistics);
 
             ResponseEntity<RouterResponse<ExceptionStatisticsDTO>> response =
-                    controller.getExceptionStatistics(null, null);
+                    controller.getExceptionStatistics(null, null, null).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
-            verify(exceptionManagementService).getExceptionStatistics(any(), any());
+            verify(exceptionManagementService).getExceptionStatistics(any(), any(), any());
         }
     }
 
@@ -165,10 +180,10 @@ class ExceptionManagementControllerTest {
         @DisplayName("获取成功")
         void getSuccess() {
             List<ExceptionEventDTO> events = List.of(createExceptionEvent("event-1"));
-            when(exceptionManagementService.getRecentExceptionEvents(10)).thenReturn(events);
+            when(exceptionManagementService.getRecentExceptionEvents(eq(10), any())).thenReturn(events);
 
             ResponseEntity<RouterResponse<List<ExceptionEventDTO>>> response =
-                    controller.getRecentExceptionEvents(10);
+                    controller.getRecentExceptionEvents(10, null).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -184,11 +199,11 @@ class ExceptionManagementControllerTest {
         @DisplayName("获取成功")
         void getSuccess() {
             List<ExceptionEventDTO> events = List.of(createExceptionEvent("event-1"));
-            when(exceptionManagementService.getRecentExceptionEventsByType("NullPointerException", 10))
+            when(exceptionManagementService.getRecentExceptionEventsByType(eq("NullPointerException"), eq(10), any()))
                     .thenReturn(events);
 
             ResponseEntity<RouterResponse<List<ExceptionEventDTO>>> response =
-                    controller.getRecentExceptionEventsByType("NullPointerException", 10);
+                    controller.getRecentExceptionEventsByType("NullPointerException", 10, null).block();
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());

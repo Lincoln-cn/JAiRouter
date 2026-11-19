@@ -90,7 +90,7 @@ class RolePermissionSeederTest {
             assertEquals(55L, counts.get("OPERATOR"));
             // #1185：USER 的 tokenusage 全局读码换成本人读码（仍然 1 个），
             // 异常读码移除（异常记录没有归属字段，无法按本人隔离）⇒ 34 - 1 = 33
-            assertEquals(33L, counts.get("USER"));
+            assertEquals(34L, counts.get("USER"));
             assertEquals(32L, counts.get("VIEWER"));
             // #1174：系统里第一组「不是人」的角色模板。SLA_READONLY = 35 个只读码（不含
             // callhistory:full-content、security:*:manage、system:*）；SLA_OPERATOR 再加 18 个
@@ -171,8 +171,9 @@ class RolePermissionSeederTest {
             assertFalse(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ),
                     "#1185：持本人读码时不发全局 Token 用量读码，否则能看到全平台用量");
             assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ),
-                    "#1185：异常记录无归属字段，USER 不发异常读码（菜单入口同时收窄）");
-            assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ));
+                    "#1189：异常记录带上归属后，USER 仍不发全局读码（否则看得到全平台异常）");
+            assertTrue(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ),
+                    "#1189：发本人读码，后端按归属两列过滤");
             assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_WRITE));
             assertTrue(codes.contains(PermissionCodes.TRACING_DASHBOARD_READ));
             assertTrue(codes.contains(PermissionCodes.TRACING_SEARCH_READ));
@@ -335,6 +336,8 @@ class RolePermissionSeederTest {
                     "#1185：异常读码必须被回收（该模块无归属字段，无法按本人过滤）");
             assertTrue(user.contains(PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ),
                     "回收后应按新模板补上本人读码");
+            assertTrue(user.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ),
+                    "#1189：异常本人读码随模板补种");
             assertTrue(user.contains(PermissionCodes.CONFIG_CACHE_READ), "模板内既有码不受影响");
         }
 
