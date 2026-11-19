@@ -33,8 +33,12 @@ export interface ChartSkin {
  * 读不到 CSS 令牌时的兜底分类色。
  *
  * 十六进制只允许出现在本文件的常量里（模板与样式一律走 `--ja-*` 令牌）。
+ *
+ * 前 4 位是**图表专用分类色阶**（P4），与 `--ja-primary` 脱钩：暗色下 primary 就是 accent
+ * 的最亮档 `#6ee0e8`，直接当首档会让大面积柱状图糊成一块亮色。这里取 `.chart-series-1..4`
+ * 的亮色值兜底，第 5 位给正文中性阶、第 6 位给系列中性阶。
  */
-const FALLBACK_PALETTE = ['#409eff', '#79bbff', '#a0cfff', '#c6e2ff', '#8b93a1', '#e6e6e6'] as const
+const FALLBACK_PALETTE = ['#0e7490', '#569eb1', '#86b9c7', '#b6d5dd', '#9aa3b2', '#e6e6e6'] as const
 
 /** 语义色兜底：只在「失败 / 告警」系列使用。 */
 const FALLBACK_EMPHASIS = '#f56c6c'
@@ -51,10 +55,12 @@ function cssVar(name: string, fallback: string): string {
 }
 
 function buildSkin(theme: EChartsColorPalette): ChartSkin {
-  const primary = cssVar('--ja-primary', FALLBACK_PALETTE[0])
-  const primaryLight3 = cssVar('--ja-primary-light-3', FALLBACK_PALETTE[1])
-  const primaryLight5 = cssVar('--ja-primary-light-5', FALLBACK_PALETTE[2])
-  const primaryLight7 = cssVar('--ja-primary-light-7', FALLBACK_PALETTE[3])
+  // 分类色阶走 --ja-chart-series-1..4：明暗两套由 tokens.css 分别给值，
+  // 暗色从次亮档起算，避免最亮的 accent 被大面积填充（P4）。
+  const series1 = cssVar('--ja-chart-series-1', FALLBACK_PALETTE[0])
+  const series2 = cssVar('--ja-chart-series-2', FALLBACK_PALETTE[1])
+  const series3 = cssVar('--ja-chart-series-3', FALLBACK_PALETTE[2])
+  const series4 = cssVar('--ja-chart-series-4', FALLBACK_PALETTE[3])
   const ink3 = cssVar('--ja-ink-3', FALLBACK_PALETTE[4])
   // 第 6 个分类色与轴线/网格线必须用图表专用中性阶：--ja-border 是面与面的分界，
   // 暗色下只有约 1.2:1，当数据系列会看不见（P1-3 语义色校正后暴露出这一点）。
@@ -67,7 +73,7 @@ function buildSkin(theme: EChartsColorPalette): ChartSkin {
   const surface = cssVar('--ja-paper', FALLBACK_SURFACE)
 
   return {
-    palette: [primary, primaryLight3, primaryLight5, primaryLight7, ink3, seriesNeutral],
+    palette: [series1, series2, series3, series4, ink3, seriesNeutral],
     emphasis,
     text,
     textMuted: ink3,

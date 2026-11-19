@@ -1,7 +1,7 @@
 <template>
   <el-dialog v-model="visible" :close-on-click-modal="false" center :title="t('apiKeys.apiKeyCreatedTitle')" width="450px">
     <div class="key-value-dialog-content">
-      <el-icon style="font-size: 48px; color: var(--ja-primary); margin-bottom: 16px;">
+      <el-icon style="font-size: 48px; color: var(--ja-accent); margin-bottom: 16px;">
         <Key />
       </el-icon>
       <p class="key-value-tip">{{ t('apiKeys.keyValueDialog.tip') }}</p>

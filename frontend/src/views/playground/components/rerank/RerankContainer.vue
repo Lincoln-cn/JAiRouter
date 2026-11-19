@@ -557,7 +557,7 @@ defineExpose({
 .rank-badge {
   font-size: 14px;
   font-weight: 600;
-  color: var(--ja-primary);
+  color: var(--ja-accent);
 }
 
 .score-badge {

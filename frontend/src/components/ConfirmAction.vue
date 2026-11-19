@@ -99,7 +99,7 @@ const handleKeydown = (event: KeyboardEvent): void => {
 }
 
 .confirm-action__trigger:focus-visible {
-  outline: 2px solid var(--ja-primary);
+  outline: 2px solid var(--ja-accent);
 }
 
 .confirm-action__trigger.is-disabled {

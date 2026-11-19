@@ -81,13 +81,13 @@ const categoryTagType = computed(() => {
 }
 
 .adapter-template-card:hover {
-  border-color: var(--ja-primary);
+  border-color: var(--ja-accent);
   /* rgba primary-tinted hover shadow — no equivalent token exists */
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
 }
 
 .adapter-template-card.selected {
-  border-color: var(--ja-primary);
+  border-color: var(--ja-accent);
   background: var(--ja-primary-light-9);
   /* rgba primary-tinted selected shadow — no equivalent token exists */
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
@@ -107,7 +107,7 @@ const categoryTagType = computed(() => {
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  color: var(--ja-primary);
+  color: var(--ja-accent);
   flex-shrink: 0;
 }
 
@@ -149,7 +149,7 @@ const categoryTagType = computed(() => {
   position: absolute;
   top: 10px;
   right: 10px;
-  color: var(--ja-primary);
+  color: var(--ja-accent);
   font-size: 18px;
 }
 </style>

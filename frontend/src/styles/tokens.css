@@ -144,13 +144,22 @@
   /* 图表专用中性色（P1-3）：分类色板第 6 位与轴线/网格线不能直接借用 --ja-border ——
      边框是「面与面的分界」，在暗色下刻意压到 1.2:1 左右；当作数据系列或网格线会几乎不可见。
      这里给图表独立的两个中性阶，保证暗色下系列可辨、网格线只做弱提示。 */
+  /* 图表分类色阶（P4）：与 accent 色阶解耦，暗色下尤其重要 ——
+     accent 在暗色是 #6ee0e8（很亮），若直接当分类首档，大面积柱状图会糊成一块亮色。
+     这里给图表独立 4 档，明暗各自从「主系列」起算，保证同一张图里既分得开、又不刺眼。 */
+  --ja-chart-series-1: #0e7490;
+  --ja-chart-series-2: #569eb1;
+  --ja-chart-series-3: #86b9c7;
+  --ja-chart-series-4: #b6d5dd;
   --ja-chart-series-neutral: #9aa3b2;
   --ja-chart-axis: #dfe3ea;
 }
 
 /* ========== 暗色模式 ========== */
 html.dark {
-  /* 品牌色：同样跟随 accent（暗色下 light-* 更暗、dark-2 更亮） */
+  /* 品牌色别名（P4 起仅服务 Element Plus 镜像：--el-color-primary* 读这一族）。
+     页面/组件不要再直接引用 var(--ja-primary) —— 请用 --ja-accent；
+     守卫 frontend/src/styles/__tests__/primaryAliasRetired.spec.ts 会拦。 */
   --ja-primary: var(--ja-accent);
   --ja-primary-light-3: var(--ja-accent-light-3);
   --ja-primary-light-5: var(--ja-accent-light-5);
@@ -242,6 +251,12 @@ html.dark {
 
   /* 图表专用中性色（P1-3）：暗色下系列中性阶对卡片 #151a21 约 4.2:1，
      轴线/网格线刻意压暗（约 1.35:1），只做弱提示，不与数据争注意力。 */
+  /* 图表分类色阶（P4）：暗色下不用 accent 的最亮档 #6ee0e8 做大面积填充，
+     从 #4ecdd8 起算并向暗递减；第 4 档保留约 2.8:1 的辨识度，再暗就分不清了。 */
+  --ja-chart-series-1: #4ecdd8;
+  --ja-chart-series-2: #37a8b4;
+  --ja-chart-series-3: #2c8590;
+  --ja-chart-series-4: #23636c;
   --ja-chart-series-neutral: #8b96a6;
   --ja-chart-axis: #2b3542;
 }

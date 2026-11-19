@@ -166,6 +166,6 @@ watch(
 }
 
 .filter-bar__toggle-button {
-  color: var(--ja-primary);
+  color: var(--ja-accent);
 }
 </style>

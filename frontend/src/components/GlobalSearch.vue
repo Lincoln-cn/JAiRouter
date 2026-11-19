@@ -282,7 +282,7 @@ defineExpose({ open, close })
   width: 12px;
   height: 12px;
   border: 2px solid var(--ja-border);
-  border-top-color: var(--ja-primary);
+  border-top-color: var(--ja-accent);
   border-radius: 50%;
   animation: global-search-spin 0.7s linear infinite;
 }

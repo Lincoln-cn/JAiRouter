@@ -1135,7 +1135,7 @@ onBeforeUnmount(() => {
 
 .gov-label { color: var(--ja-ink); font-size: 14px; font-weight: 600; }
 .gov-jump { margin-left: auto; font-size: 12px; }
-.gov-jump:focus-visible { outline: 2px solid var(--ja-primary); outline-offset: 2px; }
+.gov-jump:focus-visible { outline: 2px solid var(--ja-accent); outline-offset: 2px; }
 
 .gov-metrics { display: flex; flex-direction: column; gap: var(--ja-space-1); }
 
@@ -1172,11 +1172,11 @@ onBeforeUnmount(() => {
 
 .gov-entry-card:hover {
   background: var(--ja-surface-2);
-  border-color: var(--ja-primary);
+  border-color: var(--ja-accent);
   box-shadow: var(--ja-shadow-sm);
 }
 
-.gov-entry-card:focus-visible { outline: 2px solid var(--ja-primary); outline-offset: 2px; }
+.gov-entry-card:focus-visible { outline: 2px solid var(--ja-accent); outline-offset: 2px; }
 
 .gov-entry-inner { display: flex; flex-direction: column; gap: var(--ja-space-1); min-width: 0; }
 .gov-entry-label { color: var(--ja-ink); font-size: 14px; font-weight: 600; }
@@ -1198,7 +1198,7 @@ onBeforeUnmount(() => {
   transition: color 0.2s, transform 0.2s;
 }
 
-.gov-entry-card:hover .gov-entry-arrow { color: var(--ja-primary); transform: translateX(2px); }
+.gov-entry-card:hover .gov-entry-arrow { color: var(--ja-accent); transform: translateX(2px); }
 
 /* ════════════ 异常/告警摘要 ════════════ */
 .alert-row { margin-top: var(--ja-space-5); }
@@ -1229,7 +1229,7 @@ onBeforeUnmount(() => {
   margin-bottom: var(--ja-space-2);
 }
 .service-pane-count { color: var(--ja-ink-3); font-size: 13px; }
-.instance-link { color: var(--ja-primary); font-size: 13px; text-decoration: none; cursor: pointer; }
+.instance-link { color: var(--ja-accent); font-size: 13px; text-decoration: none; cursor: pointer; }
 .instance-link:hover { text-decoration: underline; }
 
 /* el-row 只处理横向 gutter：窄屏堆叠时补纵向间距 */
