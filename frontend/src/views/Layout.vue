@@ -760,7 +760,7 @@ const handleUserCommand = async (command: string) => {
 }
 
 .layout-header :deep(.el-breadcrumb__inner a:hover) {
-  color: var(--ja-primary);
+  color: var(--ja-accent);
 }
 
 .layout-header :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {

@@ -174,7 +174,7 @@ const { getRemainingDaysText, getRemainingDaysType, formatTokenCount } = useApiK
 
 .usage-stat {
   font-weight: 500;
-  color: var(--ja-primary);
+  color: var(--ja-accent);
 }
 
 .usage-detail {

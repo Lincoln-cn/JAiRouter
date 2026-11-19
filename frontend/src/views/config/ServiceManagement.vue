@@ -1148,7 +1148,7 @@ onMounted(() => { fetchServices() })
 .cell-link {
   text-decoration: none;
   cursor: pointer;
-  color: var(--ja-primary);
+  color: var(--ja-accent);
 }
 
 .cell-link:hover {

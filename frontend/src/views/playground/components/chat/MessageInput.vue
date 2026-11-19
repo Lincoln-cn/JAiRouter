@@ -142,7 +142,7 @@ defineExpose({
 }
 
 .input-wrapper:focus-within {
-  border-color: var(--ja-primary);
+  border-color: var(--ja-accent);
 }
 
 .input-textarea {

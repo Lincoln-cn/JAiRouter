@@ -1107,8 +1107,8 @@ onBeforeUnmount(() => {
 /* 状态标签样式优化 */
 :deep(.el-tag--success) {
   background-color: var(--ja-primary-light-9, #f0f9ff);
-  border-color: var(--ja-primary);
-  color: var(--ja-primary);
+  border-color: var(--ja-accent);
+  color: var(--ja-accent);
 }
 
 :deep(.el-tag--danger) {

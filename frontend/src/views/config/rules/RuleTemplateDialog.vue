@@ -100,11 +100,11 @@ onMounted(loadTemplates)
 }
 
 .template-card:hover {
-  border-color: var(--ja-primary);
+  border-color: var(--ja-accent);
 }
 
 .template-card.active {
-  border-color: var(--ja-primary);
+  border-color: var(--ja-accent);
   background: var(--ja-primary-light-9);
 }
 

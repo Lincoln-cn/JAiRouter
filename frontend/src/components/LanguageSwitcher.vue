@@ -68,8 +68,8 @@ const handleCommand = (command: string | number | object) => {
 
 .lang-btn:hover,
 .lang-btn:focus-visible {
-  color: var(--ja-primary);
-  border-color: var(--ja-primary);
+  color: var(--ja-accent);
+  border-color: var(--ja-accent);
   background: var(--el-color-primary-light-9);
 }
 
@@ -98,11 +98,11 @@ const handleCommand = (command: string | number | object) => {
 }
 
 .lang-menu .lang-item .lang-check {
-  color: var(--ja-primary);
+  color: var(--ja-accent);
 }
 
 .lang-menu .lang-active {
-  color: var(--ja-primary);
+  color: var(--ja-accent);
   font-weight: 500;
 }
 </style>

@@ -1343,7 +1343,7 @@ onMounted(() => {
 }
 
 .copy-btn:hover {
-  color: var(--ja-primary);
+  color: var(--ja-accent);
 }
 
 .ellipsis {
@@ -1449,7 +1449,7 @@ onMounted(() => {
 }
 
 .header-row:hover {
-  border-color: var(--ja-primary);
+  border-color: var(--ja-accent);
   box-shadow: var(--ja-shadow);
 }
 

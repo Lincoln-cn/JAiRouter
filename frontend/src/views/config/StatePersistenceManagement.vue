@@ -570,7 +570,7 @@ onMounted(loadAll)
 }
 
 .tier-box.tier-active {
-  border-color: var(--ja-primary);
+  border-color: var(--ja-accent);
   background: var(--ja-paper);
 }
 

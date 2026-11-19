@@ -288,7 +288,7 @@ const handleClear = () => {
 }
 
 .status-loading {
-  color: var(--ja-primary);
+  color: var(--ja-accent);
   animation: pulse 1s infinite;
 }
 
