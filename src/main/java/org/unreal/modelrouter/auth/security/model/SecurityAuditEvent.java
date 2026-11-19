@@ -64,6 +64,15 @@ public class SecurityAuditEvent {
     private String failureReason;
     
     /**
+     * 附加说明（落 {@code security_audit.details} 列，纯文本，供审计页直接展示）。
+     *
+     * <p>与 {@link #additionalData} 的分工：这里放**一句话人能读的补充**（如「角色 AUDITOR」、
+     * 「由管理端触发」），{@code additionalData} 放结构化 JSON（落 {@code metadata} 列）。
+     * 历史上这个字段缺位，导致 {@code recordEvent} 通道落库的行 details 恒为空（issue #1186）。</p>
+     */
+    private String details;
+
+    /**
      * 附加数据
      */
     private Map<String, Object> additionalData;
