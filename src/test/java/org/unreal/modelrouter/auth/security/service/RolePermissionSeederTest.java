@@ -88,7 +88,9 @@ class RolePermissionSeederTest {
             // #1173：monitoring:config:read 与 write 配对（MANAGE_PAIRED_READ_TO_WRITE）⇒
             // OPERATOR 持 write 故保留 read（+1 ⇒ 55），VIEWER 不持写码故被排除 ⇒ 仍 31
             assertEquals(55L, counts.get("OPERATOR"));
-            assertEquals(34L, counts.get("USER"));
+            // #1185：USER 的 tokenusage 全局读码换成本人读码（仍然 1 个），
+            // 异常读码移除（异常记录没有归属字段，无法按本人隔离）⇒ 34 - 1 = 33
+            assertEquals(33L, counts.get("USER"));
             assertEquals(32L, counts.get("VIEWER"));
             // #1174：系统里第一组「不是人」的角色模板。SLA_READONLY = 35 个只读码（不含
             // callhistory:full-content、security:*:manage、system:*）；SLA_OPERATOR 再加 18 个
@@ -157,17 +159,20 @@ class RolePermissionSeederTest {
             for (String monitoringRead : monitoringReadCodes()) {
                 assertTrue(codes.contains(monitoringRead), "USER 应包含 " + monitoringRead);
             }
-            // #1183：本人读码目前只发 callhistory:self:read —— 该面的数据隔离已在
-            // ApiCallHistoryController 落地（CallHistoryDataScopeTest 守着）；
-            // tokenusage / exceptions 的 self 过滤尚未实现，因此这两个 self 码不发给任何角色，
-            // 避免「发了码但后端不过滤」的安全假象（#1185）。这两个面仍是全局读。
+            // #1183 / #1185：USER 的三处「本人读」面
+            //   callhistory:self:read  —— ApiCallHistoryController 已按 DataScope 过滤
+            //   monitoring:tokenusage:self:read —— TokenUsageController 已按 DataScope 过滤（本轮）
+            //   monitoring:exceptions:self:read —— 不发：异常记录没有归属字段，过滤不了
             assertTrue(codes.contains(PermissionCodes.CALLHISTORY_SELF_READ));
             assertFalse(codes.contains(PermissionCodes.CALLHISTORY_READ),
                     "#1183：USER 持本人读码时不发全局调用记录读码");
-            assertTrue(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ));
-            assertTrue(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ));
+            assertTrue(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ),
+                    "#1185：Token 用量按本人过滤，发本人读码");
+            assertFalse(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ),
+                    "#1185：持本人读码时不发全局 Token 用量读码，否则能看到全平台用量");
+            assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ),
+                    "#1185：异常记录无归属字段，USER 不发异常读码（菜单入口同时收窄）");
             assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_SELF_READ));
-            assertFalse(codes.contains(PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ));
             assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_WRITE));
             assertTrue(codes.contains(PermissionCodes.TRACING_DASHBOARD_READ));
             assertTrue(codes.contains(PermissionCodes.TRACING_SEARCH_READ));
@@ -311,6 +316,42 @@ class RolePermissionSeederTest {
             assertTrue(operatorCodes.contains(PermissionCodes.SECURITY_AUDIT_WRITE));
             // USER 的模板内规则所需码也应补齐
             assertTrue(repository.codesOf("USER").contains(PermissionCodes.CONFIG_CACHE_READ));
+        }
+
+        @Test
+        @DisplayName("存量库 USER 仍持有已撤销的全局码时，收敛会把它们回收（#1185）")
+        void revokedGlobalCodesAreReclaimed() {
+            repository.seed("USER",
+                    PermissionCodes.MONITORING_TOKENUSAGE_READ,
+                    PermissionCodes.MONITORING_EXCEPTIONS_READ,
+                    PermissionCodes.CONFIG_CACHE_READ);
+
+            seeder.seedIfEmpty();
+
+            Set<String> user = repository.codesOf("USER");
+            assertFalse(user.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ),
+                    "#1185：全局 Token 用量读码必须被回收，否则 USER 仍看得到全平台用量");
+            assertFalse(user.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ),
+                    "#1185：异常读码必须被回收（该模块无归属字段，无法按本人过滤）");
+            assertTrue(user.contains(PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ),
+                    "回收后应按新模板补上本人读码");
+            assertTrue(user.contains(PermissionCodes.CONFIG_CACHE_READ), "模板内既有码不受影响");
+        }
+
+        @Test
+        @DisplayName("回收只针对撤销清单里的角色与码，手工定制码与其他角色不动")
+        void revocationIsNarrowlyScoped() {
+            repository.seed("USER", PermissionCodes.MONITORING_TOKENUSAGE_READ, "custom:user:extra");
+            repository.seed("OPERATOR", PermissionCodes.MONITORING_EXCEPTIONS_READ, "custom:ops:extra");
+
+            seeder.seedIfEmpty();
+
+            Set<String> user = repository.codesOf("USER");
+            assertFalse(user.contains(PermissionCodes.MONITORING_TOKENUSAGE_READ));
+            assertTrue(user.contains("custom:user:extra"), "手工定制码必须保留");
+            assertTrue(repository.codesOf("OPERATOR").contains(PermissionCodes.MONITORING_EXCEPTIONS_READ),
+                    "OPERATOR 不在撤销清单里，其异常读码（模板内）不得被回收");
+            assertTrue(repository.codesOf("OPERATOR").contains("custom:ops:extra"));
         }
 
         @Test
@@ -634,6 +675,12 @@ class RolePermissionSeederTest {
                 case "deleteByRoleName":
                     rows.removeIf(row -> Objects.equals(args[0], row.getRoleName()));
                     return null;
+                case "deleteByRoleNameAndPermissionCode": {
+                    int before = rows.size();
+                    rows.removeIf(row -> Objects.equals(args[0], row.getRoleName())
+                            && Objects.equals(args[1], row.getPermissionCode()));
+                    return (long) (before - rows.size());
+                }
                 default:
                     throw new UnsupportedOperationException("测试假实现未覆盖的仓库方法: " + name);
             }

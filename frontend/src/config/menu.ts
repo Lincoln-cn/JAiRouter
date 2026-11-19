@@ -147,7 +147,9 @@ export const menuGroups: MenuGroup[] = [
         object: 'exception',
         section: 'menu.sections.health',
         permission: 'monitoring:exceptions:read',
-        audience: ['admin', 'maintainer', 'user', 'observer'],
+        // USER 不在列：异常记录没有归属字段，无法按本人隔离（issue #1185），
+        // 与其让它看全局异常，不如不给入口 —— 自己的失败数在「我的用量」页里。
+        audience: ['admin', 'maintainer', 'observer'],
         tabs: [
           { key: 'exceptions-list', labelKey: 'menu.exceptionList', to: '/exceptions/list' },
           { key: 'exceptions-statistics', labelKey: 'menu.exceptionStats', to: '/exceptions/statistics' },
@@ -170,7 +172,8 @@ export const menuGroups: MenuGroup[] = [
         title: 'menu.usage',
         object: 'usage',
         section: 'menu.sections.usage',
-        permission: 'monitoring:tokenusage:read',
+        // 全局码看全量，本人读码只看自己（后端按 DataScope 过滤，见 #1185）
+        permission: ['monitoring:tokenusage:read', 'monitoring:tokenusage:self:read'],
         audience: ['admin', 'maintainer', 'user', 'observer'],
         tabs: [
           { key: 'call-history-token-usage', labelKey: 'menu.tokenUsage', to: '/call-history/token-usage' },

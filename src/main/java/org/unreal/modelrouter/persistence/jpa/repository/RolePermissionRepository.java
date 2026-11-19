@@ -38,4 +38,13 @@ public interface RolePermissionRepository extends JpaRepository<RolePermissionEn
      * @param roleName 角色名
      */
     void deleteByRoleName(String roleName);
+
+    /**
+     * 删除某个角色的单个权限码（#1185：角色模板撤销权限码后的存量回收）。
+     *
+     * @param roleName 角色名（大写）
+     * @param permissionCode 权限码
+     * @return 删除的行数
+     */
+    long deleteByRoleNameAndPermissionCode(String roleName, String permissionCode);
 }

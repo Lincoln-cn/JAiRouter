@@ -7,10 +7,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.monitor.dto.TokenUsageRecordDTO;
 import org.unreal.modelrouter.monitor.dto.TokenUsageStatisticsDTO;
 import org.unreal.modelrouter.persistence.jpa.entity.TokenUsageEntity;
+import org.unreal.modelrouter.auth.security.permission.DataScope;
 import org.unreal.modelrouter.persistence.jpa.repository.TokenUsageRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.TreeMap;
+import java.util.LinkedHashMap;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +31,14 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class TokenUsageService {
+
+    /**
+     * 「本人」视图一次最多聚合多少行。
+     *
+     * <p>受限统计走内存聚合（复用既有全局 SQL 会需要十几组带 owner 条件的重载查询），
+     * 因此给一个上限，防止极长时间范围把内存打满；超出部分按时间倒序截断（取最近的）。</p>
+     */
+    private static final int MAX_SCOPED_ROWS = 20_000;
 
     private final TokenUsageRepository tokenUsageRepository;
 
@@ -263,6 +276,198 @@ public class TokenUsageService {
      * @param limit 最大数量
      * @return 使用记录列表
      */
+    /**
+     * 按数据面范围取统计（issue #1185）。
+     *
+     * <p>持全局码（{@code monitoring:tokenusage:read}）走原来的 SQL 聚合；只持「本人读」码
+     * （{@code monitoring:tokenusage:self:read}）时按 {@link DataScope#owns} 过滤后在内存聚合，
+     * 口径与全局版一致（成功率分母用请求数、平均响应只统计有响应时间的行）。</p>
+     *
+     * @param startTime 开始时间，空则取最近 7 天
+     * @param endTime   结束时间，空则取当前
+     * @param scope     数据面范围，{@code null} 或不限行时等价于全局统计
+     * @return 统计信息 DTO
+     */
+    @Transactional(readOnly = true)
+    public TokenUsageStatisticsDTO getTokenUsageStatistics(final LocalDateTime startTime,
+                                                           final LocalDateTime endTime,
+                                                           final DataScope scope) {
+        if (scope == null || !scope.restricted()) {
+            return getTokenUsageStatistics(startTime, endTime);
+        }
+        final LocalDateTime effectiveStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
+        final LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
+        final List<TokenUsageEntity> rows = tokenUsageRepository
+                .findByTimeRange(effectiveStartTime, effectiveEndTime).stream()
+                .filter(row -> scope.owns(row.getUserId(), row.getApiKeyId()))
+                .limit(MAX_SCOPED_ROWS)
+                .collect(Collectors.toList());
+        return aggregateRestricted(effectiveStartTime, effectiveEndTime, rows);
+    }
+
+    /**
+     * 按数据面范围取最近使用记录。
+     */
+    @Transactional(readOnly = true)
+    public List<TokenUsageEntity> getRecentUsage(final int limit, final DataScope scope) {
+        if (scope == null || !scope.restricted()) {
+            return getRecentUsage(limit);
+        }
+        final int capped = Math.min(Math.max(limit, 1), 100);
+        final LocalDateTime since = LocalDateTime.now().minusDays(90);
+        return tokenUsageRepository.findByTimeRange(since, LocalDateTime.now()).stream()
+                .filter(row -> scope.owns(row.getUserId(), row.getApiKeyId()))
+                .limit(capped)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 内存聚合（受限视图）。维度口径与全局 SQL 版保持同名字段一致。
+     */
+    private TokenUsageStatisticsDTO aggregateRestricted(final LocalDateTime startTime,
+                                                        final LocalDateTime endTime,
+                                                        final List<TokenUsageEntity> rows) {
+        final TokenUsageStatisticsDTO dto = TokenUsageStatisticsDTO.builder()
+                .startTime(startTime)
+                .endTime(endTime)
+                .build();
+        final long totalRequests = rows.size();
+        final long successful = rows.stream().filter(row -> Boolean.TRUE.equals(row.getIsSuccess())).count();
+        final long failed = rows.stream().filter(row -> Boolean.FALSE.equals(row.getIsSuccess())).count();
+        final long totalTokens = rows.stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum();
+        final long totalPrompt = rows.stream().mapToLong(row -> zeroIfNull(row.getPromptTokens())).sum();
+        final long totalCompletion = rows.stream().mapToLong(row -> zeroIfNull(row.getCompletionTokens())).sum();
+        final double avgResponse = rows.stream()
+                .filter(row -> row.getResponseTimeMs() != null)
+                .mapToLong(TokenUsageEntity::getResponseTimeMs)
+                .average()
+                .orElse(0.0);
+        dto.setTotalRequests(totalRequests);
+        dto.setSuccessfulRequests(successful);
+        dto.setFailedRequests(failed);
+        dto.setTotalTokens(totalTokens);
+        dto.setTotalPromptTokens(totalPrompt);
+        dto.setTotalCompletionTokens(totalCompletion);
+        dto.setAvgResponseTimeMs(avgResponse);
+        dto.setSuccessRate(totalRequests > 0 ? (double) successful / totalRequests * 100 : 0.0);
+
+        dto.setByModel(rows.stream()
+                .collect(Collectors.groupingBy(row -> nullToEmpty(row.getModelName()), LinkedHashMap::new,
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> {
+                    final List<TokenUsageEntity> group = entry.getValue();
+                    final long tokens = group.stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum();
+                    final long count = group.size();
+                    return new TokenUsageStatisticsDTO.ModelTokenStats(entry.getKey(), tokens,
+                            group.stream().mapToLong(row -> zeroIfNull(row.getPromptTokens())).sum(),
+                            group.stream().mapToLong(row -> zeroIfNull(row.getCompletionTokens())).sum(),
+                            count, count > 0 ? (double) tokens / count : 0.0);
+                })
+                .sorted(Comparator.comparing(TokenUsageStatisticsDTO.ModelTokenStats::getTotalTokens,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList()));
+
+        dto.setByServiceType(rows.stream()
+                .collect(Collectors.groupingBy(row -> nullToEmpty(row.getServiceType()), LinkedHashMap::new,
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> new TokenUsageStatisticsDTO.ServiceTypeStats(entry.getKey(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getPromptTokens())).sum(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getCompletionTokens())).sum(),
+                        (long) entry.getValue().size()))
+                .collect(Collectors.toList()));
+
+        dto.setByProvider(rows.stream()
+                .collect(Collectors.groupingBy(row -> nullToEmpty(row.getProvider()), LinkedHashMap::new,
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> new TokenUsageStatisticsDTO.ProviderStats(entry.getKey(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum(),
+                        (long) entry.getValue().size()))
+                .collect(Collectors.toList()));
+
+        dto.setByDay(rows.stream()
+                .collect(Collectors.groupingBy(row -> nullToEmpty(row.getUsageDate()), TreeMap::new,
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> new TokenUsageStatisticsDTO.DailyStats(entry.getKey(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getPromptTokens())).sum(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getCompletionTokens())).sum(),
+                        (long) entry.getValue().size()))
+                .collect(Collectors.toList()));
+
+        dto.setByWeek(rows.stream()
+                .collect(Collectors.groupingBy(row -> row.getYear() + "-" + row.getWeekOfYear(), TreeMap::new,
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> {
+                    final TokenUsageEntity sample = entry.getValue().get(0);
+                    return new TokenUsageStatisticsDTO.WeeklyStats(sample.getYear(), sample.getWeekOfYear(),
+                            entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum(),
+                            entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getPromptTokens())).sum(),
+                            entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getCompletionTokens())).sum(),
+                            (long) entry.getValue().size(),
+                            String.format("%d-W%02d", sample.getYear(), sample.getWeekOfYear()));
+                })
+                .collect(Collectors.toList()));
+
+        dto.setByMonth(rows.stream()
+                .collect(Collectors.groupingBy(row -> row.getYear() + "-" + row.getMonth(), TreeMap::new,
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> {
+                    final TokenUsageEntity sample = entry.getValue().get(0);
+                    return new TokenUsageStatisticsDTO.MonthlyStats(sample.getYear(), sample.getMonth(),
+                            entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum(),
+                            entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getPromptTokens())).sum(),
+                            entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getCompletionTokens())).sum(),
+                            (long) entry.getValue().size(),
+                            String.format("%d-%02d", sample.getYear(), sample.getMonth()));
+                })
+                .collect(Collectors.toList()));
+
+        dto.setByHour(rows.stream()
+                .collect(Collectors.groupingBy(row -> row.getHour() == null ? -1 : row.getHour(),
+                        TreeMap::new, Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> new TokenUsageStatisticsDTO.HourlyStats(entry.getKey(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum(),
+                        (long) entry.getValue().size(),
+                        entry.getKey() < 0 ? "-" : String.format("%02d:00", entry.getKey())))
+                .collect(Collectors.toList()));
+
+        dto.setByApiKey(rows.stream()
+                .collect(Collectors.groupingBy(row -> nullToEmpty(row.getApiKeyId()), LinkedHashMap::new,
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> new TokenUsageStatisticsDTO.ApiKeyStats(entry.getKey(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum(),
+                        (long) entry.getValue().size()))
+                .collect(Collectors.toList()));
+
+        dto.setByUser(rows.stream()
+                .collect(Collectors.groupingBy(row -> nullToEmpty(row.getUserId()), LinkedHashMap::new,
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(entry -> new TokenUsageStatisticsDTO.UserStats(entry.getKey(),
+                        entry.getValue().stream().mapToLong(row -> zeroIfNull(row.getTotalTokens())).sum(),
+                        (long) entry.getValue().size()))
+                .collect(Collectors.toList()));
+
+        return dto;
+    }
+
+    private static long zeroIfNull(final Long value) {
+        return value == null ? 0L : value;
+    }
+
+    private static String nullToEmpty(final String value) {
+        return value == null ? "" : value;
+    }
+
     @Transactional(readOnly = true)
     public List<TokenUsageEntity> getRecentUsage(int limit) {
         return tokenUsageRepository.findRecentUsage(Math.min(limit, 100));

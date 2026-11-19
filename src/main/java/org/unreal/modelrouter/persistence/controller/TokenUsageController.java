@@ -9,6 +9,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import reactor.core.publisher.Mono;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.auth.security.permission.DataScopeResolver;
+import org.unreal.modelrouter.auth.security.permission.PermissionCodes;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.dto.TokenUsageRecordDTO;
@@ -41,6 +44,9 @@ import java.util.List;
 public class TokenUsageController {
 
     private final TokenUsageService tokenUsageService;
+
+    /** 数据面范围解析（issue #1185：持「本人读」码时只统计自己的用量）。 */
+    private final DataScopeResolver dataScopeResolver;
 
     /**
      * 记录 Token 使用量
@@ -142,8 +148,9 @@ public class TokenUsageController {
      * 获取 Token 使用量统计信息
      */
     @GetMapping("/statistics")
-    @Operation(summary = "获取 Token 使用量统计信息", description = "获取指定时间范围内的 Token 使用量统计信息，包括按模型、服务类型、周、月等维度的统计")
-    public ResponseEntity<RouterResponse<TokenUsageStatisticsDTO>> getTokenUsageStatistics(
+    @Operation(summary = "获取 Token 使用量统计信息", description = "获取指定时间范围内的 Token 使用量统计信息，包括按模型、服务类型、周、月等维度的统计；"
+            + "只持「本人读」码（monitoring:tokenusage:self:read）时只统计当前账号自己的用量")
+    public Mono<ResponseEntity<RouterResponse<TokenUsageStatisticsDTO>>> getTokenUsageStatistics(
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -152,24 +159,35 @@ public class TokenUsageController {
             @Parameter(description = "结束时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime endTime) {
+            LocalDateTime endTime,
 
-        TokenUsageStatisticsDTO statistics = tokenUsageService.getTokenUsageStatistics(startTime, endTime);
-        return ResponseEntity.ok(RouterResponse.success(statistics));
+            Authentication authentication) {
+
+        return dataScopeResolver
+                .resolveWithKeys(authentication, PermissionCodes.MONITORING_TOKENUSAGE_READ,
+                        PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ)
+                .map(scope -> ResponseEntity.ok(
+                        RouterResponse.success(tokenUsageService.getTokenUsageStatistics(startTime, endTime, scope))));
     }
 
     /**
      * 获取最近的使用记录
      */
     @GetMapping("/recent")
-    @Operation(summary = "获取最近的使用记录", description = "获取最近发生的 Token 使用记录列表")
-    public ResponseEntity<RouterResponse<List<TokenUsageEntity>>> getRecentUsage(
+    @Operation(summary = "获取最近的使用记录", description = "获取最近发生的 Token 使用记录列表；"
+            + "只持「本人读」码时只返回当前账号自己的记录")
+    public Mono<ResponseEntity<RouterResponse<List<TokenUsageEntity>>>> getRecentUsage(
             @Parameter(description = "最大数量")
             @RequestParam(defaultValue = "20")
-            int limit) {
+            int limit,
 
-        List<TokenUsageEntity> records = tokenUsageService.getRecentUsage(limit);
-        return ResponseEntity.ok(RouterResponse.success(records));
+            Authentication authentication) {
+
+        return dataScopeResolver
+                .resolveWithKeys(authentication, PermissionCodes.MONITORING_TOKENUSAGE_READ,
+                        PermissionCodes.MONITORING_TOKENUSAGE_SELF_READ)
+                .map(scope -> ResponseEntity.ok(
+                        RouterResponse.success(tokenUsageService.getRecentUsage(limit, scope))));
     }
 
 }
