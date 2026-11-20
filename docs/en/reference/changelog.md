@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.8
-> **Last Updated**: 2026-11-16
+> **Document Version**: 3.9.0
+> **Last Updated**: 2026-11-20
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -69,6 +69,47 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 * **One validator for both write surfaces**: `/api/monitoring/config/*` and `/actuator/metrics/*` share the same sampling/performance bounds (sampling 0..1, `batchSize >= 1`, `bufferSize >= batchSize`), and a violation returns 400 on either path; `/actuator/metrics/*` is documented as the ADMIN break-glass bypass, marked `@Deprecated`, and is not consumed by the console.
 * **Emergency impact preview**: `GET /api/monitoring/emergency/preview?action=` reports entry counts, the top error keys, the current degradation level and sampling ratios, and breaker state and failure rate before an action runs (lists capped at 20 rows, totals separate); the console feeds it into the confirmation popover.
 * **Permission codes 71 → 72**: `monitoring:config:read` (read access to the page and the impact preview) is granted to OPERATOR through the manage/read pairing rule, since it already holds the write code (54 → 55); VIEWER stays at 31 and USER at 33, and neither sees the monitoring config page.
+
+### [3.9.0] - 2026-11-20 - Console information architecture rebuilt, permissions bound to visible entries
+
+This release turns the console from "features piled into a menu" into "one entry per object", and makes permission codes line up with menu entries: every page you can see has a code, and every code has a page.
+
+**Permission model**
+
+* **New AUDITOR role (7 roles / 79 permission codes)**: a minimal read-only set for third-party auditors - dashboard, audit log, page access heat, client access guide. No write actions.
+* **"Self-only read" scopes**: added `callhistory:self:read`, `monitoring:tokenusage:self:read`, `monitoring:exceptions:self:read`. With these, the backend narrows responses through `DataScope` (call history by userId or keys the user owns; out-of-scope detail returns 404 rather than 403 so existence is not leaked).
+* **USER template cut from 34 codes to 9**, each mapping to a page the role can actually open. On startup the seeder reclaims retired codes via `REVOKED_BY_ROLE` - the previous contract was append-only, so existing databases would otherwise keep codes with no entry.
+* **Page-level audience contract**: menu items declare `object / audience / view`; the menu is filtered per role and the route guard sends a user back to their own role's home page.
+
+**Console**
+
+* **Five role home pages**: governance console (ADMIN), operations board (OPERATOR), my usage (USER), trends report (VIEWER), audit log (AUDITOR).
+* **One entry per object (39 items / 53 pages)**: previously 49 flat items with configuration, lists and charts mixed inside the same group. Multi-view objects (call records/statistics, circuit breaker monitoring/history/config, deployment trio, monitoring config/runtime) are now single entries with a view switcher moved into the content area; the five playground tools and the client access guide became separate menu items.
+* **Configuration pages: one save per page, switches apply immediately** via `ConfigPageShell` + `useConfigDraft`; the action bar stays pinned, switches apply on change and roll back on failure. Configuration pages no longer carry statistic cards or lists.
+* **Collection pages use a right-side drawer**, observation pages share toolbar ordering and empty states, mixed pages are split into observation / list / configuration.
+* **New pages**: SLA access, page access heat (stores only userId + path + role; no query strings, no client IP), login guard thresholds.
+
+**SLA access**
+
+* One-time bootstrap token exchanged for a long-lived refresh credential (90-day rolling by default), so deployments no longer store the admin password. `SLA_READONLY` / `SLA_OPERATOR` service roles can be revoked at any time.
+
+**Visual**
+
+* unslop pass: locally bundled Inter, a single accent (light `#0e7490` / dark `#6ee0e8`), ink-filled primary buttons, no pills or gradients, chart series palette decoupled from the accent, `--ja-primary` alias retired.
+
+**Fixes**
+
+* **Token usage and exceptions no longer leak across users (#1185 / #1189)**: `exception_events` gains `user_id` / `api_key_id` and backfills from call history by `trace_id` (V19).
+* **Audit events keep the `details` column (#1186)**: `SecurityAuditEvent` had no such field, so rows written through `recordEvent` always stored an empty details.
+* **Tracing search service-name dropdown works again** (backend field is `name`, the UI read `serviceName`); **API key permissions no longer show raw `imggen` / `imgedit`** (stored in canonical camelCase, UI tolerates historical lowercase rows); **the model & instances menu group icon is back**.
+* **Single source for migration versions**: a guard test reads the version list from `db/migration` instead of four hard-coded literals.
+* **dev scripts fixed**: `-Dserver.port` after `-jar` was dropped by the JVM (port silently ignored), `-Pfast` produced a thin jar without `static/admin`, and `dev-start.sh` had hard-coded paths.
+
+**Upgrade notes**
+
+* Two new migrations: `V18__ui_page_views.sql` (page access table) and `V19__exception_ownership.sql` (adds ownership columns to exceptions and backfills by `trace_id`; unresolvable rows stay empty).
+* **The USER permission cut is a behaviour change**: after upgrading, USER only reaches the pages behind its nine entries. Integrations relying on the old `config:*:read` codes must be re-granted in Access & Identity -> Permissions.
+* If custom console CSS references `--ja-primary`, switch to `--ja-accent` (the `-light-N` / `-dark-N` Element mirrors remain).
 
 ### [3.8.8] - 2026-11-16 - Tracing that can be investigated, not just watched
 
