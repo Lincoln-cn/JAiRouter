@@ -397,7 +397,8 @@ class MetricsManagementControllerTest {
             ResponseEntity<String> result = controller.updateSamplingConfig(request);
 
             assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
-            assertTrue(result.getBody().contains("采样率必须在 0~1 之间"));
+            assertEquals("Invalid sampling configuration", result.getBody());
+            assertFalse(result.getBody().contains("5.0"), "响应体不得回显校验异常消息（CodeQL #92）");
             verify(sampling, never()).setRequestMetrics(5.0);
         }
 
@@ -465,7 +466,8 @@ class MetricsManagementControllerTest {
             ResponseEntity<String> result = controller.updatePerformanceConfig(request);
 
             assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
-            assertTrue(result.getBody().contains("缓冲区必须 ≥ 批大小"));
+            assertEquals("Invalid performance configuration", result.getBody());
+            assertFalse(result.getBody().contains("400"), "响应体不得回显校验异常消息（CodeQL #93）");
             verify(performance, never()).setBufferSize(400);
         }
     }
