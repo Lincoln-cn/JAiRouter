@@ -45,8 +45,8 @@
       "Version": "1.0.3",
       "LastModified": "2026-11-26T23:35:30.789433",
       "ContentHash": "8dfd67faa740efab",
-      "GitCommit": "a3f1f22f",
-      "Author": "Lincoln",
+      "GitCommit": "1130ed56",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -194,8 +194,8 @@
       "Version": "1.0.1",
       "LastModified": "2026-11-26T23:43:33.404592",
       "ContentHash": "da702acd58d65d29",
-      "GitCommit": "a3f1f22f",
-      "Author": "Lincoln",
+      "GitCommit": "1130ed56",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/index.md",
@@ -1202,8 +1202,8 @@
       "Version": "1.0.3",
       "LastModified": "2026-11-26T23:36:09.554554",
       "ContentHash": "3fbc89e4617d3ec8",
-      "GitCommit": "a3f1f22f",
-      "Author": "Lincoln",
+      "GitCommit": "1130ed56",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -1350,8 +1350,8 @@
       "Version": "1.0.1",
       "LastModified": "2026-11-26T23:36:15.297547",
       "ContentHash": "a9d801fde3297980",
-      "GitCommit": "a3f1f22f",
-      "Author": "Lincoln",
+      "GitCommit": "1130ed56",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/monitoring/index.md",
@@ -8918,5 +8918,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-26T10:27:42.804965"
+  "last_updated": "2026-11-26T16:10:47.387336"
 }
