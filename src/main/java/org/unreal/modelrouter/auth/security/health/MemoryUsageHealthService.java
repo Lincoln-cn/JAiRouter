@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 
 /**
  * 内存使用情况健康检查服务
@@ -236,7 +237,7 @@ public class MemoryUsageHealthService {
             status.put("thresholds", thresholds);
             
         } catch (Exception e) {
-            status.put("error", e.getMessage());
+            status.put("error", ClientErrors.message(e, "读取内存状态详情失败"));
             log.error("获取内存状态详情失败", e);
         }
         
@@ -279,7 +280,8 @@ public class MemoryUsageHealthService {
             gcInfo.put("jvmUptimeMs", uptime);
             
         } catch (Exception e) {
-            gcInfo.put("error", e.getMessage());
+            log.error("获取垃圾回收信息失败", e);
+            gcInfo.put("error", ClientErrors.message(e, "读取垃圾回收信息失败"));
         }
         
         return gcInfo;

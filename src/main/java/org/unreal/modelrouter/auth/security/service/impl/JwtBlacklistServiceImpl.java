@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
 import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.common.util.JacksonHelper;
 import reactor.core.publisher.Mono;
@@ -235,7 +236,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
             } catch (Exception e) {
                 log.error("Failed to get blacklist stats: { }", e.getMessage(), e);
                 Map<String, Object> errorStats = new HashMap<>();
-                errorStats.put("error", e.getMessage());
+                errorStats.put("error", ClientErrors.message(e, "读取黑名单统计失败"));
                 errorStats.put("currentSize", 0L);
                 return errorStats;
             }

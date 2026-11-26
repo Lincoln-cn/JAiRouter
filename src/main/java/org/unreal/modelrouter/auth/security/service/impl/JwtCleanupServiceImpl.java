@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
 import org.unreal.modelrouter.auth.security.service.JwtCleanupService;
 import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import reactor.core.publisher.Mono;
 
@@ -166,12 +167,13 @@ public final class JwtCleanupServiceImpl implements JwtCleanupService {
     private CleanupResult handleTokenCleanupError(final Exception e, final LocalDateTime startTime) {
         LocalDateTime endTime = LocalDateTime.now();
         long duration = java.time.Duration.between(startTime, endTime).toMillis();
+        log.error("令牌清理失败", e);
         CleanupResult result = new CleanupResult(0, 0, startTime, endTime, false);
-        result.setErrorMessage(e.getMessage());
+        result.setErrorMessage(ClientErrors.message(e, "清理令牌失败"));
 
         Map<String, Object> details = new HashMap<>();
         details.put("cleanupType", "tokens");
-        details.put("error", e.getMessage());
+        details.put("error", ClientErrors.message(e, "清理令牌失败"));
         details.put("errorClass", e.getClass().getSimpleName());
         details.put("duration", duration);
         result.setDetails(details);
@@ -227,12 +229,13 @@ public final class JwtCleanupServiceImpl implements JwtCleanupService {
     private CleanupResult handleBlacklistCleanupError(final Exception e, final LocalDateTime startTime) {
         LocalDateTime endTime = LocalDateTime.now();
         long duration = java.time.Duration.between(startTime, endTime).toMillis();
+        log.error("黑名单清理失败", e);
         CleanupResult result = new CleanupResult(0, 0, startTime, endTime, false);
-        result.setErrorMessage(e.getMessage());
+        result.setErrorMessage(ClientErrors.message(e, "清理黑名单失败"));
 
         Map<String, Object> details = new HashMap<>();
         details.put("cleanupType", "blacklist");
-        details.put("error", e.getMessage());
+        details.put("error", ClientErrors.message(e, "清理黑名单失败"));
         details.put("errorClass", e.getClass().getSimpleName());
         details.put("duration", duration);
         result.setDetails(details);
@@ -336,11 +339,12 @@ public final class JwtCleanupServiceImpl implements JwtCleanupService {
         LocalDateTime endTime = LocalDateTime.now();
         long totalDuration = java.time.Duration.between(startTime, endTime).toMillis();
 
+        log.error("完整清理失败", e);
         CleanupResult result = new CleanupResult(0, 0, startTime, endTime, false);
-        result.setErrorMessage(e.getMessage());
+        result.setErrorMessage(ClientErrors.message(e, "清理任务失败"));
 
         Map<String, Object> details = new HashMap<>();
-        details.put("error", e.getMessage());
+        details.put("error", ClientErrors.message(e, "清理任务失败"));
         details.put("errorClass", e.getClass().getSimpleName());
         details.put("totalDuration", totalDuration);
         details.put("tokenPhaseCompleted", tokenResult != null);
