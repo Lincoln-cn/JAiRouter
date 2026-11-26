@@ -39,6 +39,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.Map;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 
 /**
  * JWT令牌管理控制器
@@ -139,15 +140,10 @@ public class JwtTokenController {
                             && ErrorCode.FORBIDDEN.code().equals(apiEx.getErrorCode())) {
                         return Mono.error(apiEx);
                     }
-                    log.warn("JWT令牌撤销失败: {}", ex.getMessage());
+                    // #1197：异常原文只进日志；此前这里创建的 JwtApiResponse 从未被返回，一并删除
+                    log.warn("JWT令牌撤销失败: {}", ex.getMessage(), ex);
 
-                    JwtApiResponse response = new JwtApiResponse();
-                    response.setSuccess(false);
-                    response.setMessage("令牌撤销失败: " + ex.getMessage());
-                    response.setTimestamp(LocalDateTime.now());
-
-                    return Mono.error(ApiException.of(
-                            ErrorCode.TOKEN_REVOKE_FAILED.code(), "令牌撤销失败: " + ex.getMessage()));
+                    return Mono.error(ClientErrors.api(ex, ErrorCode.TOKEN_REVOKE_FAILED, "令牌撤销失败"));
                 });
     }
 
@@ -274,15 +270,11 @@ public class JwtTokenController {
                     return RouterResponse.success(response, "批量撤销令牌成功");
                 }))
                 .onErrorResume(ex -> {
-                    log.warn("批量JWT令牌撤销失败: {}", ex.getMessage());
+                    // #1197：异常原文只进日志；JwtApiResponse 此前未被返回，一并删除
+                    log.warn("批量JWT令牌撤销失败: {}", ex.getMessage(), ex);
 
-                    JwtApiResponse response = new JwtApiResponse();
-                    response.setSuccess(false);
-                    response.setMessage("批量撤销失败: " + ex.getMessage());
-                    response.setTimestamp(LocalDateTime.now());
-
-                    return Mono.error(ApiException.of(
-                            ErrorCode.BATCH_TOKEN_REVOKE_FAILED.code(), "批量撤销失败: " + ex.getMessage()));
+                    return Mono.error(ClientErrors.api(
+                            ex, ErrorCode.BATCH_TOKEN_REVOKE_FAILED, "批量撤销失败"));
                 });
     }
 
@@ -341,11 +333,12 @@ public class JwtTokenController {
                     }
                 })
                 .onErrorResume(ex -> {
-                    log.warn("JWT令牌验证失败: {}", ex.getMessage());
+                    // #1197：校验失败的原文只进日志（JWT 内部细节不外显）
+                    log.warn("JWT令牌验证失败: {}", ex.getMessage(), ex);
 
                     TokenValidationResponse response = new TokenValidationResponse();
                     response.setValid(false);
-                    response.setMessage("令牌验证失败: " + ex.getMessage());
+                    response.setMessage("令牌验证失败");
                     response.setTimestamp(LocalDateTime.now());
 
                     return Mono.just(RouterResponse.success(response, "令牌验证失败"));
@@ -466,9 +459,8 @@ public class JwtTokenController {
         return resultMono
                 .map(result -> RouterResponse.success(result, "令牌列表获取成功"))
                 .onErrorResume(ex -> {
-                    log.warn("获取令牌列表失败: {}", ex.getMessage());
-                    return Mono.error(ApiException.of(
-                            ErrorCode.GET_TOKENS_FAILED.code(), "获取令牌列表失败: " + ex.getMessage()));
+                    log.warn("获取令牌列表失败: {}", ex.getMessage(), ex);
+                    return Mono.error(ClientErrors.api(ex, ErrorCode.GET_TOKENS_FAILED, "获取令牌列表失败"));
                 });
     }
 
@@ -504,9 +496,9 @@ public class JwtTokenController {
                 .map(tokenInfo -> RouterResponse.success(tokenInfo, "令牌详情获取成功"))
                 .switchIfEmpty(Mono.error(ApiException.of(ErrorCode.TOKEN_NOT_FOUND.code(), "令牌不存在")))
                 .onErrorResume(ex -> {
-                    log.warn("获取令牌详情失败: tokenId={}, error={}", tokenId, ex.getMessage());
-                    return Mono.error(ApiException.of(
-                            ErrorCode.GET_TOKEN_DETAILS_FAILED.code(), "获取令牌详情失败: " + ex.getMessage()));
+                    log.warn("获取令牌详情失败: tokenId={}, error={}", tokenId, ex.getMessage(), ex);
+                    return Mono.error(ClientErrors.api(
+                            ex, ErrorCode.GET_TOKEN_DETAILS_FAILED, "获取令牌详情失败"));
                 });
     }
 
@@ -540,16 +532,10 @@ public class JwtTokenController {
                     return RouterResponse.success(result, message);
                 })
                 .onErrorResume(ex -> {
-                    log.warn("手动清理过期令牌失败: {}", ex.getMessage());
-                    
-                    // 创建失败的清理结果
-                    JwtCleanupService.CleanupResult failedResult = new JwtCleanupService.CleanupResult();
-                    failedResult.setSuccess(false);
-                    failedResult.setErrorMessage(ex.getMessage());
-                    failedResult.setStartTime(LocalDateTime.now());
-                    failedResult.setEndTime(LocalDateTime.now());
-                    
-                    return Mono.error(ApiException.of(ErrorCode.CLEANUP_FAILED.code(), "清理操作失败: " + ex.getMessage()));
+                    // #1197：异常原文只进日志；此前构造的 failedResult 从未被返回，一并删除
+                    log.warn("手动清理过期令牌失败: {}", ex.getMessage(), ex);
+
+                    return Mono.error(ClientErrors.api(ex, ErrorCode.CLEANUP_FAILED, "清理操作失败"));
                 });
     }
 
@@ -576,9 +562,9 @@ public class JwtTokenController {
         return jwtCleanupService.getCleanupStats()
                 .map(stats -> RouterResponse.success(stats, "清理统计信息获取成功"))
                 .onErrorResume(ex -> {
-                    log.warn("获取清理统计信息失败: {}", ex.getMessage());
-                    return Mono.error(ApiException.of(
-                            ErrorCode.GET_CLEANUP_STATS_FAILED.code(), "获取清理统计信息失败: " + ex.getMessage()));
+                    log.warn("获取清理统计信息失败: {}", ex.getMessage(), ex);
+                    return Mono.error(ClientErrors.api(
+                            ex, ErrorCode.GET_CLEANUP_STATS_FAILED, "获取清理统计信息失败"));
                 });
     }
 

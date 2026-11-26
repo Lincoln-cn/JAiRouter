@@ -52,10 +52,10 @@ public class ServerExceptionHandler {
             logger.warn("错误追踪失败: {}", trackingException.getMessage());
         }
         
-        // 特别处理 ServerWebInputException
+        // 特别处理 ServerWebInputException（#1197：解析原文含字段名 / 期望类型，只进日志）
         if (e instanceof org.springframework.web.server.ServerWebInputException) {
-            logger.error("请求体读取异常: {}", e.getMessage());
-            return RouterResponse.error("请求体无效或缺失: " + e.getMessage(), "400");
+            logger.error("请求体读取异常: {}", e.getMessage(), e);
+            return RouterResponse.error("请求体无效或缺失", "400");
         }
         
         // 特别处理 ResponseStatusException

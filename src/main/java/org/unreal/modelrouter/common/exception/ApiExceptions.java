@@ -19,11 +19,17 @@ import org.unreal.modelrouter.common.constants.ErrorCode;
  * <p>映射规则：</p>
  * <ul>
  *   <li>{@link ApiException} → 原样返回（保留原始错误码与状态码，不二次包装）</li>
- *   <li>{@link IllegalArgumentException} → {@code INVALID_REQUEST}（400），消息用异常自身消息</li>
- *   <li>{@link IllegalStateException} → {@code CONFLICT_STATE}（409），消息用异常自身消息</li>
+ *   <li>{@link ClientFacingException} → {@code INVALID_REQUEST}（400），消息可外显（其错误码非空时优先用它）</li>
+ *   <li>{@link IllegalArgumentException} → {@code INVALID_REQUEST}（400）</li>
+ *   <li>{@link IllegalStateException} → {@code CONFLICT_STATE}（409）</li>
  *   <li>{@link ResponseStatusException} → 保留其状态码，错误码用状态码数字</li>
- *   <li>其它 → {@code INTERNAL_ERROR}（500），消息为 {@code fallbackMessage + ": " + e.getMessage()}</li>
+ *   <li>其它 → {@code INTERNAL_ERROR}（500）</li>
  * </ul>
+ *
+ * <p><b>消息口径（issue #1197 / #1198）：</b>对外消息由 {@link ClientErrors#clientSafeDetail(Throwable)}
+ * 决定是否附带异常 detail —— 只有 {@link ClientFacingException} / {@link ApiException} /
+ * {@link ResponseStatusException#getReason()} 会外显，其余异常只回 {@code fallbackMessage}，
+ * 原文进日志。以前这里无条件拼 {@code e.getMessage()}，是这族泄露的机制层入口。</p>
  *
  * @author JAiRouter Team
  * @since 3.2.2
@@ -45,6 +51,12 @@ public final class ApiExceptions {
             // 已是业务异常：保留原始错误码/状态码，避免被压成 500
             return apiException;
         }
+        if (e instanceof ClientFacingException clientFacing) {
+            // 业务校验语：消息本就是要给调用方看的；错误码非空时尊重异常自带的码
+            final String code = clientFacing.getErrorCode() == null
+                    ? ErrorCode.INVALID_REQUEST.code() : clientFacing.getErrorCode();
+            return ApiException.of(code, messageOf(e, fallbackMessage));
+        }
         if (e instanceof IllegalArgumentException) {
             return ApiException.of(ErrorCode.INVALID_REQUEST.code(), messageOf(e, fallbackMessage));
         }
@@ -61,19 +73,25 @@ public final class ApiExceptions {
     }
 
     /**
-     * 组装对外消息：优先保留原始异常消息，无消息时退回兜底文案。
+     * 组装对外消息：只有显式声明可外显的异常才保留 detail，其余只回兜底文案（issue #1197 / #1198）。
+     *
+     * <p>判定统一走 {@link ClientErrors#clientSafeDetail(Throwable)}：{@link ClientFacingException} /
+     * {@link ApiException} / {@link ResponseStatusException} 的 reason 可外显，其余（{@code SQLException}、
+     * {@code IOException}、反射异常…）一律只进日志。此前这里无条件拼 {@code e.getMessage()}，
+     * 等于把这族泄露问题集中在了机制层。</p>
      *
      * @param e               原始异常
      * @param fallbackMessage 兜底文案前缀
      * @return 对外消息
      */
     private static String messageOf(final Throwable e, final String fallbackMessage) {
-        final String detail = e == null ? null : e.getMessage();
-        if (detail == null || detail.isBlank()) {
+        final String detail = ClientErrors.clientSafeDetail(e);
+        if (detail == null) {
             return fallbackMessage;
         }
         return fallbackMessage == null || fallbackMessage.isBlank()
                 ? detail
+                // 半角 ": " 与 V1ErrorBodyMapper 的 legacy 前缀净化保持一致
                 : fallbackMessage + ": " + detail;
     }
 }

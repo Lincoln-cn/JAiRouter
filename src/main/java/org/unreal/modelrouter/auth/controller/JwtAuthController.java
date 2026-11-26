@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 
 /**
  * JWT认证控制器
@@ -109,8 +110,9 @@ public class JwtAuthController {
                         return Mono.error(apiEx);
                     }
                     loginBruteForceGuard.recordFailure(request.getUsername(), clientIp);
-                    log.warn("用户登录失败: {}", ex.getMessage());
-                    return Mono.error(ApiException.of(ErrorCode.LOGIN_FAILED.code(), "登录失败: " + ex.getMessage()));
+                    // #1197：登录接口未认证可达，异常原文只进日志（避免账号枚举 / 连接串外泄）
+                    log.warn("用户登录失败: {}", ex.getMessage(), ex);
+                    return Mono.error(ClientErrors.api(ex, ErrorCode.LOGIN_FAILED, "登录失败"));
                 });
     }
 
@@ -158,9 +160,8 @@ public class JwtAuthController {
                     if (ex instanceof ApiException apiException) {
                         return Mono.error(apiException);
                     }
-                    log.warn("JWT令牌刷新失败（主体解析阶段）: {}", ex.getMessage());
-                    return Mono.error(ApiException.of(
-                            ErrorCode.TOKEN_REFRESH_FAILED.code(), "令牌刷新失败: " + ex.getMessage()));
+                    log.warn("JWT令牌刷新失败（主体解析阶段）: {}", ex.getMessage(), ex);
+                    return Mono.error(ClientErrors.api(ex, ErrorCode.TOKEN_REFRESH_FAILED, "令牌刷新失败"));
                 });
     }
 
@@ -191,14 +192,10 @@ public class JwtAuthController {
                     }
                 })
                 .onErrorResume(ex -> {
-                    log.warn("JWT令牌刷新失败: {}", ex.getMessage());
-
-                    JwtTokenInfo response = new JwtTokenInfo();
-                    response.setMessage("令牌刷新失败: " + ex.getMessage());
-                    response.setTimestamp(LocalDateTime.now());
-
-                    return Mono.error(ApiException.of(
-                            ErrorCode.TOKEN_REFRESH_FAILED.code(), "令牌刷新失败: " + ex.getMessage()));
+                    // #1197：异常原文只进日志；此前这里还创建了一个从未被使用的 JwtTokenInfo，
+                    // 一并删除（创建后立即 return Mono.error，属残留对象）
+                    log.warn("JWT令牌刷新失败: {}", ex.getMessage(), ex);
+                    return Mono.error(ClientErrors.api(ex, ErrorCode.TOKEN_REFRESH_FAILED, "令牌刷新失败"));
                 });
     }
 

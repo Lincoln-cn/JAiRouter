@@ -10,6 +10,7 @@ import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.persistence.jpa.entity.LoginGuardConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.LoginGuardConfigRepository;
 
@@ -175,7 +176,8 @@ public class LoginGuardConfigService {
         try {
             return new LoginGuardSettings(maxFailuresPerPrincipal, maxFailuresPerIp, windowMinutes, lockMinutes);
         } catch (IllegalArgumentException ex) {
-            throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), ex.getMessage(), ErrorCode.INVALID_REQUEST.status());
+            // #1197：校验异常原文只进日志，对外只回固定短语
+            throw ClientErrors.api(ex, ErrorCode.INVALID_REQUEST, "登录保护参数无效");
         }
     }
 

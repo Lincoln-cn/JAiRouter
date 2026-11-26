@@ -19,7 +19,10 @@ import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.NoAvailableInstanceException;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ApiExceptions;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
+import org.unreal.modelrouter.common.exception.ClientFacingException;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.common.exception.AuthorizationException;
 import org.unreal.modelrouter.common.exception.SanitizationException;
@@ -112,8 +115,9 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                 Long retryAfterSeconds = null;
                 
                 if (ex instanceof ServerWebInputException) {
-                    logger.error("请求体读取异常: {}", ex.getMessage());
-                    errorResponse = RouterResponse.error("请求体无效或缺失: " + ex.getMessage(), "400");
+                    // #1197：请求体解析异常的原文含字段名 / 期望类型 / JSON 片段，只进日志
+                    logger.error("请求体读取异常: {}", ex.getMessage(), ex);
+                    errorResponse = RouterResponse.error("请求体无效或缺失", "400");
                     status = HttpStatus.BAD_REQUEST;
                 } else if (ex instanceof DownstreamServiceException downstreamError) {
                     // #717：下游错误体已读回 —— 用下游状态码与错误码回给调用方，
@@ -173,10 +177,15 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                     if (status == null) {
                         status = HttpStatus.INTERNAL_SERVER_ERROR;
                     }
-                } else if (ex instanceof IllegalArgumentException) {
-                    logger.warn("参数验证异常：message={}", ex.getMessage());
-                    errorResponse = RouterResponse.error("参数验证失败：" + ex.getMessage(), "400");
-                    status = HttpStatus.BAD_REQUEST;
+                } else if (ex instanceof IllegalArgumentException
+                        || ex instanceof ClientFacingException) {
+                    // #1197：参数异常的原文不再直接回显；只有 ClientFacingException 的
+                    // 消息（人工确认过的业务校验语）会由 ApiExceptions.wrap 追加到对外消息里
+                    logger.warn("参数验证异常：type={}, message={}",
+                            ex.getClass().getSimpleName(), ex.getMessage());
+                    final ApiException mapped = ApiExceptions.wrap(ex, "参数验证失败");
+                    errorResponse = RouterResponse.error(mapped.getMessage(), mapped.getErrorCode());
+                    status = mapped.getStatus();
                 } else {
                     // #856：兜底分支只给固定文案，异常原文（可能含类名 / SQL / 路径）只进日志。
                     // 与脱敏失败分支「数据处理失败」的既有约定一致：客户端可见体不得暴露内部细节。

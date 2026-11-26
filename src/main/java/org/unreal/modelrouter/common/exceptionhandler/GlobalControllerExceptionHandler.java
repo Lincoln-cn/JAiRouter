@@ -7,6 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.controller.response.RouterResponse; // 确保引入您项目中的Response类
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,8 @@ public class GlobalControllerExceptionHandler {
                 ex.getStatusCode(), ex.getReason(), ex);
 
         RouterResponse<Void> errorResponse = RouterResponse.error(
-                "请求处理失败: " + ex.getMessage(),
+                // #1197：只保留 status 异常自己的 reason，不再整体拼接 getMessage()
+                ClientErrors.message(ex, "请求处理失败"),
                 String.valueOf(ex.getStatusCode().value())
         );
 
