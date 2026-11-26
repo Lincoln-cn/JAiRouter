@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 
 /**
  * JWT持久化系统健康检查服务
@@ -58,7 +59,7 @@ public final class JwtPersistenceHealthIndicator {
             log.error("JWT持久化健康检查失败", e);
             Map<String, Object> result = new HashMap<>();
             result.put("status", "DOWN");
-            result.put("error", "Health check failed: " + e.getMessage());
+            result.put("error", "Health check failed");
             result.put("checkTime", LocalDateTime.now().toString());
             return result;
         }
@@ -108,10 +109,10 @@ public final class JwtPersistenceHealthIndicator {
             
         } catch (Exception e) {
             redisDetails.put("status", "DOWN");
-            redisDetails.put("error", e.getMessage());
+            redisDetails.put("error", ClientErrors.message(e, "Redis 健康检查失败"));
             redisDetails.put("errorType", e.getClass().getSimpleName());
             details.put("redis", redisDetails);
-            log.warn("Redis健康检查失败: {}", e.getMessage());
+            log.warn("Redis健康检查失败", e);
             return false;
         }
     }
@@ -125,7 +126,8 @@ public final class JwtPersistenceHealthIndicator {
             // 由于不同的Redis连接池实现方式不同，这里提供基础框架
             redisDetails.put("connectionPool", "Available");
         } catch (Exception e) {
-            redisDetails.put("connectionPoolError", e.getMessage());
+            log.warn("检查 Redis 连接池状态失败", e);
+            redisDetails.put("connectionPoolError", ClientErrors.message(e, "检查 Redis 连接池状态失败"));
         }
     }
     
@@ -137,7 +139,8 @@ public final class JwtPersistenceHealthIndicator {
             // 简化实现，实际项目中可以通过INFO命令获取详细信息
             redisDetails.put("memoryCheck", "Available");
         } catch (Exception e) {
-            redisDetails.put("memoryCheckError", e.getMessage());
+            log.warn("检查 Redis 内存使用失败", e);
+            redisDetails.put("memoryCheckError", ClientErrors.message(e, "检查 Redis 内存使用失败"));
         }
     }
     
@@ -183,9 +186,9 @@ public final class JwtPersistenceHealthIndicator {
             
         } catch (Exception e) {
             memoryDetails.put("status", "DOWN");
-            memoryDetails.put("error", e.getMessage());
+            memoryDetails.put("error", ClientErrors.message(e, "内存健康检查失败"));
             details.put("memory", memoryDetails);
-            log.warn("内存健康检查失败: {}", e.getMessage());
+            log.warn("内存健康检查失败", e);
             return false;
         }
     }
@@ -211,9 +214,9 @@ public final class JwtPersistenceHealthIndicator {
             
         } catch (Exception e) {
             syncDetails.put("status", "DOWN");
-            syncDetails.put("error", e.getMessage());
+            syncDetails.put("error", ClientErrors.message(e, "存储同步健康检查失败"));
             details.put("storageSync", syncDetails);
-            log.warn("存储同步健康检查失败: {}", e.getMessage());
+            log.warn("存储同步健康检查失败", e);
             return false;
         }
     }

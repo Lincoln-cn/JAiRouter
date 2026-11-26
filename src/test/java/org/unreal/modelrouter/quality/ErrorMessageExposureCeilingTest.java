@@ -94,15 +94,24 @@ class ErrorMessageExposureCeilingTest {
         final Map<String, Integer> baseline = readBaseline();
         final Map<String, Integer> current = scanSourceRoot();
 
-        // 反空转：扫描面与基线都必须真的有东西，否则「找不到 ⇒ 没超标」会静默成立
-        assertTrue(baseline.size() >= 5,
-                "基线应登记至少 5 个文件，实际 " + baseline.size() + " —— 基线可能被误改或路径变了");
-        assertTrue(current.size() >= 5,
-                "扫描应命中至少 5 个含外显点的文件，实际 " + current.size()
+        // 反空转：扫描面与基线都必须真的有东西，否则「找不到 ⇒ 没超标」会静默成立。
+        // 存量会随 #1197 的分批收敛持续下降（首版 97 处 / 27 文件 ⇒ P0/P1 后 45 处 / 13 文件），
+        // 所以这里的下限按「还有保留项」设定，真正防判据失效的是紧随其后的锚点断言。
+        assertTrue(baseline.size() >= 2,
+                "基线应登记至少 2 个文件，实际 " + baseline.size() + " —— 基线可能被误改或路径变了");
+        assertTrue(current.size() >= 2,
+                "扫描应命中至少 2 个含外显点的文件，实际 " + current.size()
                         + " —— 扫描路径或判据可能已失效（" + SOURCE_ROOT.toAbsolutePath() + "）");
-        assertTrue(total(baseline) >= 15,
-                "基线总数应不少于 15 处（首版 97 处；P0/P1/P2 收敛后为 23 处，"
-                        + "剩下的都是健康详情与中央处理器的保留项），实际 " + total(baseline));
+        assertTrue(total(baseline) >= 9,
+                "基线总数应不少于 9 处（首版 97 处；P0/P1/P2/P3 收敛后预期剩 9 处保留项），"
+                        + "实际 " + total(baseline));
+        // 锚点：中央处理器里 ApiException 分支的输出属「可外显」保留项，会长期存在于扫描结果中。
+        // 一旦它从命中里消失，说明判据（sink 正则 / 括号配平 / 注释剥离）已经失效，而不是「都修完了」。
+        final String anchor = "org/unreal/modelrouter/common/exceptionhandler/ReactiveGlobalExceptionHandler.java";
+        assertTrue(current.containsKey(anchor),
+                "扫描结果必须包含 " + anchor + "（ApiException 可外显分支的保留项），实际命中 " + current.keySet());
+        assertTrue(baseline.containsKey(anchor),
+                "基线必须登记 " + anchor + "，否则逐文件比对会把它当成「新增外显点」而误报红");
 
         final List<String> violations = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : current.entrySet()) {

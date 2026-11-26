@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 
 /**
  * Redis连接健康检查服务
@@ -100,7 +101,8 @@ public class RedisConnectionHealthService {
             }
             
         } catch (Exception e) {
-            handleHealthCheckFailure("Redis connection failed: " + e.getMessage());
+            log.warn("Redis 健康检查失败", e);
+            handleHealthCheckFailure("Redis connection failed");
             return false;
         }
     }
@@ -153,7 +155,8 @@ public class RedisConnectionHealthService {
             try {
                 status.put("connectionInfo", getRedisConnectionInfo());
             } catch (Exception e) {
-                status.put("connectionInfoError", e.getMessage());
+                log.warn("读取 Redis 连接信息失败", e);
+                status.put("connectionInfoError", ClientErrors.message(e, "读取 Redis 连接信息失败"));
             }
         }
         
@@ -176,7 +179,8 @@ public class RedisConnectionHealthService {
             info.put("status", "Available");
             
         } catch (Exception e) {
-            info.put("error", e.getMessage());
+            log.warn("读取 Redis 连接信息失败", e);
+            info.put("error", ClientErrors.message(e, "读取 Redis 连接信息失败"));
         }
         
         return info;

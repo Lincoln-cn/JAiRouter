@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.unreal.modelrouter.auth.security.metrics.JwtPersistenceMetricsService;
 import org.unreal.modelrouter.auth.security.metrics.StorageHealthMetricsService;
 import org.unreal.modelrouter.auth.security.metrics.CleanupMetricsService;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public class JwtPersistenceHealthEndpoint {
         } catch (Exception e) {
             log.error("获取JWT持久化健康状态失败", e);
             health.put("status", "DOWN");
-            health.put("error", e.getMessage());
+            health.put("error", ClientErrors.message(e, "读取持久化健康状态失败"));
             health.put("timestamp", LocalDateTime.now().toString());
         }
         
@@ -147,7 +148,7 @@ public class JwtPersistenceHealthEndpoint {
         } catch (Exception e) {
             log.error("获取组件 {} 健康状态失败", component, e);
             componentHealth.put("status", "ERROR");
-            componentHealth.put("error", e.getMessage());
+            componentHealth.put("error", ClientErrors.message(e, "读取组件健康状态失败"));
         }
         
         return ResponseEntity.ok(componentHealth);
@@ -165,9 +166,9 @@ public class JwtPersistenceHealthEndpoint {
             coreHealth.putAll(health);
             
         } catch (Exception e) {
-            log.warn("获取核心健康状态失败: {}", e.getMessage());
+            log.warn("获取核心健康状态失败", e);
             coreHealth.put("status", "DOWN");
-            coreHealth.put("error", e.getMessage());
+            coreHealth.put("error", ClientErrors.message(e, "读取核心持久化状态失败"));
         }
         
         return coreHealth;
