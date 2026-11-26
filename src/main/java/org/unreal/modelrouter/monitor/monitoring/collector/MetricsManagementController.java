@@ -214,8 +214,9 @@ public class MetricsManagementController {
 
             return ResponseEntity.ok("Sampling configuration updated successfully");
         } catch (ApiException e) {
+            // 不把校验消息回显给调用方（CodeQL java/error-message-exposure，#1193）；细节留在日志里。
             logger.warn("Invalid sampling config: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid sampling configuration");
         } catch (RuntimeException e) {
             logger.error("Error updating sampling config", e);
             return ResponseEntity.internalServerError()
@@ -266,8 +267,9 @@ public class MetricsManagementController {
 
             return ResponseEntity.ok("Performance configuration updated successfully");
         } catch (ApiException e) {
+            // 不把校验消息回显给调用方（CodeQL java/error-message-exposure，#1193）；细节留在日志里。
             logger.warn("Invalid performance config: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid performance configuration");
         } catch (RuntimeException e) {
             logger.error("Error updating performance config", e);
             return ResponseEntity.internalServerError()
