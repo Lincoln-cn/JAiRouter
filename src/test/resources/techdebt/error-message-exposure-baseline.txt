@@ -2,7 +2,7 @@
 # 格式：`相对路径 处数`，末行 `TOTAL n`（TOTAL 仅作人读，不参与断言）。
 # 判据 = 逐文件不得高于本表；清理掉一处直接变绿，无需改本文件；新增处数会红。
 # 逐批收敛进度见 #1197（P0 认证面 #1198 → P1 管理面 → P2 监控面 → P3 健康详情）。
-# 生成时间：2026-11-27；基线 TOTAL = 77（#1198 落地后从 97 降下来）
+# 生成时间：2026-11-27；基线 TOTAL = 45（P0 #1198 + P1 收敛后，首版为 97）
 org/unreal/modelrouter/auth/security/health/JwtPersistenceHealthEndpoint.java 3
 org/unreal/modelrouter/auth/security/health/JwtPersistenceHealthIndicator.java 4
 org/unreal/modelrouter/auth/security/health/MemoryUsageHealthService.java 2
@@ -11,17 +11,9 @@ org/unreal/modelrouter/auth/security/service/impl/JwtBlacklistServiceImpl.java 1
 org/unreal/modelrouter/auth/security/service/impl/JwtCleanupServiceImpl.java 3
 org/unreal/modelrouter/common/exceptionhandler/GlobalControllerExceptionHandler.java 1
 org/unreal/modelrouter/common/exceptionhandler/ReactiveGlobalExceptionHandler.java 8
-org/unreal/modelrouter/config/controller/ServiceTypeController.java 2
 org/unreal/modelrouter/monitor/controller/ModelStatsController.java 1
 org/unreal/modelrouter/monitor/controller/MonitoringController.java 1
 org/unreal/modelrouter/monitor/controller/TracingController.java 2
-org/unreal/modelrouter/monitor/controller/TracingSecurityController.java 10
 org/unreal/modelrouter/monitor/monitoring/circuitbreaker/MonitoringHealthChecker.java 8
-org/unreal/modelrouter/router/controller/AdapterConfigController.java 6
-org/unreal/modelrouter/router/controller/AdapterController.java 1
-org/unreal/modelrouter/router/controller/AdapterTemplateController.java 3
-org/unreal/modelrouter/router/controller/AdapterTestController.java 3
-org/unreal/modelrouter/router/controller/LoadBalancerManagementController.java 6
 org/unreal/modelrouter/router/controller/ModelCallStatsController.java 10
-org/unreal/modelrouter/router/controller/ResponseCacheController.java 1
-TOTAL 77
+TOTAL 45

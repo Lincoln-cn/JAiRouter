@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.test.AdapterTestResult;
 import org.unreal.modelrouter.router.adapter.test.AdapterTestService;
@@ -68,11 +69,11 @@ public class AdapterTestController {
                     .map(result -> ResponseEntity.ok(RouterResponse.success(result, "测试完成")))
                     .onErrorResume(ex -> {
                         logger.error("测试适配器失败: {}", name, ex);
-                        return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "测试失败: " + ex.getMessage()));
+                        return Mono.error(ClientErrors.api(ex, ErrorCode.INTERNAL_ERROR, "测试失败"));
                     });
         } catch (Exception e) {
             logger.error("测试适配器异常: {}", name, e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "测试异常: " + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "测试异常"));
         }
     }
 
@@ -107,7 +108,7 @@ public class AdapterTestController {
                 .map(result -> ResponseEntity.ok(RouterResponse.success(result, "测试完成")))
                 .onErrorResume(ex -> {
                     logger.error("预览测试失败", ex);
-                    return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "测试失败: " + ex.getMessage()));
+                    return Mono.error(ClientErrors.api(ex, ErrorCode.INTERNAL_ERROR, "测试失败"));
                 });
     }
 }

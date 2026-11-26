@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ClientFacingException;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.controller.ResponseCacheController.RuntimeConfigUpdateRequest;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
@@ -234,7 +235,7 @@ class ResponseCacheControllerTest {
     void putInvalidTtlReturnsBadRequest() {
         when(responseCacheService.updateRuntimeConfig(
                 any(), any(), any(), eq(0L)))
-                .thenThrow(new IllegalArgumentException(
+                .thenThrow(new ClientFacingException(
                         "ttlSeconds 超出范围 [1, 604800]: 0"));
 
         RuntimeConfigUpdateRequest request = new RuntimeConfigUpdateRequest();
@@ -254,7 +255,7 @@ class ResponseCacheControllerTest {
     void putAllNullReturnsBadRequest() {
         when(responseCacheService.updateRuntimeConfig(
                 eq(null), eq(null), eq(null), eq(null)))
-                .thenThrow(new IllegalArgumentException("至少需要指定一个配置参数"));
+                .thenThrow(new ClientFacingException("至少需要指定一个配置参数"));
 
         RuntimeConfigUpdateRequest request = new RuntimeConfigUpdateRequest();
 
@@ -265,6 +266,21 @@ class ResponseCacheControllerTest {
         assertFalse(response.getBody().isSuccess());
         assertEquals("INVALID_REQUEST", response.getBody().getErrorCode());
         assertTrue(response.getBody().getMessage().contains("至少需要指定一个配置参数"));
+    }
+
+    @Test
+    @DisplayName("PUT /response/config 非校验异常不上浮为 400，也不外显原文（#1197）")
+    void putUnexpectedFailureIsNotExposedAsBadRequest() {
+        when(responseCacheService.updateRuntimeConfig(any(), any(), any(), any()))
+                .thenThrow(new IllegalStateException(
+                        "java.sql.SQLException: jdbc:postgresql://db.internal/prod?password=s3cret"));
+
+        RuntimeConfigUpdateRequest request = new RuntimeConfigUpdateRequest();
+        request.enabled = Boolean.TRUE;
+
+        // 控制器只认可外显的业务校验异常；其它异常交给中央处理器兜底（固定文案 + 日志），
+        // 不能在这里被误判成 400，更不能把原文拼进响应体。
+        assertThrows(IllegalStateException.class, () -> controller.updateRuntimeConfig(request));
     }
 
     @Test

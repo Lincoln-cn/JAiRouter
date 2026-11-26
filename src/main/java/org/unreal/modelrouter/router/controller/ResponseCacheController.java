@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ClientErrors;
+import org.unreal.modelrouter.common.exception.ClientFacingException;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.cache.SemanticCacheProperties;
 import org.unreal.modelrouter.router.cache.SemanticCacheService;
@@ -177,9 +179,9 @@ public class ResponseCacheController {
                     request.onlyDeterministic, request.ttlSeconds);
             logger.info("Response cache runtime config updated: {}", snapshot);
             return ResponseEntity.ok(RouterResponse.success(snapshot, "缓存配置已更新"));
-        } catch (IllegalArgumentException e) {
+        } catch (ClientFacingException e) {
             return ResponseEntity.badRequest()
-                    .body(RouterResponse.error(e.getMessage(), ErrorCode.INVALID_REQUEST.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INVALID_REQUEST, null));
         }
     }
 

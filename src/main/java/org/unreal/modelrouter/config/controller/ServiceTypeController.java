@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.ServiceConfigManager;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
@@ -81,7 +82,7 @@ public class ServiceTypeController {
                 .map(configs -> ResponseEntity.ok(RouterResponse.success(configs, "获取配置成功")))
                 .onErrorResume(e -> {
                     logger.error("获取所有配置失败", e);
-                    return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取配置失败：" + e.getMessage()));
+                    return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取配置失败"));
                 });
     }
 
@@ -135,7 +136,7 @@ public class ServiceTypeController {
             // 只捕获「清除持久化配置失败」这一条已定性的失败路径；其余运行时异常继续冒泡，
             // 由全局异常处理器兜底，避免再新增一处裸 catch（见 BareCatchCeilingTest / #604）。
             logger.error("重置配置失败", e);
-            throw ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "重置配置失败：" + e.getMessage());
+            throw ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "重置配置失败");
         }
         final String message = backupKey == null
                 ? "配置已重置为默认值"

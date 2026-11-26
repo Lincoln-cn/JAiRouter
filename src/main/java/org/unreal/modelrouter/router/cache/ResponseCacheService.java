@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
+import org.unreal.modelrouter.common.exception.ClientFacingException;
 import org.unreal.modelrouter.config.core.ResponseCacheProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
@@ -279,7 +280,7 @@ public class ResponseCacheService {
      * @param onlyDeterministic  是否仅缓存确定性请求（null 表示不修改）
      * @param ttlSeconds         缓存 TTL 秒数（null 表示不修改）
      * @return 更新后的快照
-     * @throws IllegalArgumentException 全 null 或校验失败
+     * @throws ClientFacingException 全 null 或校验失败（消息对调用方可见）
      */
     public Map<String, Object> updateRuntimeConfig(final Boolean enabled,
                                                    final Boolean skipStreaming,
@@ -287,12 +288,12 @@ public class ResponseCacheService {
                                                    final Long ttlSeconds) {
         if (enabled == null && skipStreaming == null
                 && onlyDeterministic == null && ttlSeconds == null) {
-            throw new IllegalArgumentException("至少需要指定一个配置参数");
+            throw new ClientFacingException("至少需要指定一个配置参数");
         }
 
         if (ttlSeconds != null) {
             if (ttlSeconds < TTL_MIN_SECONDS || ttlSeconds > TTL_MAX_SECONDS) {
-                throw new IllegalArgumentException(
+                throw new ClientFacingException(
                         "ttlSeconds 超出范围 [" + TTL_MIN_SECONDS + ", " + TTL_MAX_SECONDS + "]: " + ttlSeconds);
             }
             properties.setTtl(Duration.ofSeconds(ttlSeconds));

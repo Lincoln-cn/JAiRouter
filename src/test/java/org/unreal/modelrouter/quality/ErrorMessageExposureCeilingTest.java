@@ -100,8 +100,9 @@ class ErrorMessageExposureCeilingTest {
         assertTrue(current.size() >= 10,
                 "扫描应命中至少 10 个含外显点的文件，实际 " + current.size()
                         + " —— 扫描路径或判据可能已失效（" + SOURCE_ROOT.toAbsolutePath() + "）");
-        assertTrue(total(baseline) >= 50,
-                "基线总数应不少于 50 处（父 issue #1197 登记约 75 处），实际 " + total(baseline));
+        assertTrue(total(baseline) >= 30,
+                "基线总数应不少于 30 处（P0 #1198 / P1 收敛后约 45 处，父 issue #1197 首版为 97 处），"
+                        + "实际 " + total(baseline));
 
         final List<String> violations = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : current.entrySet()) {

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
@@ -99,8 +100,7 @@ public class AdapterTemplateController {
         } catch (Exception e) {
             logger.error("获取模板列表失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取模板列表失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "获取模板列表失败"));
         }
     }
 
@@ -123,8 +123,7 @@ public class AdapterTemplateController {
         } catch (Exception e) {
             logger.error("获取模板详情失败: {}", id, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取模板详情失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "获取模板详情失败"));
         }
     }
 
@@ -184,8 +183,7 @@ public class AdapterTemplateController {
         } catch (Exception e) {
             logger.error("从模板创建适配器失败: {}", id, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("从模板创建适配器失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "从模板创建适配器失败"));
         }
     }
 
