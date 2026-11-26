@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.unreal.modelrouter.common.exception.ClientFacingException;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
@@ -394,24 +395,32 @@ class ResponseCacheServiceTest {
     }
 
     @Test
-    @DisplayName("updateRuntimeConfig 全 null → IllegalArgumentException")
+    @DisplayName("updateRuntimeConfig 全 null → ClientFacingException（消息对调用方可见）")
     void updateRuntimeConfigAllNullThrows() {
-        assertThrows(IllegalArgumentException.class,
+        // #1197：全 null / 越界属于「用户输入的取值要求」，消息由 Service 显式声明
+        // 为 ClientFacingException（对外可见）；非 client-facing 异常一律固定文案。
+        final ClientFacingException allNull = assertThrows(ClientFacingException.class,
                 () -> service.updateRuntimeConfig(null, null, null, null));
+        assertTrue(allNull.getMessage().contains("至少需要指定一个配置参数"),
+                "业务校验话术仍应对调用方可见: " + allNull.getMessage());
     }
 
     @Test
-    @DisplayName("updateRuntimeConfig ttlSeconds 超下界 → IllegalArgumentException")
+    @DisplayName("updateRuntimeConfig ttlSeconds 超下界 → ClientFacingException（消息对调用方可见）")
     void updateRuntimeConfigTtlTooLowThrows() {
-        assertThrows(IllegalArgumentException.class,
+        final ClientFacingException tooLow = assertThrows(ClientFacingException.class,
                 () -> service.updateRuntimeConfig(null, null, null, 0L));
+        assertTrue(tooLow.getMessage().contains("ttlSeconds 超出范围"),
+                "业务校验话术仍应对调用方可见: " + tooLow.getMessage());
     }
 
     @Test
-    @DisplayName("updateRuntimeConfig ttlSeconds 超上界 → IllegalArgumentException")
+    @DisplayName("updateRuntimeConfig ttlSeconds 超上界 → ClientFacingException（消息对调用方可见）")
     void updateRuntimeConfigTtlTooHighThrows() {
-        assertThrows(IllegalArgumentException.class,
+        final ClientFacingException tooHigh = assertThrows(ClientFacingException.class,
                 () -> service.updateRuntimeConfig(null, null, null, 604_801L));
+        assertTrue(tooHigh.getMessage().contains("ttlSeconds 超出范围"),
+                "业务校验话术仍应对调用方可见: " + tooHigh.getMessage());
     }
 
     @Test

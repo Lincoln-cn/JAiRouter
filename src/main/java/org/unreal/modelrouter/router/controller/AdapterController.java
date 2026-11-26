@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 
@@ -71,8 +72,7 @@ public class AdapterController {
         } catch (Exception e) {
             logger.error("获取适配器列表失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取适配器列表失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "获取适配器列表失败"));
         }
     }
 }

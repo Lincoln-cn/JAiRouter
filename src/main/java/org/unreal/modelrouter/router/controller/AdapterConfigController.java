@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
@@ -141,8 +142,7 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("获取adapter列表失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取adapter列表失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "获取adapter列表失败"));
         }
     }
 
@@ -184,8 +184,7 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("获取adapter详情失败: {}", name, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取adapter详情失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "获取adapter详情失败"));
         }
     }
 
@@ -295,8 +294,7 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("创建adapter失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("创建adapter失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "创建adapter失败"));
         }
     }
 
@@ -397,8 +395,7 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("更新adapter失败: {}", name, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("更新adapter失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "更新adapter失败"));
         }
     }
 
@@ -440,8 +437,7 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("删除adapter失败: {}", name, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("删除adapter失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "删除adapter失败"));
         }
     }
 
@@ -474,8 +470,7 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("获取父adapter列表失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取父adapter列表失败: " + e.getMessage(),
-                            ErrorCode.INTERNAL_ERROR.code()));
+                    .body(ClientErrors.response(e, ErrorCode.INTERNAL_ERROR, "获取父adapter列表失败"));
         }
     }
 
