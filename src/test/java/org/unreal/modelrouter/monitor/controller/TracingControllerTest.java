@@ -172,6 +172,32 @@ class TracingControllerTest {
 
             verify(samplingStrategyManager).updateSamplingConfiguration(any());
         }
+
+        @Test
+        @DisplayName("更新失败：响应体不回显异常原文")
+        void updateFailureDoesNotEchoExceptionDetail() {
+            setupDefaultMocks();
+            TracingConfiguration newConfig = mock(TracingConfiguration.class);
+            TracingConfiguration.SamplingConfig samplingConfig = mock(TracingConfiguration.SamplingConfig.class);
+            when(newConfig.getSampling()).thenReturn(samplingConfig);
+            when(newConfig.getLogging()).thenReturn(null);
+            when(newConfig.getPerformance()).thenReturn(null);
+            when(newConfig.getExporter()).thenReturn(null);
+            when(newConfig.getMonitoring()).thenReturn(null);
+            doThrow(new RuntimeException("java.sql.SQLException: 连接失败 jdbc:postgresql://db.internal:5432/prod?password=s3cret"))
+                    .when(samplingStrategyManager).updateSamplingConfiguration(any());
+
+            StepVerifier.create(controller.updateTracingConfiguration(newConfig))
+                    .assertNext(response -> {
+                        assert response.getStatusCode().value() == 400;
+                        assert response.getBody() != null;
+                        String error = String.valueOf(response.getBody().get("error"));
+                        assert "配置更新失败".equals(error) : "应返回固定文案，实际: " + error;
+                        assert !error.contains("jdbc") && !error.contains("s3cret")
+                                : "不得回显异常原文: " + error;
+                    })
+                    .verifyComplete();
+        }
     }
 
     @Nested
@@ -187,6 +213,24 @@ class TracingControllerTest {
                     .assertNext(response -> {
                         assert response.getStatusCode().value() == 200;
                         assert "采样策略已刷新".equals(response.getBody().get("message"));
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("刷新失败：响应体不回显异常原文")
+        void refreshFailureDoesNotEchoExceptionDetail() {
+            setupDefaultMocks();
+            doThrow(new RuntimeException("java.sql.SQLException: 连接失败 jdbc:postgresql://db.internal:5432/prod?password=s3cret"))
+                    .when(samplingStrategyManager).updateSamplingConfiguration(any());
+
+            StepVerifier.create(controller.refreshSamplingStrategy())
+                    .assertNext(response -> {
+                        assert response.getStatusCode().value() == 500;
+                        String error = String.valueOf(response.getBody().get("error"));
+                        assert "刷新失败".equals(error) : "应返回固定文案，实际: " + error;
+                        assert !error.contains("jdbc") && !error.contains("s3cret")
+                                : "不得回显异常原文: " + error;
                     })
                     .verifyComplete();
         }
