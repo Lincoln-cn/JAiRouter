@@ -36,8 +36,18 @@ jairouter:
       # 令牌持久化配置
       persistence:
         enabled: false  # 默认：禁用，按环境启用
-        primary-storage: redis    # 选项：redis, memory
-        fallback-storage: memory  # 选项：memory
+
+        # 复合存储策略（Redis + StoreManager）
+        composite:
+          enabled: true
+
+        # 多存储之间的数据同步
+        sync:
+          enabled: true
+
+        # 启动时从持久化存储恢复令牌
+        startup-recovery:
+          enabled: true
 
         # 清理配置
         cleanup:
@@ -46,20 +56,16 @@ jairouter:
           retention-days: 30       # 保留令牌30天
           batch-size: 1000        # 每批处理1000个令牌
 
-        # 内存存储配置
-        memory:
-          max-tokens: 50000       # 内存中最大令牌数
-          cleanup-threshold: 0.8  # 满80%时清理
-          lru-enabled: true       # 使用LRU淘汰策略
-
-        # Redis存储配置
+        # Redis 存储只有开关，连接信息统一由 spring.data.redis.*（或 REDIS_HOST 等环境变量）提供
         redis:
-          key-prefix: "jwt:"      # Redis键前缀
-          default-ttl: 3600       # 默认TTL（秒）
-          connection-timeout: 5000 # 连接超时（毫秒）
-          retry-attempts: 3       # 失败操作重试次数
-          serialization-format: "json"  # 选项：json, binary
+          enabled: false
 ```
+
+> **只有以上键会被读取。** 存储实现只有 JPA 一种（H2 只是 JPA 使用的数据库），`redis` / `memory`
+> 作为独立存储实现从未落地；任何 `primary-storage`、`fallback-storage`、`memory.*`、
+> `redis.key-prefix` / `default-ttl` / `connection-timeout` / `retry-attempts` /
+> `serialization-format` 之类的键在今天都不是可配置项。可对照
+> `src/main/resources/config/security/persistence-base.yml`。
 
 ### 黑名单配置
 
@@ -71,10 +77,10 @@ jairouter:
       blacklist:
         persistence:
           enabled: false          # 默认：禁用
-          primary-storage: redis  # 选项：redis, memory
-          fallback-storage: memory
-          max-memory-size: 10000  # 内存中最大黑名单条目数
-          cleanup-interval: 3600  # 清理间隔（秒，1小时）
+        composite:
+          enabled: true           # 复合存储策略（Redis + StoreManager）
+        redis:
+          enabled: false          # 只有开关，连接信息见 spring.data.redis.*
 ```
 
 ### 安全审计配置
@@ -106,27 +112,18 @@ jairouter:
     jwt:
       persistence:
         enabled: true
-        primary-storage: memory  # 开发环境使用内存
-        fallback-storage: memory
+        composite:
+          enabled: true
         cleanup:
           schedule: "0 */5 * * * ?"  # 每5分钟用于测试
           retention-days: 1          # 开发环境短保留期
       blacklist:
         persistence:
           enabled: true
-          primary-storage: memory
 
     # 开发审计配置
     audit:
       retention-days: 7          # 开发环境短保留期
-
-# 启用调试端点
-management:
-  endpoint:
-    jwt-tokens:
-      enabled: true
-    jwt-blacklist:
-      enabled: true
 ```
 
 ### 生产环境
@@ -138,16 +135,15 @@ jairouter:
     jwt:
       persistence:
         enabled: true
-        primary-storage: redis   # 生产环境使用Redis
-        fallback-storage: memory
+        composite:
+          enabled: true
         redis:
-          connection-timeout: 3000
-          retry-attempts: 5
+          enabled: true   # 生产环境用 Redis 做共享存储
       blacklist:
         persistence:
           enabled: true
-          primary-storage: redis
-          max-memory-size: 50000
+        redis:
+          enabled: true
 
     # 生产审计配置
     audit:
@@ -156,9 +152,10 @@ jairouter:
 
 # 监控配置
 jairouter:
-  monitoring:
-    jwt-persistence:
-      enabled: true
+  security:
+    monitoring:
+      jwt-persistence:
+        enabled: true
 ```
 
 ### 预发布环境
@@ -170,27 +167,22 @@ jairouter:
     jwt:
       persistence:
         enabled: true
-        primary-storage: redis
-        fallback-storage: memory
+        composite:
+          enabled: true
+        redis:
+          enabled: true
         cleanup:
           retention-days: 7      # 预发布环境较短保留期
       blacklist:
         persistence:
           enabled: true
-          primary-storage: redis
+        redis:
+          enabled: true
 
     # 预发布审计配置
     audit:
       enabled: true
       retention-days: 30
-
-# 预发布环境启用调试端点
-management:
-  endpoint:
-    jwt-tokens:
-      enabled: true
-    jwt-blacklist:
-      enabled: true
 ```
 
 ## 监控配置
@@ -198,55 +190,59 @@ management:
 ### 指标配置
 
 ```yaml
-# config/monitoring/persistence-monitoring-base.yml
+# config/monitor/persistence-monitoring-base.yml
 management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,jwt-tokens,jwt-blacklist
+        include: health,metrics
   metrics:
     tags:
       application: jairouter
-    export:
-      prometheus:
-        enabled: true
-  endpoint:
-    jwt-tokens:
-      enabled: false  # 默认：禁用，按环境启用
-    jwt-blacklist:
-      enabled: false
+  health:
+    show-details: when-authorized
 
-# 自定义监控指标
+# 自定义监控指标（前缀是 jairouter.security.monitoring，不是 jairouter.monitoring）
 jairouter:
-  monitoring:
-    jwt-persistence:
-      enabled: false  # 默认：禁用，按环境启用
-      metrics:
-        token-operations:
+  security:
+    monitoring:
+      jwt-persistence:
+        enabled: false  # 默认：禁用，按环境启用
+        metrics:
+          token-operations:
+            histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
+          blacklist-operations:
+            histogram-buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1.0]
+          storage-health:
+            include-storages:
+              - redis
+              - memory
+              - composite
+        health-checks:
           enabled: true
-          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
-        blacklist-operations:
-          enabled: true
-          histogram-buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1.0]
-        storage-health:
-          enabled: true
-          check-interval: 30  # 秒
+          check-interval: 60  # 秒
 ```
+
+> 这两个 `enabled` 开关控制的只是指标与健康指标的采集端；自定义 actuator 端点
+> `jwt-tokens` / `jwt-blacklist` 并不存在，写 `management.endpoint.jwt-tokens.enabled`
+> 不会有任何效果。
 
 ### 健康检查配置
 
 ```yaml
 management:
   health:
-    jwt-persistence:
-      enabled: true
     redis:
-      enabled: true
+      enabled: true   # Spring 内置 Redis 健康指示器
   endpoint:
     health:
       show-details: when-authorized
       show-components: always
 ```
+
+> JWT 落库/缓存的健康状态由 `jwtRedisHealthIndicator` 提供（`HealthIndicator` 实现），
+> 它是否装配取决于 `jairouter.security.jwt.persistence.redis.enabled` 与
+> `jairouter.security.jwt.blacklist.redis.enabled` 两个开关，**没有** `management.health.jwt-persistence` 这个键。
 
 ## Redis 配置
 
@@ -254,48 +250,51 @@ management:
 
 ```yaml
 spring:
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
-    timeout: 5000ms
-    lettuce:
-      pool:
-        max-active: 20
-        max-idle: 10
-        min-idle: 5
-        max-wait: 2000ms
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 2000ms
 ```
 
 ### Redis 集群配置
 
 ```yaml
 spring:
-  redis:
-    cluster:
-      nodes:
-        - ${REDIS_NODE1:localhost:7001}
-        - ${REDIS_NODE2:localhost:7002}
-        - ${REDIS_NODE3:localhost:7003}
-      max-redirects: 3
-    lettuce:
+  data:
+    redis:
       cluster:
-        refresh:
-          adaptive: true
-          period: 30s
+        nodes:
+          - ${REDIS_NODE1:localhost:7001}
+          - ${REDIS_NODE2:localhost:7002}
+          - ${REDIS_NODE3:localhost:7003}
+        max-redirects: 3
+      lettuce:
+        cluster:
+          refresh:
+            adaptive: true
+            period: 30s
 ```
 
 ### Redis Sentinel 配置
 
 ```yaml
 spring:
-  redis:
-    sentinel:
-      master: mymaster
-      nodes:
-        - ${REDIS_SENTINEL1:localhost:26379}
-        - ${REDIS_SENTINEL2:localhost:26380}
-        - ${REDIS_SENTINEL3:localhost:26381}
+  data:
+    redis:
+      sentinel:
+        master: mymaster
+        nodes:
+          - ${REDIS_SENTINEL1:localhost:26379}
+          - ${REDIS_SENTINEL2:localhost:26380}
+          - ${REDIS_SENTINEL3:localhost:26381}
 ```
 
 ## 安全配置
@@ -305,17 +304,16 @@ spring:
 ```yaml
 jairouter:
   security:
+    # 密钥 / 连接凭据统一走环境变量或 spring.data.redis.password，
+    # 持久化树里没有可配的 key-prefix / 序列化格式 / 内存淘汰参数
     jwt:
       persistence:
-        # 安全设置
         redis:
-          key-prefix: "jwt:"      # 命名空间隔离
-          serialization-format: "json"  # 安全避免二进制格式
-        memory:
-          lru-enabled: true       # 防止内存耗尽
-          max-tokens: 50000       # 硬限制
+          enabled: true
 
     audit:
+      enabled: true
+      retention-days: 90
 ```
 
 ### 访问控制
@@ -327,16 +325,13 @@ management:
       base-path: /actuator
       exposure:
         include: health,metrics
-        exclude: jwt-tokens,jwt-blacklist  # 限制敏感端点
   endpoint:
-    jwt-tokens:
-      enabled: false  # 仅在开发/预发布环境启用
-    jwt-blacklist:
-      enabled: false
-  security:
-    enabled: true
-    roles: ADMIN  # 管理端点需要管理员角色
+    health:
+      show-details: when-authorized
 ```
+
+> actuator 的访问控制由 Spring Security 的 URL 规则决定（本仓是 `/actuator/**` 需要
+> `ROLE_ADMIN`），`management.security.*` 这类 Spring Boot 1.x 的键在今天无效。
 
 ## 性能调优
 
@@ -347,10 +342,6 @@ jairouter:
   security:
     jwt:
       persistence:
-        memory:
-          max-tokens: 100000      # 根据可用内存调整
-          cleanup-threshold: 0.75 # 更早清理防止OOM
-          lru-enabled: true       # 启用LRU淘汰
         cleanup:
           batch-size: 2000        # 更大批次提升性能
           retention-days: 15      # 高流量系统更短保留期
@@ -359,23 +350,16 @@ jairouter:
 ### Redis 优化
 
 ```yaml
-jairouter:
-  security:
-    jwt:
-      persistence:
-        redis:
-          connection-timeout: 2000  # 高性能更快超时
-          retry-attempts: 2         # 更少重试更快故障转移
-          serialization-format: "binary"  # 比JSON性能更好
-          default-ttl: 1800        # 高流量系统更短TTL
-
+# 持久化树里只有 redis.enabled 一个 Redis 键；超时 / 重试 / 序列化 / TTL
+# 由 spring.data.redis.* 与令牌自身的过期时间决定
 spring:
-  redis:
-    lettuce:
-      pool:
-        max-active: 50    # 高并发更多连接
-        max-idle: 20
-        min-idle: 10
+  data:
+    redis:
+      lettuce:
+        pool:
+          max-active: 50    # 高并发更多连接
+          max-idle: 20
+          min-idle: 10
 ```
 
 ### 清理优化
@@ -389,9 +373,6 @@ jairouter:
           schedule: "0 */30 * * * ?"  # 更频繁清理
           batch-size: 5000            # 更大批次
           retention-days: 7           # 更短保留期
-      blacklist:
-        persistence:
-          cleanup-interval: 1800      # 更频繁黑名单清理
 ```
 
 ## 故障排除配置
@@ -412,8 +393,6 @@ logging:
 ```yaml
 management:
   health:
-    jwt-persistence:
-      enabled: true
     redis:
       enabled: true
   endpoint:
@@ -426,15 +405,16 @@ management:
 
 ```yaml
 jairouter:
-  monitoring:
-    jwt-persistence:
-      enabled: true
-      metrics:
-        token-operations:
-          enabled: true
-        blacklist-operations:
-          enabled: true
-        storage-health:
+  security:
+    monitoring:
+      jwt-persistence:
+        enabled: true
+        metrics:
+          token-operations:
+            histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
+          blacklist-operations:
+            histogram-buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1.0]
+        health-checks:
           enabled: true
           check-interval: 10  # 更频繁健康检查
 ```
@@ -449,17 +429,16 @@ jairouter:
 # JWT 配置
 export JWT_SECRET="your-production-jwt-secret-key"
 export JWT_EXPIRATION_MINUTES=15
-export JWT_REFRESH_EXPIRATION_DAYS=30
 
 # Redis 配置
 export REDIS_HOST="your-redis-host"
 export REDIS_PORT=6379
 export REDIS_PASSWORD="your-redis-password"
-
-# 安全配置
-export SECURITY_AUDIT_ENABLED=true
-export SECURITY_AUDIT_RETENTION_DAYS=180
 ```
+
+> 审计没有 `SECURITY_AUDIT_*` 这类环境变量；开关与保留期写在
+> `jairouter.security.audit.enabled` / `jairouter.security.audit.retention-days`。
+> 没有设置 `JWT_SECRET` 时生产 profile 会直接拒绝启动（`StartupSecurityGate`）。
 
 ### 配置验证脚本
 
@@ -499,26 +478,33 @@ cp application.yml application.yml.backup
 
 2. **逐步更新配置**
 ```yaml
-# 从内存持久化开始
+# 先只打开持久化本身（复合存储默认开启，Redis 先不接）
 jairouter:
   security:
     jwt:
       persistence:
         enabled: true
-        primary-storage: memory
-        fallback-storage: memory
+        composite:
+          enabled: true
+        redis:
+          enabled: false
 ```
 
 3. **测试后启用 Redis**
 ```yaml
-# 升级到 Redis，保留内存作为备选
+# 升级到 Redis 做共享存储，复合存储保留 StoreManager 作为落库侧
 jairouter:
   security:
     jwt:
       persistence:
         enabled: true
-        primary-storage: redis
-        fallback-storage: memory
+        composite:
+          enabled: true
+        redis:
+          enabled: true
+      blacklist:
+        redis:
+          enabled: true
 ```
 
 4. **启用完整审计**
@@ -544,20 +530,22 @@ jairouter:
 2. **使用强 Redis 安全**
 ```yaml
 spring:
-  redis:
-    password: ${REDIS_PASSWORD}  # 总是使用密码
-    ssl: true                   # 生产环境使用SSL
+  data:
+    redis:
+      password: ${REDIS_PASSWORD}  # 总是使用密码
+      ssl: true                   # 生产环境使用SSL
 ```
 
-3. **限制内存使用**
+3. **控制落库数据量**
 ```yaml
 jairouter:
   security:
     jwt:
       persistence:
-        memory:
-          max-tokens: 50000       # 设置合理限制
-          cleanup-threshold: 0.8  # 耗尽前清理
+        cleanup:
+          enabled: true
+          retention-days: 30      # 过期令牌的保留上限
+          batch-size: 1000        # 单次清理批量
 ```
 
 ### 性能最佳实践
@@ -573,25 +561,25 @@ jairouter:
           batch-size: 1000         # 平衡内存和性能
 ```
 
-2. **使用合适的 TTL**
+2. **令牌有效期由 JWT 配置决定**
 ```yaml
+# 持久化树里没有 default-ttl：令牌多久失效由签发时的过期时间决定
 jairouter:
   security:
     jwt:
-      persistence:
-        redis:
-          default-ttl: 3600  # 匹配或超过令牌过期时间
+      expiration-minutes: 60   # 短期访问令牌
 ```
 
 3. **监控性能**
 ```yaml
 jairouter:
-  monitoring:
-    jwt-persistence:
-      enabled: true
-      metrics:
-        storage-health:
-          check-interval: 30  # 定期健康监控
+  security:
+    monitoring:
+      jwt-persistence:
+        enabled: true
+        health-checks:
+          enabled: true
+          check-interval: 30  # 定期健康监控（秒）
 ```
 
 ## 相关文档

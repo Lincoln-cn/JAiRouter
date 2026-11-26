@@ -36,18 +36,16 @@ jairouter:
       # Token persistence configuration
       persistence:
         enabled: false  # Default: disabled, enable per environment
-        primary-storage: file    # Options: file (H2), redis, memory
-        fallback-storage: memory  # Options: memory
 
-        # Composite storage strategy (NEW in v2.x)
+        # Composite storage strategy (Redis + StoreManager)
         composite:
           enabled: true  # Enable composite storage (Redis + StoreManager)
 
-        # Data synchronization (NEW in v2.x)
+        # Data synchronization
         sync:
           enabled: true  # Enable data synchronization
 
-        # Startup recovery (NEW in v2.x)
+        # Startup recovery
         startup-recovery:
           enabled: true  # Enable data recovery on startup
 
@@ -58,30 +56,18 @@ jairouter:
           retention-days: 30       # Keep tokens for 30 days
           batch-size: 1000        # Process 1000 tokens per batch
 
-        # Memory storage configuration
-        memory:
-          max-tokens: 500         # Maximum tokens in memory (reduced in v2.x)
-          cleanup-threshold: 0.8  # Cleanup when 80% full
-          lru-enabled: true       # Use LRU eviction policy
-
-        # Redis storage configuration
+        # Redis storage: only a switch. Connection settings come from spring.data.redis.*
+        # (or the REDIS_HOST / REDIS_PORT / REDIS_PASSWORD environment variables).
         redis:
           enabled: false          # Default: disabled, enable when using Redis
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:0}"
-          key-prefix: "jwt:"      # Redis key prefix
-          default-ttl: 3600       # Default TTL in seconds
-          connection-timeout: 5000 # Connection timeout in ms
-          retry-attempts: 3       # Retry attempts for failed operations
-          serialization-format: "json"  # Options: json, binary
-          pool:                   # Connection pool (NEW in v2.x)
-            max-active: 8
-            max-idle: 8
-            min-idle: 0
-            max-wait: -1
 ```
+
+> **Only the keys above are read.** The only storage implementation is JPA (H2 is just the
+> database JPA uses); `redis` / `memory` as standalone storage backends were never implemented.
+> Keys such as `primary-storage`, `fallback-storage`, `memory.*`, `redis.key-prefix` /
+> `default-ttl` / `connection-timeout` / `retry-attempts` / `serialization-format` are not
+> configurable today. Compare with `src/main/resources/config/security/persistence-base.yml`.
+
 
 ### Blacklist Configuration
 
@@ -93,31 +79,14 @@ jairouter:
       blacklist:
         persistence:
           enabled: false          # Default: disabled
-          primary-storage: file  # Options: file (H2), redis, memory
-          fallback-storage: memory
-          max-memory-size: 10000  # Maximum blacklist entries in memory
-          cleanup-interval: 3600  # Cleanup interval in seconds (1 hour)
 
-        # Composite storage strategy (NEW in v2.x)
+        # Composite storage strategy (Redis + StoreManager)
         composite:
           enabled: true  # Enable composite storage (Redis + StoreManager)
 
-        # Redis blacklist configuration (NEW in v2.x)
+        # Redis blacklist: only a switch; connection settings come from spring.data.redis.*
         redis:
           enabled: false
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:0}"
-          key-prefix: "jwt:blacklist:"
-          default-ttl: 86400      # 24 hours
-          connection-timeout: 5000
-          retry-attempts: 3
-          pool:
-            max-active: 8
-            max-idle: 8
-            min-idle: 0
-            max-wait: -1
 ```
 
 ### Security Audit Configuration
@@ -149,27 +118,18 @@ jairouter:
     jwt:
       persistence:
         enabled: true
-        primary-storage: memory  # Use memory for development
-        fallback-storage: memory
+        composite:
+          enabled: true
         cleanup:
           schedule: "0 */5 * * * ?"  # Every 5 minutes for testing
           retention-days: 1          # Short retention for development
       blacklist:
         persistence:
           enabled: true
-          primary-storage: memory
     
     # Development audit configuration
     audit:
       retention-days: 7          # Short retention for development
-
-# Enable debug endpoints
-management:
-  endpoint:
-    jwt-tokens:
-      enabled: true
-    jwt-blacklist:
-      enabled: true
 ```
 
 ### Production Environment
@@ -181,27 +141,27 @@ jairouter:
     jwt:
       persistence:
         enabled: true
-        primary-storage: redis   # Use Redis for production
-        fallback-storage: memory
+        composite:
+          enabled: true
         redis:
-          connection-timeout: 3000
-          retry-attempts: 5
+          enabled: true   # Use Redis as the shared store in production
       blacklist:
         persistence:
           enabled: true
-          primary-storage: redis
-          max-memory-size: 50000
+        redis:
+          enabled: true
     
     # Production audit configuration
     audit:
       enabled: true
       retention-days: 180   # Longer retention for production
 
-# Monitoring configuration
+# Monitoring configuration (prefix is jairouter.security.monitoring, not jairouter.monitoring)
 jairouter:
-  monitoring:
-    jwt-persistence:
-      enabled: true
+  security:
+    monitoring:
+      jwt-persistence:
+        enabled: true
 ```
 
 ### Staging Environment
@@ -213,27 +173,20 @@ jairouter:
     jwt:
       persistence:
         enabled: true
-        primary-storage: redis
-        fallback-storage: memory
+        redis:
+          enabled: true
         cleanup:
           retention-days: 7      # Shorter retention for staging
       blacklist:
         persistence:
           enabled: true
-          primary-storage: redis
+        redis:
+          enabled: true
     
     # Staging audit configuration
     audit:
       enabled: true
       retention-days: 30
-
-# Enable debug endpoints for staging
-management:
-  endpoint:
-    jwt-tokens:
-      enabled: true
-    jwt-blacklist:
-      enabled: true
 ```
 
 ## Monitoring Configuration
@@ -241,55 +194,56 @@ management:
 ### Metrics Configuration
 
 ```yaml
-# config/monitoring/persistence-monitoring-base.yml
+# config/monitor/persistence-monitoring-base.yml
 management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,jwt-tokens,jwt-blacklist
+        include: health,metrics,prometheus
   metrics:
     tags:
       application: jairouter
     export:
       prometheus:
         enabled: true
-  endpoint:
-    jwt-tokens:
-      enabled: false  # Default: disabled, enable per environment
-    jwt-blacklist:
-      enabled: false
 
-# Custom monitoring metrics
+# Custom monitoring (prefix is jairouter.security.monitoring)
 jairouter:
-  monitoring:
-    jwt-persistence:
-      enabled: false  # Default: disabled, enable per environment
-      metrics:
-        token-operations:
+  security:
+    monitoring:
+      jwt-persistence:
+        enabled: false  # Default: disabled, enable per environment
+        metrics:
+          token-operations:
+            histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
+          blacklist-operations:
+            histogram-buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1.0]
+          storage-health:
+            include-storages: [redis, memory, composite]
+        health-checks:
           enabled: true
-          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
-        blacklist-operations:
-          enabled: true
-          histogram-buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1.0]
-        storage-health:
-          enabled: true
-          check-interval: 30  # seconds
+          check-interval: 60  # seconds
 ```
+
+> There is no `jwt-tokens` / `jwt-blacklist` actuator endpoint (the codebase has no
+> `@Endpoint` for them) and no `management.health.jwt-persistence` property. Metrics and
+> health are exported through Micrometer under `/actuator/prometheus` and `/actuator/health`,
+> which require `ROLE_ADMIN` (see `/actuator/**` in `SecurityConfiguration`).
 
 ### Health Check Configuration
 
 ```yaml
 management:
-  health:
-    jwt-persistence:
-      enabled: true
-    redis:
-      enabled: true
   endpoint:
     health:
       show-details: when-authorized
       show-components: always
 ```
+
+The `jwtRedisHealthIndicator` is contributed automatically, and only when **both**
+`jairouter.security.jwt.persistence.redis.enabled` and
+`jairouter.security.jwt.blacklist.persistence.redis.enabled` are `true` — with either one
+missing the bean is not created at all.
 
 ## Redis Configuration
 
@@ -297,48 +251,51 @@ management:
 
 ```yaml
 spring:
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
-    timeout: 5000ms
-    lettuce:
-      pool:
-        max-active: 20
-        max-idle: 10
-        min-idle: 5
-        max-wait: 2000ms
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 2000ms
 ```
 
 ### Redis Cluster Configuration
 
 ```yaml
 spring:
-  redis:
-    cluster:
-      nodes:
-        - ${REDIS_NODE1:localhost:7001}
-        - ${REDIS_NODE2:localhost:7002}
-        - ${REDIS_NODE3:localhost:7003}
-      max-redirects: 3
-    lettuce:
+  data:
+    redis:
       cluster:
-        refresh:
-          adaptive: true
-          period: 30s
+        nodes:
+          - ${REDIS_NODE1:localhost:7001}
+          - ${REDIS_NODE2:localhost:7002}
+          - ${REDIS_NODE3:localhost:7003}
+        max-redirects: 3
+      lettuce:
+        cluster:
+          refresh:
+            adaptive: true
+            period: 30s
 ```
 
 ### Redis Sentinel Configuration
 
 ```yaml
 spring:
-  redis:
-    sentinel:
-      master: mymaster
-      nodes:
-        - ${REDIS_SENTINEL1:localhost:26379}
-        - ${REDIS_SENTINEL2:localhost:26380}
-        - ${REDIS_SENTINEL3:localhost:26381}
+  data:
+    redis:
+      sentinel:
+        master: mymaster
+        nodes:
+          - ${REDIS_SENTINEL1:localhost:26379}
+          - ${REDIS_SENTINEL2:localhost:26380}
+          - ${REDIS_SENTINEL3:localhost:26381}
 ```
 
 ## Security Configuration
@@ -350,16 +307,21 @@ jairouter:
   security:
     jwt:
       persistence:
-        # Security settings
+        composite:
+          enabled: true   # Keep the shared store authoritative
         redis:
-          key-prefix: "jwt:"      # Namespace isolation
-          serialization-format: "json"  # Avoid binary for security
-        memory:
-          lru-enabled: true       # Prevent memory exhaustion
-          max-tokens: 50000       # Hard limit
-    
-    audit:
+          enabled: true
+
+spring:
+  data:
+    redis:
+      password: ${REDIS_PASSWORD}   # Never hardcode; inject from the environment
+      ssl:
+        enabled: true               # Enable for cross-network deployments
 ```
+
+> Redis key naming and (de)serialization are handled internally. `key-prefix`,
+> `serialization-format` and `memory.*` are **not** configurable properties today.
 
 ### Access Control
 
@@ -369,56 +331,40 @@ management:
     web:
       base-path: /actuator
       exposure:
-        include: health,metrics
-        exclude: jwt-tokens,jwt-blacklist  # Restrict sensitive endpoints
-  endpoint:
-    jwt-tokens:
-      enabled: false  # Only enable in development/staging
-    jwt-blacklist:
-      enabled: false
-  security:
-    enabled: true
-    roles: ADMIN  # Require admin role for management endpoints
+        include: health,metrics,prometheus
 ```
+
+> Management endpoints are protected by Spring Security, not by `management.security.*`:
+> `SecurityConfiguration` requires `ROLE_ADMIN` for `/actuator/**`, while
+> `/actuator/health`, `/actuator/health/**`, `/actuator/info` and `/actuator/prometheus`
+> stay anonymous. `management.security.enabled` / `management.security.roles` are Spring
+> Boot 1.x keys and have no effect here.
 
 ## Performance Tuning
 
-### Memory Optimization
+### Storage Footprint
 
 ```yaml
 jairouter:
   security:
     jwt:
       persistence:
-        memory:
-          max-tokens: 100000      # Adjust based on available memory
-          cleanup-threshold: 0.75 # Cleanup earlier to prevent OOM
-          lru-enabled: true       # Enable LRU eviction
         cleanup:
-          batch-size: 2000        # Larger batches for better performance
+          batch-size: 2000        # Larger batches for better throughput
           retention-days: 15      # Shorter retention for high-volume systems
 ```
 
 ### Redis Optimization
 
 ```yaml
-jairouter:
-  security:
-    jwt:
-      persistence:
-        redis:
-          connection-timeout: 2000  # Faster timeout for high-performance
-          retry-attempts: 2         # Fewer retries for faster failover
-          serialization-format: "binary"  # Better performance than JSON
-          default-ttl: 1800        # Shorter TTL for high-volume systems
-
 spring:
-  redis:
-    lettuce:
-      pool:
-        max-active: 50    # More connections for high concurrency
-        max-idle: 20
-        min-idle: 10
+  data:
+    redis:
+      lettuce:
+        pool:
+          max-active: 50    # More connections for high concurrency
+          max-idle: 20
+          min-idle: 10
 ```
 
 ### Cleanup Optimization
@@ -432,9 +378,6 @@ jairouter:
           schedule: "0 */30 * * * ?"  # More frequent cleanup
           batch-size: 5000            # Larger batches
           retention-days: 7           # Shorter retention
-      blacklist:
-        persistence:
-          cleanup-interval: 1800      # More frequent blacklist cleanup
 ```
 
 ## Troubleshooting Configuration
@@ -454,32 +397,27 @@ logging:
 
 ```yaml
 management:
-  health:
-    jwt-persistence:
-      enabled: true
-    redis:
-      enabled: true
   endpoint:
     health:
       show-details: always  # Show detailed health information
       show-components: always
 ```
 
+To make the JWT Redis health indicator report, enable the Redis-backed stores
+(`jairouter.security.jwt.persistence.redis.enabled=true` **and**
+`jairouter.security.jwt.blacklist.persistence.redis.enabled=true`).
+
 ### Metrics for Troubleshooting
 
 ```yaml
 jairouter:
-  monitoring:
-    jwt-persistence:
-      enabled: true
-      metrics:
-        token-operations:
+  security:
+    monitoring:
+      jwt-persistence:
+        enabled: true
+        health-checks:
           enabled: true
-        blacklist-operations:
-          enabled: true
-        storage-health:
-          enabled: true
-          check-interval: 10  # More frequent health checks
+          check-interval: 10  # More frequent health checks (seconds)
 ```
 
 ## Configuration Validation
@@ -492,17 +430,18 @@ For production deployment, ensure these environment variables are set:
 # JWT Configuration
 export JWT_SECRET="your-production-jwt-secret-key"
 export JWT_EXPIRATION_MINUTES=15
-export JWT_REFRESH_EXPIRATION_DAYS=30
 
 # Redis Configuration
 export REDIS_HOST="your-redis-host"
 export REDIS_PORT=6379
 export REDIS_PASSWORD="your-redis-password"
-
-# Security Configuration
-export SECURITY_AUDIT_ENABLED=true
-export SECURITY_AUDIT_RETENTION_DAYS=180
 ```
+
+> `JWT_REFRESH_EXPIRATION_DAYS`, `SECURITY_AUDIT_ENABLED` and `SECURITY_AUDIT_RETENTION_DAYS`
+> are **not** read by the code — no environment variables with those names are referenced
+> anywhere. The refresh-token window is the plain config value
+> `jairouter.security.jwt.refresh-expiration-days` (defaults to 1 day), and audit settings
+> live under `jairouter.security.audit.*` in `config/security/security-base.yml`.
 
 ### Configuration Validation Script
 
@@ -542,26 +481,29 @@ cp application.yml application.yml.backup
 
 2. **Update Configuration Gradually**
 ```yaml
-# Start with memory-only persistence
+# Start with the JPA store only
 jairouter:
   security:
     jwt:
       persistence:
         enabled: true
-        primary-storage: memory
-        fallback-storage: memory
 ```
 
 3. **Enable Redis After Testing**
 ```yaml
-# Upgrade to Redis with memory fallback
+# Move token and blacklist storage to the shared Redis store
 jairouter:
   security:
     jwt:
       persistence:
         enabled: true
-        primary-storage: redis
-        fallback-storage: memory
+        redis:
+          enabled: true
+      blacklist:
+        persistence:
+          enabled: true
+        redis:
+          enabled: true
 ```
 
 4. **Enable Full Auditing**
@@ -582,25 +524,29 @@ jairouter:
 jairouter:
   security:
     audit:
+      include-request-body: false
+      include-response-body: false
 ```
 
 2. **Use Strong Redis Security**
 ```yaml
 spring:
-  redis:
-    password: ${REDIS_PASSWORD}  # Always use password
-    ssl: true                   # Use SSL in production
+  data:
+    redis:
+      password: ${REDIS_PASSWORD}  # Always use password
+      ssl:
+        enabled: true              # Use SSL in production
 ```
 
-3. **Limit Memory Usage**
+3. **Bound the Token Store**
 ```yaml
 jairouter:
   security:
     jwt:
       persistence:
-        memory:
-          max-tokens: 50000       # Set reasonable limits
-          cleanup-threshold: 0.8  # Cleanup before exhaustion
+        cleanup:
+          retention-days: 30     # Expired rows are removed, not kept forever
+          batch-size: 1000
 ```
 
 ### Performance Best Practices
@@ -616,25 +562,25 @@ jairouter:
           batch-size: 1000         # Balance memory and performance
 ```
 
-2. **Use Appropriate TTL**
+2. **Match Retention to Token Lifetime**
 ```yaml
 jairouter:
   security:
     jwt:
       persistence:
-        redis:
-          default-ttl: 3600  # Match or exceed token expiration
+        cleanup:
+          retention-days: 30  # Keep at least as long as the longest token lifetime
 ```
 
 3. **Monitor Performance**
 ```yaml
 jairouter:
-  monitoring:
-    jwt-persistence:
-      enabled: true
-      metrics:
-        storage-health:
-          check-interval: 30  # Regular health monitoring
+  security:
+    monitoring:
+      jwt-persistence:
+        enabled: true
+        health-checks:
+          check-interval: 30  # Regular health monitoring (seconds)
 ```
 
 ## Related Documentation

@@ -52,8 +52,10 @@ http://localhost:8080
 (`config/auth/jwt.yml`), so `/v1/**` requires credentials, `/api/**` goes through the permission
 matrix, and only the exempt list may be called anonymously (`/actuator/health` and its sub-paths,
 `/actuator/info`, `/actuator/prometheus`, the login endpoints `POST /api/auth/jwt/login` and
-`POST /api/auth/jwt/validate`, `/admin/**` static assets and `/favicon.ico` — see
-`SecurityConfiguration.java` and `AnonymousEndpointPaths.java`). Swagger / OpenAPI is **not** exempt
+`POST /api/auth/jwt/validate`, the SLA onboarding endpoints `POST /api/auth/sla/bootstrap` and
+`POST /api/auth/sla/refresh`, `/admin/**` static assets and `/favicon.ico` — see
+`SecurityConfiguration.java` and `AnonymousEndpointPaths.java`). When CORS allowed origins are
+configured, preflight requests (`OPTIONS /**`) are permitted as well. Swagger / OpenAPI is **not** exempt
 unless `jairouter.security.docs-public=true` (`ApiDocsAccessPolicy.java`).
 
 The gateway itself accepts two credential types:

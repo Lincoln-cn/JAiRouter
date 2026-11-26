@@ -42,11 +42,11 @@
     },
     "docs/en/api-reference/index.md": {
       "FilePath": "docs/en/api-reference/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:54.039056",
-      "ContentHash": "d5a4873350b0fa42",
-      "GitCommit": "3a02eda1",
-      "Author": "Leo Lin",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-26T23:35:30.789433",
+      "ContentHash": "8dfd67faa740efab",
+      "GitCommit": "a3f1f22f",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -191,11 +191,11 @@
     },
     "docs/en/configuration/jwt-persistence.md": {
       "FilePath": "docs/en/configuration/jwt-persistence.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:31.773075",
-      "ContentHash": "aeb535f938ec5712",
-      "GitCommit": "2435f7d0",
-      "Author": "Leo Lin",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-26T23:43:33.404592",
+      "ContentHash": "da702acd58d65d29",
+      "GitCommit": "a3f1f22f",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/index.md",
@@ -349,7 +349,8 @@
       "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-26T00:00:00"
     },
     "docs/en/deployment/china-optimization.md": {
       "FilePath": "docs/en/deployment/china-optimization.md",
@@ -1198,11 +1199,11 @@
     },
     "docs/zh/api-reference/index.md": {
       "FilePath": "docs/zh/api-reference/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:54.669194",
-      "ContentHash": "aea583255e5b4ede",
-      "GitCommit": "3a02eda1",
-      "Author": "Leo Lin",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-26T23:36:09.554554",
+      "ContentHash": "3fbc89e4617d3ec8",
+      "GitCommit": "a3f1f22f",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -1346,11 +1347,11 @@
     },
     "docs/zh/configuration/jwt-persistence.md": {
       "FilePath": "docs/zh/configuration/jwt-persistence.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:37.642931",
-      "ContentHash": "5d56aa68ee760022",
-      "GitCommit": "2435f7d0",
-      "Author": "Leo Lin",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-26T23:36:15.297547",
+      "ContentHash": "a9d801fde3297980",
+      "GitCommit": "a3f1f22f",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/monitoring/index.md",
@@ -1504,7 +1505,8 @@
       "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-26T00:00:00"
     },
     "docs/zh/deployment/china-optimization.md": {
       "FilePath": "docs/zh/deployment/china-optimization.md",
@@ -8882,6 +8884,38 @@
       "ChangeType": "DELETED",
       "Timestamp": "2026-11-20T09:40:30.121369",
       "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/api-reference/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-26T23:35:30.789433",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/jwt-persistence.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-26T23:35:36.907359",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-26T23:36:09.554554",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/jwt-persistence.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-26T23:36:15.297547",
+      "Description": "文档modified"
     }
   ],
   "last_updated": "2026-11-26T10:27:42.804965"
