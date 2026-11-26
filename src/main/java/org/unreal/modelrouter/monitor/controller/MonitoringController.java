@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.constants.ErrorCode;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCacheAndRetry;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
@@ -382,7 +383,7 @@ public class MonitoringController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", "DOWN");
             errorResponse.put("healthy", false);
-            errorResponse.put("error", "健康检查失败: " + e.getMessage());
+            errorResponse.put("error", ClientErrors.message(e, "健康检查失败"));
             return Mono.just(RouterResponse.<Map<String, Object>>error("健康检查失败"));
         });
     }

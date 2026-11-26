@@ -95,14 +95,14 @@ class ErrorMessageExposureCeilingTest {
         final Map<String, Integer> current = scanSourceRoot();
 
         // 反空转：扫描面与基线都必须真的有东西，否则「找不到 ⇒ 没超标」会静默成立
-        assertTrue(baseline.size() >= 10,
-                "基线应登记至少 10 个文件，实际 " + baseline.size() + " —— 基线可能被误改或路径变了");
-        assertTrue(current.size() >= 10,
-                "扫描应命中至少 10 个含外显点的文件，实际 " + current.size()
+        assertTrue(baseline.size() >= 5,
+                "基线应登记至少 5 个文件，实际 " + baseline.size() + " —— 基线可能被误改或路径变了");
+        assertTrue(current.size() >= 5,
+                "扫描应命中至少 5 个含外显点的文件，实际 " + current.size()
                         + " —— 扫描路径或判据可能已失效（" + SOURCE_ROOT.toAbsolutePath() + "）");
-        assertTrue(total(baseline) >= 30,
-                "基线总数应不少于 30 处（P0 #1198 / P1 收敛后约 45 处，父 issue #1197 首版为 97 处），"
-                        + "实际 " + total(baseline));
+        assertTrue(total(baseline) >= 15,
+                "基线总数应不少于 15 处（首版 97 处；P0/P1/P2 收敛后为 23 处，"
+                        + "剩下的都是健康详情与中央处理器的保留项），实际 " + total(baseline));
 
         final List<String> violations = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : current.entrySet()) {

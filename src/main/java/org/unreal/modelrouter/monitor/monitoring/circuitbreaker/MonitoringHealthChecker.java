@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.monitor.monitoring.AsyncMetricsProcessor;
 import org.unreal.modelrouter.monitor.monitoring.MetricsMemoryManager;
 import org.unreal.modelrouter.monitor.monitoring.event.ProcessingStats;
@@ -117,8 +118,8 @@ public class MonitoringHealthChecker {
         } catch (Exception e) {
             logger.error("监控系统健康检查失败", e);
             Map<String, Object> errorDetails = new HashMap<>();
-            errorDetails.put("error", "监控系统健康检查失败: " + e.getMessage());
-            return new HealthCheckResult(false, errorDetails, "Health check exception: " + e.getMessage());
+            errorDetails.put("error", ClientErrors.message(e, "监控系统健康检查失败"));
+            return new HealthCheckResult(false, errorDetails, "Health check exception");
         }
     }
     
@@ -142,7 +143,7 @@ public class MonitoringHealthChecker {
         } catch (Exception e) {
             Map<String, Object> details = new HashMap<>();
             details.put("status", "DOWN");
-            details.put("error", e.getMessage());
+            details.put("error", ClientErrors.message(e, "检查错误处理器状态失败"));
             return new HealthStatus(false, details);
         }
     }
@@ -171,7 +172,7 @@ public class MonitoringHealthChecker {
         } catch (Exception e) {
             Map<String, Object> details = new HashMap<>();
             details.put("status", "DOWN");
-            details.put("error", e.getMessage());
+            details.put("error", ClientErrors.message(e, "检查降级策略状态失败"));
             return new HealthStatus(false, details);
         }
     }
@@ -199,7 +200,7 @@ public class MonitoringHealthChecker {
         } catch (Exception e) {
             Map<String, Object> details = new HashMap<>();
             details.put("status", "DOWN");
-            details.put("error", e.getMessage());
+            details.put("error", ClientErrors.message(e, "检查缓存与重试状态失败"));
             return new HealthStatus(false, details);
         }
     }
@@ -227,7 +228,7 @@ public class MonitoringHealthChecker {
         } catch (Exception e) {
             Map<String, Object> details = new HashMap<>();
             details.put("status", "DOWN");
-            details.put("error", e.getMessage());
+            details.put("error", ClientErrors.message(e, "检查异步处理器状态失败"));
             return new HealthStatus(false, details);
         }
     }
@@ -255,7 +256,7 @@ public class MonitoringHealthChecker {
         } catch (Exception e) {
             Map<String, Object> details = new HashMap<>();
             details.put("status", "DOWN");
-            details.put("error", e.getMessage());
+            details.put("error", ClientErrors.message(e, "检查内存管理器状态失败"));
             return new HealthStatus(false, details);
         }
     }
@@ -285,7 +286,7 @@ public class MonitoringHealthChecker {
         } catch (Exception e) {
             Map<String, Object> details = new HashMap<>();
             details.put("status", "DOWN");
-            details.put("error", e.getMessage());
+            details.put("error", ClientErrors.message(e, "检查指标注册表状态失败"));
             return new HealthStatus(false, details);
         }
     }
@@ -315,7 +316,7 @@ public class MonitoringHealthChecker {
             summary.put("checkTime", Instant.now().toString());
             
         } catch (Exception e) {
-            summary.put("error", "创建摘要信息失败: " + e.getMessage());
+            summary.put("error", ClientErrors.message(e, "创建摘要信息失败"));
         }
         
         return summary;

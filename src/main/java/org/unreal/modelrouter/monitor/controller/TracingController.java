@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.monitor.tracing.TracingService;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.config.TracingPerformanceConfig;
@@ -140,7 +141,7 @@ public class TracingController {
             } catch (Exception e) {
                 log.error("更新追踪配置失败", e);
                 Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "配置更新失败: " + e.getMessage());
+                errorResponse.put("error", ClientErrors.message(e, "配置更新失败"));
                 errorResponse.put("timestamp", LocalDateTime.now());
                 return ResponseEntity.badRequest().body(errorResponse);
             }
@@ -165,7 +166,7 @@ public class TracingController {
             } catch (Exception e) {
                 log.error("刷新采样策略失败", e);
                 Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error", "刷新失败: " + e.getMessage());
+                errorResponse.put("error", ClientErrors.message(e, "刷新失败"));
                 errorResponse.put("timestamp", LocalDateTime.now().toString());
                 return ResponseEntity.internalServerError().body(errorResponse);
             }

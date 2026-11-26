@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.monitor.dto.ModelCallStats;
 import org.unreal.modelrouter.monitor.service.ModelCallAnalyzer;
 import reactor.core.publisher.Mono;
@@ -66,7 +67,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(summary, "获取统计摘要成功")));
         } catch (Exception e) {
             logger.error("获取统计摘要失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取统计摘要失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取统计摘要失败"));
         }
     }
 
@@ -88,7 +89,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(result, "获取模型统计成功")));
         } catch (Exception e) {
             logger.error("获取模型统计失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取模型统计失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取模型统计失败"));
         }
     }
 
@@ -106,7 +107,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(stats, "获取服务类型统计成功")));
         } catch (Exception e) {
             logger.error("获取服务类型统计失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取服务类型统计失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取服务类型统计失败"));
         }
     }
 
@@ -129,7 +130,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(stats, "获取模型统计成功")));
         } catch (Exception e) {
             logger.error("获取模型统计失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取模型统计失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取模型统计失败"));
         }
     }
 
@@ -146,7 +147,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(topModels, "获取 Top 10 活跃模型成功")));
         } catch (Exception e) {
             logger.error("获取 Top 10 活跃模型失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取 Top 10 活跃模型失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取 Top 10 活跃模型失败"));
         }
     }
 
@@ -163,7 +164,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(unhealthyModels, "获取健康状态异常的模型成功")));
         } catch (Exception e) {
             logger.error("获取健康状态异常的模型失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取健康状态异常的模型失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取健康状态异常的模型失败"));
         }
     }
 
@@ -180,7 +181,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(grouped, "获取分组统计成功")));
         } catch (Exception e) {
             logger.error("获取分组统计失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取分组统计失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取分组统计失败"));
         }
     }
 
@@ -198,7 +199,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(trend, "获取调用趋势成功")));
         } catch (Exception e) {
             logger.error("获取调用趋势失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取调用趋势失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "获取调用趋势失败"));
         }
     }
 
@@ -218,7 +219,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(result, "刷新统计成功")));
         } catch (Exception e) {
             logger.error("刷新统计失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "刷新统计失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "刷新统计失败"));
         }
     }
 
@@ -247,7 +248,7 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(result, "清空统计成功")));
         } catch (Exception e) {
             logger.error("清空统计失败", e);
-            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "清空统计失败：" + e.getMessage()));
+            return Mono.error(ClientErrors.api(e, ErrorCode.INTERNAL_ERROR, "清空统计失败"));
         }
     }
     
