@@ -195,8 +195,13 @@ class V1ClientErrorBodyMappingTest {
         assertEquals(HttpStatus.BAD_REQUEST, exchange.getResponse().getStatusCode());
         final JsonNode json = singleJsonObject(body);
         assertEquals("invalid_request_error", json.path("error").path("type").asText());
-        assertTrue(json.path("error").path("message").asText().contains("Invalid request body"),
-                "必须是原错误消息: " + body);
+        // #1197：请求体解析异常的原文含字段名 / 期望类型 / JSON 片段，只进日志。
+        // 原断言（必须含 Invalid request body）正是要修掉的行为，这里反过来钉住「不得泄漏」；
+        // 协议面只保留可识别的固定文案，SDK 侧按 type 分支即可。
+        final String message = json.path("error").path("message").asText();
+        assertFalse(message.contains("Invalid request body"),
+                "请求体解析异常的原文不得回显（#1197）: " + body);
+        assertFalse(message.isBlank(), "协议面必须给出非空的固定文案: " + body);
     }
 
     @Test

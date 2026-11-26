@@ -15,6 +15,8 @@ import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.http.server.reactive.MockServerHttpResponse;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.ServerWebInputException;
+import org.unreal.modelrouter.common.exception.ClientFacingException;
 import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
 
 import reactor.test.StepVerifier;
@@ -87,6 +89,57 @@ class GenericErrorNoDetailLeakTest {
         assertTrue(response.getMessage().contains("系统异常"), "实际: " + response.getMessage());
         assertFalse(response.getMessage().contains("SuperSecret123"),
                 "兜底文案不得回显异常原文，实际: " + response.getMessage());
+    }
+
+    // ==================== #1197：参数类异常不再回显原文 ====================
+
+    @Test
+    @DisplayName("1197-001 请求体解析异常：字段名与期望类型不外显")
+    void webInputExceptionHidesParseDetail() {
+        final ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/models").build());
+        final ServerWebInputException exception = new ServerWebInputException(
+                "JSON parse error: Cannot deserialize value of type `int` from String \"abc\"");
+
+        StepVerifier.create(handler.handle(exchange, exception)).verifyComplete();
+
+        assertEquals(HttpStatus.BAD_REQUEST, exchange.getResponse().getStatusCode());
+        final String body = bodyOf(exchange);
+        assertTrue(body.contains("请求体无效或缺失"), "实际: " + body);
+        assertFalse(body.contains("Cannot deserialize"), "不得回显解析细节，实际: " + body);
+        assertFalse(body.contains("abc"), "不得回显请求体片段，实际: " + body);
+    }
+
+    @Test
+    @DisplayName("1197-002 参数校验异常：原文只进日志")
+    void illegalArgumentExceptionHidesDetail() {
+        final ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/models").build());
+        final IllegalArgumentException exception =
+                new IllegalArgumentException("'username' must not be null");
+
+        StepVerifier.create(handler.handle(exchange, exception)).verifyComplete();
+
+        assertEquals(HttpStatus.BAD_REQUEST, exchange.getResponse().getStatusCode());
+        final String body = bodyOf(exchange);
+        assertTrue(body.contains("参数验证失败"), "实际: " + body);
+        assertFalse(body.contains("must not be null"), "不得回显校验原文，实际: " + body);
+        assertFalse(body.contains("'username'"), "不得回显字段名，实际: " + body);
+    }
+
+    @Test
+    @DisplayName("1197-003 ClientFacingException：人工确认过的业务语仍可外显")
+    void clientFacingExceptionStaysVisible() {
+        final ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/models").build());
+        final ClientFacingException exception = new ClientFacingException("用户名不能为空");
+
+        StepVerifier.create(handler.handle(exchange, exception)).verifyComplete();
+
+        assertEquals(HttpStatus.BAD_REQUEST, exchange.getResponse().getStatusCode());
+        final String body = bodyOf(exchange);
+        assertTrue(body.contains("用户名不能为空"), "业务校验语应到达调用方，实际: " + body);
+        assertTrue(body.contains("参数验证失败"), "实际: " + body);
     }
 
     private static String bodyOf(final ServerWebExchange exchange) {

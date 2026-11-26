@@ -27,6 +27,7 @@ import org.unreal.modelrouter.auth.security.service.SecurityBlacklistService;
 import java.security.Principal;
 import java.util.List;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 
 /**
  * 统一安全黑名单管理API
@@ -116,11 +117,12 @@ public class SecurityBlacklistController {
             return ResponseEntity.ok(RouterResponse.success(entry, "黑名单添加成功"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INVALID_PARAM.code()))
-                    .body(RouterResponse.error("无效的参数: " + e.getMessage(), ErrorCode.INVALID_PARAM.code()));
+                    // #1197：异常原文只进日志
+                    .body(ClientErrors.response(e, ErrorCode.INVALID_PARAM, "无效的参数"));
         } catch (Exception e) {
             log.error("添加黑名单失败", e);
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.ADD_FAILED.code()))
-                    .body(RouterResponse.error("添加失败: " + e.getMessage(), ErrorCode.ADD_FAILED.code()));
+                    .body(ClientErrors.response(e, ErrorCode.ADD_FAILED, "添加失败"));
         }
     }
 

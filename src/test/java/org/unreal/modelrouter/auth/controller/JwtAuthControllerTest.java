@@ -29,6 +29,7 @@ import reactor.test.StepVerifier;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -123,6 +124,29 @@ class JwtAuthControllerTest {
                         ApiException apiEx = (ApiException) ex;
                         assertEquals("LOGIN_FAILED", apiEx.getErrorCode());
                         assertEquals(HttpStatus.UNAUTHORIZED, apiEx.getStatus());
+                    })
+                    .verify();
+        }
+        @Test
+        @DisplayName("登录失败：异常原文不回显（#1198）")
+        void testLogin_failureDoesNotEchoExceptionDetail() {
+            // Given：底层异常带着连接串与口令，正是此前会被拼进响应体的那一类
+            lenient().when(accountManager.authenticateAndGenerateToken(anyString(), anyString(), any(), any(), any()))
+                    .thenReturn(Mono.error(new RuntimeException(
+                            "java.sql.SQLException: jdbc:postgresql://db.internal/prod?password=s3cret")));
+
+            // When
+            Mono<RouterResponse<LoginResponse>> result = controller.login(testLoginRequest, null);
+
+            // Then：对外只剩固定短语，细节不随响应体出去
+            StepVerifier.create(result)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("LOGIN_FAILED", apiEx.getErrorCode());
+                        assertEquals("登录失败", apiEx.getMessage());
+                        assertFalse(apiEx.getMessage().contains("jdbc"), "不得回显连接串");
+                        assertFalse(apiEx.getMessage().contains("s3cret"), "不得回显口令");
                     })
                     .verify();
         }

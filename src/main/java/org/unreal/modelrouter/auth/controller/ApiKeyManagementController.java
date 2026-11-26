@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.common.exception.ApiExceptions;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 
 /**
  * API 密钥管理控制器
@@ -328,7 +329,8 @@ public class ApiKeyManagementController {
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(detail -> RouterResponse.success(detail, "配额已更新"))
                 .onErrorResume(IllegalArgumentException.class, e ->
-                        Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), e.getMessage())))
+                        // #1197：校验异常原文只进日志（配额端点是管理面，但仍不外显内部细节）
+                        Mono.error(ClientErrors.api(e, ErrorCode.INVALID_REQUEST, "配额参数无效")))
                 .onErrorResume(e -> {
                     log.error("更新API密钥配额失败: {}", keyId, e);
                     return Mono.error(ApiExceptions.wrap(e, "更新配额失败"));

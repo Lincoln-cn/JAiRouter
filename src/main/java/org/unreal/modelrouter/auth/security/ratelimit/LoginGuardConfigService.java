@@ -10,6 +10,8 @@ import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ClientFacingException;
+import org.unreal.modelrouter.common.exception.ClientErrors;
 import org.unreal.modelrouter.persistence.jpa.entity.LoginGuardConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.LoginGuardConfigRepository;
 
@@ -175,7 +177,10 @@ public class LoginGuardConfigService {
         try {
             return new LoginGuardSettings(maxFailuresPerPrincipal, maxFailuresPerIp, windowMinutes, lockMinutes);
         } catch (IllegalArgumentException ex) {
-            throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), ex.getMessage(), ErrorCode.INVALID_REQUEST.status());
+            // #1197：LoginGuardSettings 的校验语是人写的业务话术（阈值取值要求），对调用方可见，
+            // 因此显式包成 ClientFacingException；其它异常类型的原文一律不外显。
+            throw ClientErrors.api(new ClientFacingException(ex.getMessage()),
+                    ErrorCode.INVALID_REQUEST, "登录保护参数无效");
         }
     }
 
