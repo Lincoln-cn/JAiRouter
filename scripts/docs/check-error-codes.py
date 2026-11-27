@@ -86,6 +86,10 @@ _DOC_ROOTS = ("docs/zh", "docs/en")
 NON_CODE_TOKENS: Dict[str, str] = {
     "ERROR_CODE": "响应体模板里的占位符（`{\"success\": false, \"errorCode\": \"ERROR_CODE\"}`，"
                   "`error-codes.md` 与 `management-api.md` 的中英侧各一处），是形状示意，不是任何路径发出的码",
+    # #1238：`/v1/**` 的 OpenAI 面错误体 `code` 字段本应填错误码名，但异常是 `ResponseStatusException`
+    # 时拿到的 errorCode 就是状态码字符串（router 层既有 6 处都这么抛：`ModelServiceRegistry:572/603/622/639/712/726`）。
+    # 实测 `{"error":{"message":"...","code":"503"}}`；`docs/{zh,en}/configuration/adapter-config.md` 各一处。
+    "503": "HTTP 状态码字符串，不是注册表里的错误码名 —— 见 resource-status 抛法的实测响应体",
     # `error_code`（小写写法）曾在 en 侧 `api-reference/index.md` 出现，那条漂移已在 #419 修掉；
     # 2026-10-16 全仓复查（`grep -ri "error_code" docs/**/*.md`）零命中 ⇒ 按「不留中间态」移除白名单项。
 }
