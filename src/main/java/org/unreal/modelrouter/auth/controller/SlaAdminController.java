@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,13 +12,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.service.SlaAccessService;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.dto.PagedResult;
 import org.unreal.modelrouter.common.exception.ApiException;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,6 +33,9 @@ import java.util.Map;
  *
  * <p>一次性令牌的明文只在这个接口的响应里出现一次，之后库里只有 SHA-256 摘要；吊销不删行，
  * 保留 {@code revoked_at} 是为了让审计能对上「这条凭据什么时候被谁拔掉」。</p>
+ *
+ * <p>issue #1215：本组端点全部是阻塞的 JPA 调用，方法签名因此返回 {@link Mono} 并把实际工作
+ * 放到 {@code boundedElastic}——直接在事件循环线程上跑数据库查询，会把整条 Netty 线程卡住。</p>
  */
 @Slf4j
 @RestController
@@ -37,17 +44,47 @@ import java.util.Map;
 @Tag(name = "SLA 接入管理", description = "SLA 服务账号与一次性接入令牌的签发/吊销")
 public class SlaAdminController {
 
+    /** 列表默认每页条数。 */
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
+    /** 列表单页上限：再大就不该走列表接口了。 */
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final SlaAccessService slaAccessService;
 
     /**
-     * 列出全部 SLA 账号。
+     * 分页列出 SLA 账号。
      *
-     * @return 账号视图列表（含有效凭据数与未消费令牌数）
+     * @param page    页码（从 0 开始，默认 0）
+     * @param size    每页条数（1~100，默认 20）
+     * @param keyword 名称关键字（可选）
+     * @return 分页后的账号视图
      */
     @GetMapping("/accounts")
-    @Operation(summary = "列出 SLA 服务账号")
-    public RouterResponse<List<SlaAccessService.AccountView>> listAccounts() {
-        return RouterResponse.success(slaAccessService.listAccounts());
+    @Operation(summary = "分页列出 SLA 服务账号")
+    public Mono<RouterResponse<SlaAccountPage>> listAccounts(
+            @Parameter(description = "页码，从 0 开始")
+            @RequestParam(required = false) final Integer page,
+            @Parameter(description = "每页条数，1~100")
+            @RequestParam(required = false) final Integer size,
+            @Parameter(description = "账号名关键字")
+            @RequestParam(required = false) final String keyword) {
+        return Mono.fromCallable(() -> {
+                    final int effectivePage = page == null ? 0 : page;
+                    final int effectiveSize = size == null ? DEFAULT_PAGE_SIZE : size;
+                    if (effectivePage < 0) {
+                        throw ApiException.of(ErrorCode.INVALID_PAGE.code(),
+                                "page 不能小于 0", ErrorCode.INVALID_PAGE.status());
+                    }
+                    if (effectiveSize < 1 || effectiveSize > MAX_PAGE_SIZE) {
+                        throw ApiException.of(ErrorCode.INVALID_SIZE.code(),
+                                "size 必须在 1~" + MAX_PAGE_SIZE + " 之间", ErrorCode.INVALID_SIZE.status());
+                    }
+                    return RouterResponse.success(new SlaAccountPage(
+                            slaAccessService.listAccounts(effectivePage, effectiveSize, keyword),
+                            slaAccessService.summarize()));
+                })
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -60,10 +97,11 @@ public class SlaAdminController {
     @PostMapping("/accounts")
     @Operation(summary = "新建 SLA 服务账号",
             description = "角色模板只有 SLA_READONLY 与 SLA_OPERATOR；后者含控制面配置写权限。")
-    public RouterResponse<SlaAccessService.AccountView> createAccount(
+    public Mono<RouterResponse<SlaAccessService.AccountView>> createAccount(
             @RequestBody final CreateAccountRequest request, final Authentication authentication) {
-        return RouterResponse.success(slaAccessService.createAccount(
-                request.name(), request.roleTemplate(), operatorOf(authentication)));
+        return Mono.fromCallable(() -> RouterResponse.success(slaAccessService.createAccount(
+                        request.name(), request.roleTemplate(), operatorOf(authentication))))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -76,18 +114,19 @@ public class SlaAdminController {
      */
     @PostMapping("/accounts/{accountId}/bootstrap")
     @Operation(summary = "签发一次性接入令牌",
-            description = "明文只返回一次；默认 15 分钟有效、只能使用一次；可绑定来源 IP。")
-    public RouterResponse<SlaAccessService.IssueResult> issueBootstrap(
+            description = "明文只返回一次；默认 15 分钟有效、最长 60 分钟、只能使用一次；可绑定来源 IP 或网段。")
+    public Mono<RouterResponse<SlaAccessService.IssueResult>> issueBootstrap(
             @PathVariable final String accountId,
             @RequestBody(required = false) final IssueRequest request,
             final Authentication authentication) {
         final IssueRequest effective = request == null ? new IssueRequest(null, null) : request;
-        return RouterResponse.success(slaAccessService.issueBootstrap(
-                accountId, effective.ttlMinutes(), effective.allowedIp(), operatorOf(authentication)));
+        return Mono.fromCallable(() -> RouterResponse.success(slaAccessService.issueBootstrap(
+                        accountId, effective.ttlMinutes(), effective.allowedIp(), operatorOf(authentication))))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
-     * 吊销账号名下全部刷新凭据（账号保留，用于「先发新再吊销旧」的轮换）。
+     * 吊销账号名下全部凭据。
      *
      * @param accountId      账号主键
      * @param authentication 当前操作人
@@ -97,10 +136,13 @@ public class SlaAdminController {
     @Operation(summary = "吊销账号名下全部凭据",
             description = "同时吊销刷新凭据、作废未消费的接入令牌、停用 jwt 主体："
                     + "已签发的访问令牌在下一个请求即被拒。重新接入需再签发一枚接入令牌。")
-    public RouterResponse<Map<String, Object>> revokeAll(
+    public Mono<RouterResponse<Map<String, Object>>> revokeAll(
             @PathVariable final String accountId, final Authentication authentication) {
-        final int revoked = slaAccessService.revokeAll(accountId, operatorOf(authentication));
-        return RouterResponse.success(Map.of("revoked", revoked));
+        return Mono.fromCallable(() -> {
+                    final int revoked = slaAccessService.revokeAll(accountId, operatorOf(authentication));
+                    return RouterResponse.<Map<String, Object>>success(Map.of("revoked", revoked));
+                })
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -118,16 +160,20 @@ public class SlaAdminController {
     @PostMapping("/accounts/{accountId}/enabled")
     @Operation(summary = "启用或禁用 SLA 服务账号",
             description = "禁用会连带吊销凭据并停用 jwt 主体，已签发访问令牌随即失效；重新启用不会自动恢复主体。")
-    public RouterResponse<SlaAccessService.AccountView> setAccountEnabled(
+    public Mono<RouterResponse<SlaAccessService.AccountView>> setAccountEnabled(
             @PathVariable final String accountId,
             @RequestBody final EnabledRequest request,
             final Authentication authentication) {
-        if (request == null || request.enabled() == null) {
-            throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
-                    "缺少 enabled 字段（true 启用 / false 禁用）", ErrorCode.INVALID_REQUEST.status());
-        }
-        return RouterResponse.success(slaAccessService.setAccountEnabled(
-                accountId, request.enabled(), operatorOf(authentication)));
+        return Mono.fromCallable(() -> {
+                    if (request == null || request.enabled() == null) {
+                        throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
+                                "缺少 enabled 字段（true 启用 / false 禁用）",
+                                ErrorCode.INVALID_REQUEST.status());
+                    }
+                    return RouterResponse.success(slaAccessService.setAccountEnabled(
+                            accountId, request.enabled(), operatorOf(authentication)));
+                })
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -140,10 +186,13 @@ public class SlaAdminController {
     @DeleteMapping("/accounts/{accountId}")
     @Operation(summary = "删除 SLA 服务账号",
             description = "同时删除其一次性令牌、刷新凭据与 jwt_accounts 里的 sla: 主体。")
-    public RouterResponse<Void> deleteAccount(
+    public Mono<RouterResponse<Void>> deleteAccount(
             @PathVariable final String accountId, final Authentication authentication) {
-        slaAccessService.deleteAccount(accountId, operatorOf(authentication));
-        return RouterResponse.success();
+        return Mono.fromCallable(() -> {
+                    slaAccessService.deleteAccount(accountId, operatorOf(authentication));
+                    return RouterResponse.<Void>success();
+                })
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     private static String operatorOf(final Authentication authentication) {
@@ -151,6 +200,18 @@ public class SlaAdminController {
             return "unknown";
         }
         return authentication.getName();
+    }
+
+    /**
+     * 列表响应：当前页 + 全量汇总（issue #1219）。
+     *
+     * <p>汇总与列表一起返回：分页之后前端不能再拿「当前页求和」充总数。</p>
+     *
+     * @param page    当前页
+     * @param summary 全量汇总指标
+     */
+    public record SlaAccountPage(PagedResult<SlaAccessService.AccountView> page,
+                                 SlaAccessService.AccountSummary summary) {
     }
 
     /**
@@ -173,8 +234,8 @@ public class SlaAdminController {
     /**
      * 签发一次性令牌请求体。
      *
-     * @param ttlMinutes 有效期分钟数（为空用 15 分钟）
-     * @param allowedIp  绑定的来源 IP（为空不限制）
+     * @param ttlMinutes 有效期分钟数（为空用 15 分钟，超过 60 按 60 夹取）
+     * @param allowedIp  绑定的来源 IP 或网段（为空不限制）
      */
     public record IssueRequest(Integer ttlMinutes, String allowedIp) {
     }

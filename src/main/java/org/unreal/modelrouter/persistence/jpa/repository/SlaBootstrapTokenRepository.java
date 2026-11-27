@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaBootstrapTokenEntity;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,12 +35,38 @@ public interface SlaBootstrapTokenRepository extends JpaRepository<SlaBootstrapT
     List<SlaBootstrapTokenEntity> findByAccountId(String accountId);
 
     /**
-     * 统计某账号下尚未被消费的令牌数。
+     * 统计某账号下「未消费且未过期」的令牌数（issue #1219）。
+     *
+     * <p>过期但未消费的行曾经也被算进去，导致控制台的「待用令牌数」虚高 ——
+     * 那些令牌再也不能用了，把它们算成待用会让运维以为还有额度。</p>
      *
      * @param accountId 账号主键
-     * @return 未消费数量
+     * @param now       当前时间
+     * @return 待用数量
      */
-    long countByAccountIdAndUsedAtIsNull(String accountId);
+    long countByAccountIdAndUsedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(
+            String accountId, LocalDateTime now);
+
+    /**
+     * 批量统计多个账号的「未消费、未吊销且未过期」令牌数，避免逐个账号查一次（issue #1219）。
+     *
+     * @param accountIds 账号主键集合
+     * @param now        当前时间
+     * @return 每条为 {@code [accountId, count]}
+     */
+    /**
+     * 统计全平台「未消费、未吊销且未过期」的令牌数，供列表顶部汇总使用（issue #1219）。
+     *
+     * @param now 当前时间
+     * @return 待用令牌总数
+     */
+    long countByUsedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(LocalDateTime now);
+
+    @Query("select t.accountId, count(t) from SlaBootstrapTokenEntity t "
+            + "where t.usedAt is null and t.revokedAt is null and t.expiresAt > :now "
+            + "and t.accountId in :accountIds group by t.accountId")
+    List<Object[]> countUnusedByAccountIds(@Param("accountIds") Collection<String> accountIds,
+                                           @Param("now") LocalDateTime now);
 
     /**
      * 删除「过期、已消费或已吊销」且早于保留期下界的令牌行（issue #1218）。

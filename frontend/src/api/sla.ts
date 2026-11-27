@@ -49,10 +49,59 @@ export interface SlaIssuePayload {
   allowedIp?: string
 }
 
-/** 账号列表 */
-export async function getSlaAccounts(): Promise<SlaAccount[]> {
-  const response = await request.get<RouterResponse<SlaAccount[]>>('/security/sla/accounts')
-  return response.data.data ?? []
+/** 分页容器（与后端 PagedResult 对齐） */
+export interface SlaAccountPageResult {
+  content: SlaAccount[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  first: boolean
+  last: boolean
+  hasNext: boolean
+  hasPrevious: boolean
+}
+
+/** 全量汇总指标 —— 与列表一起返回，避免分页后按页求和算出错的「总数」 */
+export interface SlaAccountSummary {
+  accounts: number
+  enabled: number
+  refreshTokens: number
+  pendingTokens: number
+}
+
+/** 列表响应：当前页 + 全量汇总 */
+export interface SlaAccountPage {
+  page: SlaAccountPageResult
+  summary: SlaAccountSummary
+}
+
+/** 账号列表（分页 + 关键字） */
+export async function getSlaAccounts(
+  params: { page?: number; size?: number; keyword?: string } = {}
+): Promise<SlaAccountPage> {
+  const response = await request.get<RouterResponse<SlaAccountPage>>('/security/sla/accounts', {
+    params: {
+      page: params.page ?? 0,
+      size: params.size ?? 20,
+      keyword: params.keyword || undefined
+    }
+  })
+  const data = response.data.data
+  return {
+    page: data?.page ?? {
+      content: [],
+      page: 0,
+      size: params.size ?? 20,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: true,
+      hasNext: false,
+      hasPrevious: false
+    },
+    summary: data?.summary ?? { accounts: 0, enabled: 0, refreshTokens: 0, pendingTokens: 0 }
+  }
 }
 
 /** 新建账号 */

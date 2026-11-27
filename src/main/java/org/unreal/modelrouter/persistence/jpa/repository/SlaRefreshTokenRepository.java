@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaRefreshTokenEntity;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,6 +52,23 @@ public interface SlaRefreshTokenRepository extends JpaRepository<SlaRefreshToken
      * @return 有效凭据数
      */
     long countByAccountIdAndRevokedAtIsNull(String accountId);
+
+    /**
+     * 统计全平台未吊销的凭据数，供列表顶部汇总使用（issue #1219）。
+     *
+     * @return 有效凭据总数
+     */
+    long countByRevokedAtIsNull();
+
+    /**
+     * 批量统计多个账号的有效凭据数，避免逐个账号查一次（issue #1219）。
+     *
+     * @param accountIds 账号主键集合
+     * @return 每条为 {@code [accountId, count]}
+     */
+    @Query("select t.accountId, count(t) from SlaRefreshTokenEntity t "
+            + "where t.revokedAt is null and t.accountId in :accountIds group by t.accountId")
+    List<Object[]> countActiveByAccountIds(@Param("accountIds") Collection<String> accountIds);
 
     /**
      * 删除「过期或已吊销」且早于保留期下界的凭据（issue #1218）。

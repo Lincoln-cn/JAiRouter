@@ -187,10 +187,25 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 #### 基础路径: `/api/security/sla`（需 `system:sla:read` / `system:sla:manage`）
 
+本组端点全部在 `boundedElastic` 线程池上执行阻塞的数据库查询，不占用 Netty 事件循环；
+`/api/auth/sla/**` 与 `/api/security/sla/**` 共用一条按来源 IP 的限流桶（默认 120 次/分钟、
+1000 次/小时，配置键 `jairouter.auth.sla-rate-limit.per-minute` / `.per-hour`），超限返回 `429`。
+
 ##### `GET /api/security/sla/accounts`
 
-列出 SLA 账号：`accountId`、`name`、`roleTemplate`、`enabled`、`createdBy`、`createdAt`、`lastSeenAt`，
-以及 `activeRefreshTokens`（有效刷新凭据数）、`unusedBootstrapTokens`（未使用的一次性令牌数）。需 `system:sla:read`。
+分页列出 SLA 账号，支持 `page`（从 0 开始）、`size`（1~100，默认 20）、`keyword`（按名字模糊匹配）：
+
+```
+GET /api/security/sla/accounts?page=0&size=20&keyword=build
+```
+
+响应分两部分：`page` 是当前页（`content` 每项含 `accountId`、`name`、`roleTemplate`、`enabled`、
+`createdBy`、`createdAt`、`lastSeenAt`、`activeRefreshTokens`、`unusedBootstrapTokens`，另带
+`totalElements` / `totalPages` / `hasNext` 等分页元数据），`summary` 是全量汇总
+（`accounts` / `enabled` / `refreshTokens` / `pendingTokens`）。
+
+汇总跟着列表一起返回，是因为分页之后「把当前页加起来」已经不等于总数了。`pendingTokens` 只数
+「未消费、未吊销且未过期」的令牌，过期未用的行不算。需 `system:sla:read`。
 
 ##### `POST /api/security/sla/accounts`
 

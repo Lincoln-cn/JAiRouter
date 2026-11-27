@@ -23,6 +23,8 @@
         :placeholder="t('slaAccess.searchPlaceholder')"
         clearable
         style="max-width: 260px"
+        @keyup.enter="applyKeyword"
+        @clear="applyKeyword"
       >
         <template #prefix>
           <el-icon><Search /></el-icon>
@@ -51,7 +53,7 @@
         </div>
       </template>
 
-      <el-table :data="filteredAccounts" v-loading="loading" size="small">
+      <el-table :data="accounts" v-loading="loading" size="small">
         <template #empty>
           <EmptyState
             :title="keyword ? t('slaAccess.noMatchTitle') : t('slaAccess.empty')"
@@ -144,6 +146,19 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 总数为 0 时不渲染无意义的分页条（与审计日志/密钥管理一致） -->
+    <el-pagination
+      v-if="total > 0"
+      v-model:current-page="page"
+      v-model:page-size="size"
+      :total="total"
+      :page-sizes="[10, 20, 50, 100]"
+      layout="total, sizes, prev, pager, next, jumper"
+      class="pagination-bar"
+      @current-change="loadAccounts"
+      @size-change="handleSizeChange"
+    />
 
     <!-- 新建账号：集合页统一用右侧抽屉（与账户管理/黑名单一致） -->
     <el-drawer
@@ -253,6 +268,7 @@ import {
   revokeSlaCredentials,
   setSlaAccountEnabled,
   type SlaAccount,
+  type SlaAccountSummary,
   type SlaBootstrapIssue
 } from '@/api/sla'
 
@@ -274,6 +290,19 @@ const accounts = ref<SlaAccount[]>([])
 const loading = ref(false)
 const keyword = ref('')
 
+/** 分页状态：默认第 0 页、每页 20（与后端 DEFAULT_PAGE_SIZE 一致） */
+const page = ref(0)
+const size = ref(20)
+const total = ref(0)
+
+/** 全量汇总指标：由后端算 —— 分页后不能再拿「当前页求和」充总数 */
+const summary = ref<SlaAccountSummary>({
+  accounts: 0,
+  enabled: 0,
+  refreshTokens: 0,
+  pendingTokens: 0
+})
+
 const createVisible = ref(false)
 const creating = ref(false)
 const createForm = reactive({ name: '', roleTemplate: 'SLA_READONLY' })
@@ -284,30 +313,18 @@ const issueTarget = ref<SlaAccount | null>(null)
 const issueForm = reactive({ ttlMinutes: 15, allowedIp: '' })
 const issued = ref<SlaBootstrapIssue | null>(null)
 
-const filteredAccounts = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  if (!kw) {
-    return accounts.value
-  }
-  return accounts.value.filter((item) => item.name.toLowerCase().includes(kw))
-})
-
 const metricItems = computed(() => [
-  { key: 'accounts', label: t('slaAccess.metricAccounts'), value: accounts.value.length },
-  {
-    key: 'enabled',
-    label: t('slaAccess.metricEnabled'),
-    value: accounts.value.filter((item) => item.enabled).length
-  },
+  { key: 'accounts', label: t('slaAccess.metricAccounts'), value: summary.value.accounts },
+  { key: 'enabled', label: t('slaAccess.metricEnabled'), value: summary.value.enabled },
   {
     key: 'refreshTokens',
     label: t('slaAccess.metricRefreshTokens'),
-    value: accounts.value.reduce((sum, item) => sum + item.activeRefreshTokens, 0)
+    value: summary.value.refreshTokens
   },
   {
     key: 'pendingTokens',
     label: t('slaAccess.metricPendingTokens'),
-    value: accounts.value.reduce((sum, item) => sum + item.unusedBootstrapTokens, 0)
+    value: summary.value.pendingTokens
   }
 ])
 
@@ -322,12 +339,36 @@ function errorMessage(error: unknown, fallback: string): string {
 async function loadAccounts(): Promise<void> {
   loading.value = true
   try {
-    accounts.value = await getSlaAccounts()
+    const result = await getSlaAccounts({
+      page: page.value,
+      size: size.value,
+      keyword: keyword.value.trim()
+    })
+    accounts.value = result.page.content
+    total.value = result.page.totalElements
+    summary.value = result.summary
+    // 删掉末页最后一条后，当前页会变成空页：退一页重查，别让用户盯着空表
+    if (accounts.value.length === 0 && page.value > 0 && total.value > 0) {
+      page.value = Math.max(0, Math.ceil(total.value / size.value) - 1)
+      await loadAccounts()
+    }
   } catch (error) {
     ElMessage.error(t('slaAccess.loadFailed'))
   } finally {
     loading.value = false
   }
+}
+
+/** 搜索条件变化：回到第一页再查，否则会停在一个已不存在的页上 */
+async function applyKeyword(): Promise<void> {
+  page.value = 0
+  await loadAccounts()
+}
+
+async function handleSizeChange(next: number): Promise<void> {
+  size.value = next
+  page.value = 0
+  await loadAccounts()
 }
 
 function openCreate(): void {
@@ -444,6 +485,11 @@ onMounted(loadAccounts)
 
 .collection-card {
   border-radius: var(--ja-radius, 8px);
+}
+
+.pagination-bar {
+  margin-top: var(--ja-space-4, 16px);
+  justify-content: flex-end;
 }
 
 .card-header {

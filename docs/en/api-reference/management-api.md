@@ -191,10 +191,26 @@ Response `data`: `{ "accessToken": "...", "expiresIn": 3600 }`.
 
 #### Base path: `/api/security/sla` (needs `system:sla:read` / `system:sla:manage`)
 
+Every endpoint in this group runs its blocking database work on the `boundedElastic` pool instead of the
+Netty event loop. `/api/auth/sla/**` and `/api/security/sla/**` share one per-source-IP rate-limit bucket
+(120 requests per minute and 1000 per hour by default, keys `jairouter.auth.sla-rate-limit.per-minute` and
+`.per-hour`); exceeding it returns `429`.
+
 ##### `GET /api/security/sla/accounts`
 
-Lists SLA accounts: `accountId`, `name`, `roleTemplate`, `enabled`, `createdBy`, `createdAt`, `lastSeenAt`, plus
-`activeRefreshTokens` and `unusedBootstrapTokens`. Requires `system:sla:read`.
+Pages through SLA accounts with `page` (zero-based), `size` (1–100, default 20) and `keyword` (name substring):
+
+```
+GET /api/security/sla/accounts?page=0&size=20&keyword=build
+```
+
+The response has two parts: `page` is the current page (`content` rows carry `accountId`, `name`,
+`roleTemplate`, `enabled`, `createdBy`, `createdAt`, `lastSeenAt`, `activeRefreshTokens`,
+`unusedBootstrapTokens`, alongside `totalElements` / `totalPages` / `hasNext`), and `summary` holds
+platform-wide totals (`accounts` / `enabled` / `refreshTokens` / `pendingTokens`).
+
+The summary ships with the list because summing the current page no longer equals the total once paginated.
+`pendingTokens` counts only tokens that are unused, not revoked and not expired. Requires `system:sla:read`.
 
 ##### `POST /api/security/sla/accounts`
 

@@ -10,12 +10,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.AuditEventType;
+import org.unreal.modelrouter.common.dto.PagedResult;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaBootstrapTokenEntity;
@@ -38,7 +41,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -484,19 +489,76 @@ class SlaAccessServiceTest {
         }
 
         @Test
-        @DisplayName("列表带出未消费令牌数与有效凭据数")
+        @DisplayName("列表带出未消费令牌数与有效凭据数，计数来自一次批量聚合")
         void listsAccounts() {
-            when(accountRepository.findAllByOrderByCreatedAtDesc())
-                    .thenReturn(List.of(account(true, "SLA_READONLY")));
-            when(refreshTokenRepository.countByAccountIdAndRevokedAtIsNull(ACCOUNT_ID)).thenReturn(2L);
-            when(bootstrapTokenRepository.countByAccountIdAndUsedAtIsNull(ACCOUNT_ID)).thenReturn(1L);
+            when(accountRepository.findAllByOrderByCreatedAtDesc(any()))
+                    .thenReturn(new PageImpl<>(List.of(account(true, "SLA_READONLY")),
+                            PageRequest.of(0, 20), 1));
+            when(refreshTokenRepository.countActiveByAccountIds(anyCollection()))
+                    .thenReturn(List.<Object[]>of(new Object[] {ACCOUNT_ID, 2L}));
+            when(bootstrapTokenRepository.countUnusedByAccountIds(anyCollection(), any()))
+                    .thenReturn(List.<Object[]>of(new Object[] {ACCOUNT_ID, 1L}));
 
-            List<SlaAccessService.AccountView> views = service.listAccounts();
+            PagedResult<SlaAccessService.AccountView> views = service.listAccounts(0, 20, null);
 
-            assertEquals(1, views.size());
-            assertEquals(2L, views.get(0).activeRefreshTokens());
-            assertEquals(1L, views.get(0).unusedBootstrapTokens());
-            assertEquals("builder", views.get(0).name());
+            assertEquals(1, views.getContent().size());
+            assertEquals(2L, views.getContent().get(0).activeRefreshTokens());
+            assertEquals(1L, views.getContent().get(0).unusedBootstrapTokens());
+            assertEquals("builder", views.getContent().get(0).name());
+            assertEquals(1L, views.getTotalElements());
+            // 聚合各查一次，不再按账号逐个 count（#1219）
+            verify(refreshTokenRepository, never()).countByAccountIdAndRevokedAtIsNull(anyString());
+            verify(bootstrapTokenRepository, never())
+                    .countByAccountIdAndUsedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("带关键字时走名称模糊查询，页码与条数原样透传给分页对象")
+        void listsAccountsWithKeyword() {
+            when(accountRepository.findByNameContainingIgnoreCaseOrderByCreatedAtDesc(eq("buil"), any()))
+                    .thenReturn(new PageImpl<>(List.of(account(true, "SLA_READONLY")),
+                            PageRequest.of(1, 5), 6));
+            when(refreshTokenRepository.countActiveByAccountIds(anyCollection())).thenReturn(List.of());
+            when(bootstrapTokenRepository.countUnusedByAccountIds(anyCollection(), any())).thenReturn(List.of());
+
+            PagedResult<SlaAccessService.AccountView> views = service.listAccounts(1, 5, "  buil ");
+
+            assertEquals(1, views.getPage());
+            assertEquals(5, views.getSize());
+            assertEquals(6L, views.getTotalElements());
+            assertEquals(0L, views.getContent().get(0).activeRefreshTokens(), "聚合没返回时按 0 处理");
+            assertEquals(0L, views.getContent().get(0).unusedBootstrapTokens());
+        }
+
+        @Test
+        @DisplayName("账号为空页时不再发起聚合查询")
+        void listAccountsSkipsAggregationOnEmptyPage() {
+            when(accountRepository.findAllByOrderByCreatedAtDesc(any()))
+                    .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+            PagedResult<SlaAccessService.AccountView> views = service.listAccounts(0, 20, null);
+
+            assertTrue(views.getContent().isEmpty());
+            verify(refreshTokenRepository, never()).countActiveByAccountIds(anyCollection());
+            verify(bootstrapTokenRepository, never()).countUnusedByAccountIds(anyCollection(), any());
+        }
+
+        @Test
+        @DisplayName("汇总指标取全量计数，不受分页影响")
+        void summarizeCountsEverything() {
+            when(accountRepository.count()).thenReturn(37L);
+            when(accountRepository.countByEnabledTrue()).thenReturn(29L);
+            when(refreshTokenRepository.countByRevokedAtIsNull()).thenReturn(12L);
+            when(bootstrapTokenRepository
+                    .countByUsedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(any(LocalDateTime.class)))
+                    .thenReturn(4L);
+
+            SlaAccessService.AccountSummary summary = service.summarize();
+
+            assertEquals(37L, summary.accounts());
+            assertEquals(29L, summary.enabled());
+            assertEquals(12L, summary.refreshTokens());
+            assertEquals(4L, summary.pendingTokens());
         }
 
         @Test

@@ -3,6 +3,9 @@ package org.unreal.modelrouter.auth.security.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,6 +14,7 @@ import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.AuditEventType;
+import org.unreal.modelrouter.common.dto.PagedResult;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
@@ -31,6 +35,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -210,15 +215,60 @@ public class SlaAccessService {
     }
 
     /**
-     * 列出全部 SLA 账号（含未消费令牌数与有效凭据数）。
+     * 分页列出 SLA 账号（含未消费令牌数与有效凭据数）。
      *
-     * @return 账号视图列表
+     * <p>issue #1219：此前对每个账号各查两次计数，账号一多就是 2N+1；改成先取当前页，
+     * 再用一条 group by 把当前页的计数一次性取回。关键字按名称模糊匹配（不含大小写差异），
+     * 账号多起来之后控制台可以直接搜。</p>
+     *
+     * @param page    页码（从 0 开始）
+     * @param size    每页条数（1~100，由调用方先校验）
+     * @param keyword 名称关键字（可空）
+     * @return 分页后的账号视图
      */
     @Transactional(readOnly = true)
-    public List<AccountView> listAccounts() {
-        return accountRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map(this::toView)
+    public PagedResult<AccountView> listAccounts(final int page, final int size, final String keyword) {
+        final Pageable pageable = PageRequest.of(page, size);
+        final String trimmed = keyword == null ? "" : keyword.trim();
+        final Page<SlaServiceAccountEntity> found = trimmed.isEmpty()
+                ? accountRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : accountRepository.findByNameContainingIgnoreCaseOrderByCreatedAtDesc(trimmed, pageable);
+
+        final List<String> accountIds = found.getContent().stream()
+                .map(SlaServiceAccountEntity::getAccountId)
                 .toList();
+        final LocalDateTime now = LocalDateTime.now();
+        final Map<String, Long> activeRefresh = accountIds.isEmpty()
+                ? Map.of()
+                : countByAccount(refreshTokenRepository.countActiveByAccountIds(accountIds));
+        final Map<String, Long> unusedBootstrap = accountIds.isEmpty()
+                ? Map.of()
+                : countByAccount(bootstrapTokenRepository.countUnusedByAccountIds(accountIds, now));
+
+        final List<AccountView> content = found.getContent().stream()
+                .map(account -> toView(account,
+                        activeRefresh.getOrDefault(account.getAccountId(), 0L),
+                        unusedBootstrap.getOrDefault(account.getAccountId(), 0L)))
+                .toList();
+        return new PagedResult<>(content, found.getNumber(), found.getSize(), found.getTotalElements());
+    }
+
+    /**
+     * 列表顶部的汇总指标（issue #1219）。
+     *
+     * <p>分页之后不能再拿「当前页求和」充总数，否则账号一多指标就失真。这四项各走一条
+     * {@code count(*)}，都是走索引/主键的廉价查询。</p>
+     *
+     * @return 账号数、启用数、有效凭据总数、待用令牌总数
+     */
+    @Transactional(readOnly = true)
+    public AccountSummary summarize() {
+        return new AccountSummary(
+                accountRepository.count(),
+                accountRepository.countByEnabledTrue(),
+                refreshTokenRepository.countByRevokedAtIsNull(),
+                bootstrapTokenRepository.countByUsedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(
+                        LocalDateTime.now()));
     }
 
     /**
@@ -519,7 +569,30 @@ public class SlaAccessService {
         });
     }
 
+    /**
+     * 单个账号的视图（新建、启停时用）。计数各查一次：这里只处理一个账号，不值得为它走聚合。
+     *
+     * @param account 账号实体
+     * @return 账号视图
+     */
     private AccountView toView(final SlaServiceAccountEntity account) {
+        return toView(account,
+                refreshTokenRepository.countByAccountIdAndRevokedAtIsNull(account.getAccountId()),
+                bootstrapTokenRepository.countByAccountIdAndUsedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(
+                        account.getAccountId(), LocalDateTime.now()));
+    }
+
+    /**
+     * 列表用的视图构造：计数由调用方批量取好，避免每行再查两次数据库（issue #1219）。
+     *
+     * @param account             账号实体
+     * @param activeRefreshTokens 有效刷新凭据数
+     * @param unusedBootstrapTokens 待用接入令牌数（不含已过期）
+     * @return 账号视图
+     */
+    private static AccountView toView(final SlaServiceAccountEntity account,
+                                     final long activeRefreshTokens,
+                                     final long unusedBootstrapTokens) {
         return new AccountView(
                 account.getAccountId(),
                 account.getName(),
@@ -528,8 +601,25 @@ public class SlaAccessService {
                 account.getCreatedBy(),
                 account.getCreatedAt(),
                 account.getLastSeenAt(),
-                refreshTokenRepository.countByAccountIdAndRevokedAtIsNull(account.getAccountId()),
-                bootstrapTokenRepository.countByAccountIdAndUsedAtIsNull(account.getAccountId()));
+                activeRefreshTokens,
+                unusedBootstrapTokens);
+    }
+
+    /**
+     * 把 {@code [accountId, count]} 形式的聚合结果收成映射。
+     *
+     * @param rows 聚合结果
+     * @return 账号主键到计数的映射
+     */
+    private static Map<String, Long> countByAccount(final List<Object[]> rows) {
+        final Map<String, Long> counts = new HashMap<>();
+        for (final Object[] row : rows) {
+            if (row == null || row.length < 2 || row[0] == null) {
+                continue;
+            }
+            counts.put(String.valueOf(row[0]), ((Number) row[1]).longValue());
+        }
+        return counts;
     }
 
     private void touchLastSeen(final SlaServiceAccountEntity account) {
@@ -709,6 +799,17 @@ public class SlaAccessService {
      * @param expiresIn      剩余秒数
      */
     public record IssueResult(String bootstrapToken, LocalDateTime expiresAt, long expiresIn) {
+    }
+
+    /**
+     * 列表顶部的汇总指标（issue #1219）。
+     *
+     * @param accounts      账号总数
+     * @param enabled       启用状态的账号数
+     * @param refreshTokens 全平台未吊销的刷新凭据数
+     * @param pendingTokens 全平台待用（未消费、未吊销、未过期）的接入令牌数
+     */
+    public record AccountSummary(long accounts, long enabled, long refreshTokens, long pendingTokens) {
     }
 
     /**
