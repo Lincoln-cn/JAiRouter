@@ -98,8 +98,7 @@ const elStubs = [
 ]
 const stubs = Object.fromEntries([
   ...elStubs.map(c => [c, true]),
-  ['PageSkeleton', true],
-  ['StatCard', true]
+  ['PageSkeleton', true]
 ])
 
 const mountPage = () => mount(ApiKeyManagement, { global: { plugins: [i18n], stubs } })

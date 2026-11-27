@@ -343,14 +343,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- JUnit Platform Suite for test suite support -->
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-suite</artifactId>
-            <version>1.10.0</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- OpenTelemetry Core API -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
@@ -396,13 +388,6 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-logging</artifactId>
-        </dependency>
-
-        <!-- Logstash Logback Encoder for structured JSON logging -->
-        <dependency>
-            <groupId>net.logstash.logback</groupId>
-            <artifactId>logstash-logback-encoder</artifactId>
-            <version>7.4</version>
         </dependency>
 
         <!-- H2 Database for embedded storage -->
