@@ -408,7 +408,7 @@ Each row carries its own rate limiter and circuit breaker, so a misbehaving upst
 
 ### 9.3 Routing Rules: before balancing, disable instead of delete
 
-Rules are evaluated before any load balancing decision, ordered by priority and reorderable by drag and drop. A rule can be disabled instead of deleted, and its hit count updates live — so a rule that never fires is visible, not silently dead. Tenant pinning, staged rollout, and header-based A/B all ship as templates.
+Rules are evaluated before any load balancing decision, ordered by priority, and drag and drop changes that order. A rule can be disabled instead of deleted, and its hit count updates live — so a rule that never fires is visible, not silently dead. Tenant pinning, staged rollout, and header-based A/B all ship as templates.
 
 ### 9.4 Call History Dashboard: three record levels folded into one board
 

@@ -108,7 +108,7 @@ restarting the process.
 
 Grouped by the job you are trying to do. Everything below is implemented and exercised by the test
 suite; the technical list, including what is deliberately not implemented, is in
-[Feature inventory](#feature-inventory).
+[Implementation notes](#implementation-notes).
 
 **Route model traffic**
 
