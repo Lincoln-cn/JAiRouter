@@ -1,9 +1,9 @@
 ﻿# Web Console Operation Guide
 
 <!-- Version Info -->
-> **Doc Version**: 1.0.0
-> **Last Updated**: 2026-09-15
-> **Applicable Version**: v3.1.1
+> **Doc Version**: 1.1.0
+> **Last Updated**: 2026-11-27
+> **Applicable Version**: v3.9.0
 > **Author**: Lincoln
 <!-- /Version Info -->
 
@@ -24,7 +24,7 @@ Both entry points serve the same frontend code with identical functionality.
 
 | Username | Default Password | Role | Description |
 |----------|-----------------|------|-------------|
-| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 76 permission codes |
+| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 79 permission codes |
 | `user` | `user123456` | USER | Regular user, primarily read-only |
 
 > ⚠️ **Change the `admin` password before first production use.** The password is set via the `INITIAL_ADMIN_PASSWORD` environment variable (see `src/main/resources/config/auth/jwt.yml`). Restart the service after changing it.
@@ -61,7 +61,7 @@ After a successful login, the JWT is stored in the browser `localStorage` under 
 
 ### 2.1 Left Navigation
 
-The console has a collapsible sidebar containing **7 menu groups** with **34 menu items** and **48 pages (tabs)**. Pages that belong together are folded into **tabs** (for example, "Call History" holds "Call Records / Call History Dashboard"); tabs are ordered and switch in place.
+The console has a collapsible sidebar containing **8 menu groups** with **39 menu items** and **53 pages (tabs)**, at most 8 items per group. Pages that belong together are folded into **tabs** (for example, "Call History" holds "Call Records / Call History Dashboard"); tabs are ordered and switch in place.
 
 Menu visibility is controlled by permission codes: groups/menu items for which the user lacks the required code are hidden, and **each tab is gated separately** — if the user can only see some tabs, the item still shows and the landing tab is the first one the user is allowed to open.
 
@@ -78,7 +78,7 @@ Menu visibility is controlled by permission codes: groups/menu items for which t
 | 7 | Platform Settings | 平台设置 | **Runtime Configuration**: Monitoring Config (Monitoring Config ｜ Runtime & Emergency), Tracing Config, Response Cache Management, Quota Runtime Config; **Deployment & Infrastructure**: State Persistence, Cluster Settings, Health Probe Settings; **Audit**: Operation Records |
 | 8 | Developer Tools | 开发工具 | AI Playground (Chat ｜ Embeddings ｜ Rerank ｜ Audio ｜ Images), Client Access Guide |
 
-> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items; later additions brought it to 7 groups / 35 items and 49 pages (v3.5.1 Record Governance, v3.8.6 Cluster Settings, v3.8.7 Health Probe Settings, v3.8.8 Operation Records and Monitoring Config, SLA Access): 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
+> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items; later additions and a regrouping brought it to 8 groups / 39 items and 53 pages (v3.5.1 Record Governance, v3.8.6 Cluster Settings, v3.8.7 Health Probe Settings, v3.8.8 Operation Records and Monitoring Config, SLA Access): 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
 
 ### 2.2 Top Bar
 
@@ -113,7 +113,7 @@ The following steps are ordered by dependency, using an Ollama model service as 
 |-------|-------------|:--------:|
 | Service Type | Dropdown selection, e.g. `chat`, `embedding`, `completion` | ✅ |
 | Adapter | Dropdown to select the adapter type | ✅ |
-| Load Balance Strategy | Random / Round Robin / Least Connections / IP Hash | ✅ |
+| Load Balance Strategy | Eight kinds: round robin / weighted / least connections / IP hash / consistent hash / latency-aware (EWMA) / random / sticky session | ✅ |
 | Description | Optional note | ❌ |
 
 4. Click **Save**;
@@ -181,7 +181,7 @@ After configuration, verify using these methods:
 
 ### 4.1 Quota Runtime Configuration
 
-**Menu path**: Traffic Governance → Quota Runtime Config
+**Menu path**: Platform Settings → Runtime Configuration → Quota Runtime Config
 
 The quota feature is **disabled by default**. To enable it:
 
@@ -264,14 +264,15 @@ Overview → Dashboard provides a single-pane view:
 
 ## 6. Permissions and Roles
 
-### 6.1 Six Built-in Roles
+### 6.1 Seven Built-in Roles
 
 | Role | Permission Count | Permission Scope | Description |
 |------|:----------------:|------------------|-------------|
-| **ADMIN** | 76 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
+| **ADMIN** | 79 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
 | **OPERATOR** | 55 | All `:read` + `:write` codes | Day-to-day ops; excludes system management (`system:*`), security management `manage` codes (API Key / JWT Token / Blacklist management); holds `callhistory:read` (records and summaries, no bodies) |
-| **USER** | 33 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI Playground | Regular user; only write code is `lb:config:write` |
+| **USER** | 9 | Own call records, own exceptions, own token usage, slow requests, trace search, lb/cb/rl monitoring, AI Playground | Regular user; all read codes, no write code and no global observability codes (`monitoring:tokenusage:read` and `monitoring:exceptions:read` are revoked from the existing database) |
 | **VIEWER** | 31 | All `:read` codes (minus the 10 codes paired with write/manage surfaces and `callhistory:read`) | Pure read-only role; no call history (`callhistory:read`), `ai:playground:use`, or other non-`:read` codes |
+| **AUDITOR** | 3 | Dashboard, security audit events, admin operation records | Minimal set for third-party auditors; strictly read-only, deliberately excludes call record bodies (business data), every `config:*:read` code, and any write code |
 | **SLA_READONLY** | 35 | Read-only inspection surface | Read-only role for SLA tooling: dashboard, config read codes, lb/cb/rl monitoring, `callhistory:read` (summaries only), monitoring read, tracing read, audit log read; no record bodies and no management codes |
 | **SLA_OPERATOR** | 53 | Read-only inspection plus configuration writes | Adds the 15 `config:*:write` codes, `lb:config:write`, `tracing:config:manage` and `monitoring:config:write` on top of SLA_READONLY; still no account/permission management and no `security:*:manage` |
 
@@ -381,9 +382,64 @@ This page provides complete access examples for the OpenAI-compatible API and th
 
 **Resolution**:
 
-1. Go to Traffic Governance → Quota Runtime Config;
+1. Go to Platform Settings → Runtime Configuration → Quota Runtime Config;
 2. Enable the quota switch and save;
 3. Verify the storage backend status is normal (not degraded).
+
+---
+
+---
+
+## 9. Page Tour and How to Read It
+
+The README keeps four groups of screenshots (command center, services and instances, observation and records, playground and access). This section carries the page-by-page notes: what each page answers, and which numbers are easy to misread.
+
+### 9.1 Service Management: the triple and the four-step guide
+
+A service is a triple of (service type, adapter, load balancing strategy). The gateway serves seven types — chat, embeddings, rerank, speech-to-text, text-to-speech, image generation, image editing — each bound to an adapter (GPUStack, vLLM, Ollama, OpenAI, …) and one of eight balancing strategies (see the field table in step 1 of section 3).
+
+The four-step guide at the top of the page is the recommended order for onboarding a backend: configure the adapter, create the service, add instances, then try it in the playground. A wrong adapter surfaces in step one instead of on the first real request.
+
+### 9.2 Instance Management: real endpoints and per-instance control
+
+An instance is a real endpoint: base URL, path, weight, per-instance headers and tags, grouped into tabs by service type. The weight feeds the weighted strategies, the tags feed rule conditions, and per-instance headers are how you keep a downstream credential on exactly one upstream.
+
+Each row carries its own rate limiter and circuit breaker, so a misbehaving upstream can be isolated and repaired on its own instead of taking the whole service down with it.
+
+### 9.3 Routing Rules: before balancing, disable instead of delete
+
+Rules are evaluated before any load balancing decision, ordered by priority, and drag and drop changes that order. A rule can be disabled instead of deleted, and its hit count updates live — so a rule that never fires is visible, not silently dead. Tenant pinning, staged rollout, and header-based A/B all ship as templates.
+
+### 9.4 Call History Dashboard: three record levels folded into one board
+
+Every call is recorded at one of three levels (metadata only, sanitized summary, or AES-256-GCM encrypted full text; switch it under Security → Record Governance). The dashboard folds the records into the numbers operations actually needs: total and failed requests, success rate, average response time, token spend and per-request average, then daily trend, top 10 models, service type mix, and a 24-hour distribution. The time range at the top filters every panel at once, and the raw records sit in the next tab.
+
+### 9.5 Slow Queries: what "fired" and "suppressed" mean
+
+Slow queries are counted, grouped by operation type, and reported per group with count, average, max, min and total time, plus a hotspot table pointing at the worst offenders. The two numbers on the right are easy to misread: alerts **fired** and alerts **suppressed**. Suppression is the cooldown — one hotspot that keeps crossing the threshold is recorded once and then goes quiet, so more suppressions than firings means the cooldown is working, not that the threshold is broken.
+
+### 9.6 Quota Runtime Configuration: hot-reload vs restart-required
+
+Quota settings are split by what it costs to apply them: the ones that hot-reload (enable quota, fail-open, statistics window) take effect on save, while restart-required fields are read-only and marked as such, instead of letting you edit them and discover later that nothing changed. The status bar at the top spells out the effective state — enabled or not, storage backend (local or Redis), fail-open, flush interval. Quantity is off by default, and this is where you turn it on.
+
+### 9.7 Quota Usage Monitoring: six dimensions and four status cards
+
+Usage can be filtered on six dimensions at once — tenant, API key, user, service type, model, statistics window — so per-tenant reconciliation or a post-incident review of one key needs no export first.
+
+The four status cards answer the questions that actually come up during an incident (is the ledger enabled, which backend, is it degraded, how many active windows) before showing any figures; with no data the page says why (quota ledger not enabled) instead of rendering an empty table and leaving you to guess.
+
+### 9.8 Client Access Guide
+
+The first page for an outside team: base URL, the `X-API-Key` header, `GET /v1/models`, `POST /v1/chat/completions` and its streaming form, then the same call as `curl` and as the OpenAI Python SDK, each block copyable. The base URL comes from this gateway's own configuration, so what you copy is the address it actually serves.
+
+### 9.9 Playground
+
+One model selector, five benches behind it: chat, embeddings, rerank, audio and images. Credentials, routing and record governance match a real client, but the request and the streamed response are rendered on the page — the fastest way to check whether a newly added instance answers correctly. Sending is disabled until a model is selected, so there is no "clicked it, nothing happened".
+
+### 9.10 Theme and Language
+
+One toggle in the top bar switches to dark without a separate build and without a query parameter; the zh-CN / en-US switch sits beside it. Both affect the console display only and change no interface behaviour.
+
 
 ---
 
@@ -401,7 +457,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 | Traffic Governance | Load Balancing | Real-time Monitoring `/load-balancers/monitoring` ｜ Strategy Config `/load-balancers/strategy-config` |
 | Traffic Governance | Rate Limiting | Rate Limit Monitoring `/rate-limiters/monitoring` |
 | Traffic Governance | Circuit Breakers | Circuit Monitoring `/circuit-breakers/monitoring` ｜ Circuit History `/circuit-breakers/history` ｜ Global Config `/circuit-breakers/global-config` |
-| Traffic Governance | Response Cache Management | `/config/cache` |
+| Platform Settings | Response Cache Management | `/config/cache` |
 | Traffic Governance | Quota Runtime Config | `/config/quota` |
 | Traffic Governance | Resource Pools | `/config/pools` |
 | Model & Instances | Adapters | `/config/adapters` |
