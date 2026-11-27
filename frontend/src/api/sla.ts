@@ -8,7 +8,8 @@ import type { RouterResponse } from '@/types'
  * - GET    /api/security/sla/accounts                      账号列表
  * - POST   /api/security/sla/accounts                      新建账号（绑角色模板）
  * - POST   /api/security/sla/accounts/{id}/bootstrap       签发一次性接入令牌
- * - POST   /api/security/sla/accounts/{id}/revoke          吊销该账号所有刷新凭据
+ * - POST   /api/security/sla/accounts/{id}/revoke          吊销该账号所有凭据（含已签发访问令牌）
+ * - POST   /api/security/sla/accounts/{id}/enabled         启用/禁用账号
  * - DELETE /api/security/sla/accounts/{id}                 删除账号与凭据
  *
  * 注意：这里只管**管理端**。SLA 部署侧自己调
@@ -48,10 +49,59 @@ export interface SlaIssuePayload {
   allowedIp?: string
 }
 
-/** 账号列表 */
-export async function getSlaAccounts(): Promise<SlaAccount[]> {
-  const response = await request.get<RouterResponse<SlaAccount[]>>('/security/sla/accounts')
-  return response.data.data ?? []
+/** 分页容器（与后端 PagedResult 对齐） */
+export interface SlaAccountPageResult {
+  content: SlaAccount[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  first: boolean
+  last: boolean
+  hasNext: boolean
+  hasPrevious: boolean
+}
+
+/** 全量汇总指标 —— 与列表一起返回，避免分页后按页求和算出错的「总数」 */
+export interface SlaAccountSummary {
+  accounts: number
+  enabled: number
+  refreshTokens: number
+  pendingTokens: number
+}
+
+/** 列表响应：当前页 + 全量汇总 */
+export interface SlaAccountPage {
+  page: SlaAccountPageResult
+  summary: SlaAccountSummary
+}
+
+/** 账号列表（分页 + 关键字） */
+export async function getSlaAccounts(
+  params: { page?: number; size?: number; keyword?: string } = {}
+): Promise<SlaAccountPage> {
+  const response = await request.get<RouterResponse<SlaAccountPage>>('/security/sla/accounts', {
+    params: {
+      page: params.page ?? 0,
+      size: params.size ?? 20,
+      keyword: params.keyword || undefined
+    }
+  })
+  const data = response.data.data
+  return {
+    page: data?.page ?? {
+      content: [],
+      page: 0,
+      size: params.size ?? 20,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: true,
+      hasNext: false,
+      hasPrevious: false
+    },
+    summary: data?.summary ?? { accounts: 0, enabled: 0, refreshTokens: 0, pendingTokens: 0 }
+  }
 }
 
 /** 新建账号 */
@@ -72,7 +122,19 @@ export async function issueSlaBootstrap(
   return response.data.data as SlaBootstrapIssue
 }
 
-/** 吊销该账号所有刷新凭据 */
+/** 启用或禁用账号；禁用会连带吊销凭据并停用登录主体 */
+export async function setSlaAccountEnabled(
+  accountId: string,
+  enabled: boolean
+): Promise<SlaAccount> {
+  const response = await request.post<RouterResponse<SlaAccount>>(
+    `/security/sla/accounts/${accountId}/enabled`,
+    { enabled }
+  )
+  return response.data.data as SlaAccount
+}
+
+/** 吊销该账号所有凭据（含已签发的访问令牌） */
 export async function revokeSlaCredentials(accountId: string): Promise<number> {
   const response = await request.post<RouterResponse<{ revoked: number }>>(
     `/security/sla/accounts/${accountId}/revoke`

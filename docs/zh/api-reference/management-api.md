@@ -160,12 +160,13 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 }
 ```
 
-- 令牌 TTL 默认 15 分钟、**只能使用一次**（并发双花由行级乐观锁兜住，第二个请求返回「SLA 接入令牌已被使用」）。
-- 可预先绑定调用方 IP；不匹配时返回 403。
+- 令牌 TTL 默认 15 分钟、上限 60 分钟（签发时填更大的值按 60 分钟夹取）、**只能使用一次**
+  （并发双花由行级乐观锁兜住，第二个请求返回「SLA 接入令牌已被使用」）。
+- 可预先绑定来源 IP：单个 IPv4/IPv6 字面量或 IPv4 CIDR（如 `10.0.0.0/24`）；不匹配时返回 403。
 - 账号被禁用时返回 403。
 - 明文只在签发与本次响应里出现，库里只存 SHA-256。
 - `expiresIn` 以**秒**为单位（默认 3600）；`refresh` 响应同理。
-- 失败语义：令牌缺失 / 无效 / 已被使用 / 已过期 ⇒ `401`；绑定 IP 不匹配、账号被禁用 ⇒ `403`；账号不存在 ⇒ `404`。
+- 失败语义：令牌缺失 / 无效 / 已被使用 / 已被吊销 / 已过期 ⇒ `401`；绑定 IP 不匹配、账号被禁用 ⇒ `403`；账号不存在 ⇒ `404`。
 
 ##### `POST /api/auth/sla/refresh`
 
@@ -177,15 +178,34 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 响应 `data`：`{ "accessToken": "...", "expiresIn": 3600 }`。
 
-- 刷新凭据默认 90 天，每次刷新滚动续期（`lastUsedAt`、`expiresAt`、`clientIp` 一并更新）。
+- 刷新凭据默认 90 天，每次刷新滚动续期（`lastUsedAt`、`expiresAt`、`clientIp` 一并更新），
+  但滚动不会越过**绝对有效期**（首次签发后 365 天）：越过之后返回「已达绝对有效期」，需重新签发接入令牌。
+- 来源 IP 变化**不阻断**刷新（NAT 出口、双栈主机都会让 IP 合法漂移），只记 warn 日志并写一条 `REFRESH_IP_CHANGED` 审计。
+- `refreshToken` 缺失或为空返回 `401`，不会落到「系统异常」。
 - 已吊销返回「SLA 刷新凭据已被吊销」；已过期返回「SLA 刷新凭据已过期」。
+- 登录主体被停用（凭据被吊销或账号被禁用）时返回 `403`，且不会自行恢复主体 —— 重新接入要先签发新的接入令牌。
 
 #### 基础路径: `/api/security/sla`（需 `system:sla:read` / `system:sla:manage`）
 
+本组端点全部在 `boundedElastic` 线程池上执行阻塞的数据库查询，不占用 Netty 事件循环；
+`/api/auth/sla/**` 与 `/api/security/sla/**` 共用一条按来源 IP 的限流桶（默认 120 次/分钟、
+1000 次/小时，配置键 `jairouter.auth.sla-rate-limit.per-minute` / `.per-hour`），超限返回 `429`。
+
 ##### `GET /api/security/sla/accounts`
 
-列出 SLA 账号：`accountId`、`name`、`roleTemplate`、`enabled`、`createdBy`、`createdAt`、`lastSeenAt`，
-以及 `activeRefreshTokens`（有效刷新凭据数）、`unusedBootstrapTokens`（未使用的一次性令牌数）。需 `system:sla:read`。
+分页列出 SLA 账号，支持 `page`（从 0 开始）、`size`（1~100，默认 20）、`keyword`（按名字模糊匹配）：
+
+```
+GET /api/security/sla/accounts?page=0&size=20&keyword=build
+```
+
+响应分两部分：`page` 是当前页（`content` 每项含 `accountId`、`name`、`roleTemplate`、`enabled`、
+`createdBy`、`createdAt`、`lastSeenAt`、`activeRefreshTokens`、`unusedBootstrapTokens`，另带
+`totalElements` / `totalPages` / `hasNext` 等分页元数据），`summary` 是全量汇总
+（`accounts` / `enabled` / `refreshTokens` / `pendingTokens`）。
+
+汇总跟着列表一起返回，是因为分页之后「把当前页加起来」已经不等于总数了。`pendingTokens` 只数
+「未消费、未吊销且未过期」的令牌，过期未用的行不算。需 `system:sla:read`。
 
 ##### `POST /api/security/sla/accounts`
 
@@ -203,15 +223,50 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 { "ttlMinutes": 15, "allowedIp": "10.0.0.8" }
 ```
 
-两个字段都可省略（默认 15 分钟、不限 IP）。响应：`{ "bootstrapToken": "...", "expiresAt": "...", "expiresIn": 900 }`。
+两个字段都可省略（默认 15 分钟、不限 IP）。`ttlMinutes` 超过 60 按 60 夹取；`allowedIp` 接受单个 IPv4/IPv6 字面量
+或 IPv4 CIDR，格式非法返回 `400` 而不是静默存档。响应：`{ "bootstrapToken": "...", "expiresAt": "...", "expiresIn": 900 }`。
 
 ##### `POST /api/security/sla/accounts/{accountId}/revoke`
 
-吊销该账号下所有有效刷新凭据，返回 `{ "revoked": 2 }`。吊销后 refresh 立刻失败；已签发的访问令牌按到期自然失效。
+吊销该账号的全部凭据，返回 `{ "revoked": 2 }`（本次被吊销的刷新凭据数）。一次吊销做三件事：
+
+1. 全部刷新凭据置 `revoked_at`，下一次 refresh 立即失败；
+2. 全部未消费的接入令牌一并作废（同样置 `revoked_at`，不删行，保留审计痕迹）；
+3. `jwt_accounts` 里对应的 `sla:<name>` 主体置 `enabled=false`。
+
+第 3 条让**已签发的访问令牌在下一个请求就被拒**（每个请求都会复核主体状态），不必等它自然过期。
+代价是吊销不能用于「先发新再吊销旧」的零中断轮换：吊销后该账号必须重新签发接入令牌才能回来。
+
+> 重新接入的次序是「先吊销、再签发」：新的接入令牌会恢复主体，若反过来做，旧访问令牌会因为主体被重新启用而在剩余有效期内复活。
+
+##### `POST /api/security/sla/accounts/{accountId}/enabled`
+
+启用或禁用账号。
+
+```json
+{ "enabled": false }
+```
+
+`enabled` 必须显式给出（缺失返回 `400`，不默认成禁用）。禁用等价于「吊销 + 封存」：
+吊销全部刷新凭据、作废未消费的接入令牌、停用 `jwt_accounts` 主体，已签发的访问令牌随即失效；
+启用只恢复账号开关，**不会**自动恢复主体 —— 还要为它签发一枚接入令牌，SLA 才能重新接入。
+返回账号最新视图，字段与列表接口一致。需 `system:sla:manage`。
 
 ##### `DELETE /api/security/sla/accounts/{accountId}`
 
 删除账号，连同其一次性令牌、刷新凭据与 `jwt_accounts` 中对应的 `sla:<name>` 主体。
+
+#### 凭据回收
+
+两张凭据表里的过期 / 已吊销行由内置任务每小时回收一次，只删「过期或已吊销且早于保留期」的行，
+保留期内的行仍可回溯（审计比对、问题定位）：
+
+| 配置键 | 默认 | 说明 |
+| --- | --- | --- |
+| `jairouter.security.sla.retention-days` | `30` | 过期或已吊销行的保留天数 |
+| `jairouter.security.sla.cleanup-cron` | `0 40 * * * ?` | 回收任务 cron（每小时第 40 分） |
+
+删除走单条 `DELETE ... WHERE`，不会把整表读进内存。
 
 ### 登录保护 {#login-guard}
 

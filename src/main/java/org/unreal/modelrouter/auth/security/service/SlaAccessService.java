@@ -3,6 +3,9 @@ package org.unreal.modelrouter.auth.security.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,7 +14,9 @@ import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.AuditEventType;
+import org.unreal.modelrouter.common.dto.PagedResult;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaBootstrapTokenEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaRefreshTokenEntity;
@@ -30,11 +35,13 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * SLA 接入服务（issue #1174）.
@@ -71,6 +78,18 @@ public class SlaAccessService {
 
     /** 长期刷新凭据默认有效期（滚动续期）。 */
     static final Duration REFRESH_TTL = Duration.ofDays(90);
+
+    /** 一次性接入令牌的有效期上限（issue #1213）：超过就夹取，避免签出长期有效的接入令牌。 */
+
+    static final Duration MAX_BOOTSTRAP_TTL = Duration.ofMinutes(60);
+
+    /** 刷新凭据的绝对有效期上限（issue #1214）：滚动续期不能越过它。 */
+
+    static final Duration REFRESH_MAX_LIFETIME = Duration.ofDays(365);
+
+    /** IPv6 字面量的宽松字符集校验；真正比较时仍走规范化后的全等判定。 */
+
+    private static final Pattern IPV6_LITERAL = Pattern.compile("^[0-9a-fA-F:]+$");
 
     /** 默认角色模板。 */
     static final String ROLE_READONLY = "SLA_READONLY";
@@ -112,24 +131,27 @@ public class SlaAccessService {
                     final LocalDateTime now = LocalDateTime.now();
                     final SlaBootstrapTokenEntity row = requireValidBootstrapToken(bootstrapToken, clientIp, now);
                     final SlaServiceAccountEntity account = requireEnabledAccount(row.getAccountId());
-                    ensureJwtAccount(account);
+                    // 签发新接入令牌 = 管理员主动批准重新接入，允许把被吊销的主体恢复回来（#1212）。
+                    ensureJwtAccount(account, true);
                     row.setUsedAt(now);
                     try {
                         bootstrapTokenRepository.save(row);
                     } catch (ObjectOptimisticLockingFailureException e) {
                         throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被使用", ErrorCode.TOKEN_REQUIRED.status());
                     }
-                    final String refreshToken = createRefreshToken(account, clientIp, now);
-                    return new PreparedBootstrap(account, refreshToken);
+                    return account;
                 })
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(prepared -> accountManager.issueTokenForAccount(subjectOf(prepared.account()))
+                .flatMap(account -> accountManager.issueTokenForAccount(subjectOf(account))
                         .map(accessToken -> {
-                            touchLastSeen(prepared.account());
-                            audit(AuditEventType.SLA_BOOTSTRAP_CONSUMED, subjectOf(prepared.account()),
+                            // 先签出访问令牌、再落刷新凭据：签发失败时不会留下一条「客户端从未拿到明文」的
+                            // 孤儿刷新凭据行，否则它既不能被使用、又要等到清理任务才消失（#1217）。
+                            final String refreshToken = createRefreshToken(account, clientIp, LocalDateTime.now());
+                            touchLastSeen(account);
+                            audit(AuditEventType.SLA_BOOTSTRAP_CONSUMED, subjectOf(account),
                                     "BOOTSTRAP", Map.of("clientIp", nullSafe(clientIp)));
-                            return new BootstrapResult(accessToken, prepared.refreshToken(),
-                                    accessTokenTtlSeconds(), subjectOf(prepared.account()));
+                            return new BootstrapResult(accessToken, refreshToken,
+                                    accessTokenTtlSeconds(), subjectOf(account));
                         }));
     }
 
@@ -147,7 +169,8 @@ public class SlaAccessService {
     public Mono<RefreshResult> refresh(final String refreshToken, final String clientIp) {
         return Mono.fromCallable(() -> {
                     final LocalDateTime now = LocalDateTime.now();
-                    final SlaRefreshTokenEntity row = refreshTokenRepository.findByTokenHash(sha256(refreshToken))
+                    final SlaRefreshTokenEntity row = refreshTokenRepository
+                            .findByTokenHash(sha256(requirePlainToken(refreshToken, "缺少 SLA 刷新凭据")))
                             .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据无效", ErrorCode.TOKEN_REQUIRED.status()));
                     if (row.getRevokedAt() != null) {
                         throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据已被吊销", ErrorCode.TOKEN_REQUIRED.status());
@@ -155,11 +178,29 @@ public class SlaAccessService {
                     if (row.getExpiresAt().isBefore(now)) {
                         throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据已过期", ErrorCode.TOKEN_REQUIRED.status());
                     }
+                    // 绝对有效期：滚动续期不能把凭据变成「只要还在用就永不过期」（#1214）。
+                    final LocalDateTime absolute = row.getAbsoluteExpiresAt() == null
+                            ? row.getIssuedAt().plus(REFRESH_MAX_LIFETIME)
+                            : row.getAbsoluteExpiresAt();
+                    if (absolute.isBefore(now)) {
+                        throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(),
+                                "SLA 刷新凭据已达绝对有效期，请重新签发接入令牌", ErrorCode.TOKEN_REQUIRED.status());
+                    }
                     final SlaServiceAccountEntity account = requireEnabledAccount(row.getAccountId());
-                    ensureJwtAccount(account);
+                    // 主体被停用（凭据被吊销或账户被禁用）时不允许靠 refresh 自己复活（#1212）。
+                    ensureJwtAccount(account, false);
+                    final String previousIp = row.getClientIp();
+                    if (previousIp != null && clientIp != null && !previousIp.equals(clientIp)) {
+                        // 只记录不阻断：NAT 出口、双栈主机都会让来源 IP 合法地漂移，阻断会误伤正常续期。
+                        log.warn("SLA 刷新凭据来源 IP 变更: account={}, {} -> {}", row.getAccountId(), previousIp, clientIp);
+                        audit(AuditEventType.SLA_REFRESH, subjectOf(account), "REFRESH_IP_CHANGED",
+                                Map.of("previousIp", previousIp, "currentIp", nullSafe(clientIp)));
+                    }
                     row.setLastUsedAt(now);
                     row.setClientIp(clientIp);
-                    row.setExpiresAt(now.plus(REFRESH_TTL));
+                    row.setAbsoluteExpiresAt(absolute);
+                    final LocalDateTime rolled = now.plus(REFRESH_TTL);
+                    row.setExpiresAt(rolled.isAfter(absolute) ? absolute : rolled);
                     refreshTokenRepository.save(row);
                     return account;
                 })
@@ -174,24 +215,60 @@ public class SlaAccessService {
     }
 
     /**
-     * 列出全部 SLA 账号（含未消费令牌数与有效凭据数）。
+     * 分页列出 SLA 账号（含未消费令牌数与有效凭据数）。
      *
-     * @return 账号视图列表
+     * <p>issue #1219：此前对每个账号各查两次计数，账号一多就是 2N+1；改成先取当前页，
+     * 再用一条 group by 把当前页的计数一次性取回。关键字按名称模糊匹配（不含大小写差异），
+     * 账号多起来之后控制台可以直接搜。</p>
+     *
+     * @param page    页码（从 0 开始）
+     * @param size    每页条数（1~100，由调用方先校验）
+     * @param keyword 名称关键字（可空）
+     * @return 分页后的账号视图
      */
     @Transactional(readOnly = true)
-    public List<AccountView> listAccounts() {
-        return accountRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map(account -> new AccountView(
-                        account.getAccountId(),
-                        account.getName(),
-                        account.getRoleTemplate(),
-                        Boolean.TRUE.equals(account.getEnabled()),
-                        account.getCreatedBy(),
-                        account.getCreatedAt(),
-                        account.getLastSeenAt(),
-                        refreshTokenRepository.countByAccountIdAndRevokedAtIsNull(account.getAccountId()),
-                        bootstrapTokenRepository.countByAccountIdAndUsedAtIsNull(account.getAccountId())))
+    public PagedResult<AccountView> listAccounts(final int page, final int size, final String keyword) {
+        final Pageable pageable = PageRequest.of(page, size);
+        final String trimmed = keyword == null ? "" : keyword.trim();
+        final Page<SlaServiceAccountEntity> found = trimmed.isEmpty()
+                ? accountRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : accountRepository.findByNameContainingIgnoreCaseOrderByCreatedAtDesc(trimmed, pageable);
+
+        final List<String> accountIds = found.getContent().stream()
+                .map(SlaServiceAccountEntity::getAccountId)
                 .toList();
+        final LocalDateTime now = LocalDateTime.now();
+        final Map<String, Long> activeRefresh = accountIds.isEmpty()
+                ? Map.of()
+                : countByAccount(refreshTokenRepository.countActiveByAccountIds(accountIds));
+        final Map<String, Long> unusedBootstrap = accountIds.isEmpty()
+                ? Map.of()
+                : countByAccount(bootstrapTokenRepository.countUnusedByAccountIds(accountIds, now));
+
+        final List<AccountView> content = found.getContent().stream()
+                .map(account -> toView(account,
+                        activeRefresh.getOrDefault(account.getAccountId(), 0L),
+                        unusedBootstrap.getOrDefault(account.getAccountId(), 0L)))
+                .toList();
+        return new PagedResult<>(content, found.getNumber(), found.getSize(), found.getTotalElements());
+    }
+
+    /**
+     * 列表顶部的汇总指标（issue #1219）。
+     *
+     * <p>分页之后不能再拿「当前页求和」充总数，否则账号一多指标就失真。这四项各走一条
+     * {@code count(*)}，都是走索引/主键的廉价查询。</p>
+     *
+     * @return 账号数、启用数、有效凭据总数、待用令牌总数
+     */
+    @Transactional(readOnly = true)
+    public AccountSummary summarize() {
+        return new AccountSummary(
+                accountRepository.count(),
+                accountRepository.countByEnabledTrue(),
+                refreshTokenRepository.countByRevokedAtIsNull(),
+                bootstrapTokenRepository.countByUsedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(
+                        LocalDateTime.now()));
     }
 
     /**
@@ -225,6 +302,8 @@ public class SlaAccessService {
                 .createdAt(now)
                 .build();
         accountRepository.save(account);
+        audit(AuditEventType.SLA_ACCOUNT_CREATED, nullSafe(createdBy), "CREATE",
+                Map.of("account", trimmed, "roleTemplate", template));
         return new AccountView(account.getAccountId(), account.getName(), account.getRoleTemplate(),
                 true, createdBy, now, null, 0L, 0L);
     }
@@ -244,19 +323,21 @@ public class SlaAccessService {
         final SlaServiceAccountEntity account = accountRepository.findById(accountId)
                 .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId, ErrorCode.NOT_FOUND.status()));
         final LocalDateTime now = LocalDateTime.now();
-        final Duration ttl = ttlMinutes != null && ttlMinutes > 0 ? Duration.ofMinutes(ttlMinutes) : BOOTSTRAP_TTL;
+        final Duration ttl = clampBootstrapTtl(ttlMinutes);
+        final String boundIp = validatedAllowedIp(allowedIp);
         final String plain = newToken();
         bootstrapTokenRepository.save(SlaBootstrapTokenEntity.builder()
                 .tokenId(UUID.randomUUID().toString())
                 .accountId(account.getAccountId())
                 .tokenHash(sha256(plain))
                 .expiresAt(now.plus(ttl))
-                .allowedIp(allowedIp == null || allowedIp.isBlank() ? null : allowedIp.trim())
+                .allowedIp(boundIp)
                 .createdBy(createdBy)
                 .createdAt(now)
                 .build());
         audit(AuditEventType.SLA_BOOTSTRAP_ISSUED, subjectOf(account), "ISSUE",
-                Map.of("ttlMinutes", ttl.toMinutes(), "allowedIp", nullSafe(allowedIp)));
+                Map.of("ttlMinutes", ttl.toMinutes(), "allowedIp", nullSafe(boundIp),
+                        "operator", nullSafe(createdBy)));
         return new IssueResult(plain, now.plus(ttl), ttl.toSeconds());
     }
 
@@ -272,12 +353,43 @@ public class SlaAccessService {
         final SlaServiceAccountEntity account = accountRepository.findById(accountId)
                 .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId, ErrorCode.NOT_FOUND.status()));
         final LocalDateTime now = LocalDateTime.now();
-        final List<SlaRefreshTokenEntity> active = refreshTokenRepository.findByAccountIdAndRevokedAtIsNull(accountId);
-        active.forEach(token -> token.setRevokedAt(now));
-        refreshTokenRepository.saveAll(active);
+        final int revoked = revokeCredentials(account, now);
+        suspendJwtSubject(account);
         audit(AuditEventType.SLA_CREDENTIAL_REVOKED, subjectOf(account), "REVOKE",
-                Map.of("revoked", active.size(), "operator", nullSafe(operator)));
-        return active.size();
+                Map.of("revoked", revoked, "operator", nullSafe(operator)));
+        return revoked;
+    }
+
+    /**
+     * 启用或禁用 SLA 账号（issue #1212）。
+     *
+     * <p>禁用与「吊销」同义：吊销全部刷新凭据、作废全部未消费接入令牌、停用 {@code jwt_accounts}
+     * 里的主体，这样已签发的访问令牌在 {@code JwtAccountStatusVerifier} 复核时立刻失效。
+     * 启用只恢复账号本身的开关，<b>不会</b>自动恢复主体 —— 恢复接入需要重新签发接入令牌，
+     * 让「谁能重新进来」这件事始终留下一条签发记录。</p>
+     *
+     * @param accountId 账号主键
+     * @param enabled   目标状态
+     * @param operator  操作人
+     * @return 账号最新视图
+     */
+    @Transactional
+    public AccountView setAccountEnabled(final String accountId, final boolean enabled, final String operator) {
+        final SlaServiceAccountEntity account = accountRepository.findById(accountId)
+                .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId, ErrorCode.NOT_FOUND.status()));
+        if (Boolean.TRUE.equals(account.getEnabled()) == enabled) {
+            return toView(account);
+        }
+        account.setEnabled(enabled);
+        accountRepository.save(account);
+        if (!enabled) {
+            revokeCredentials(account, LocalDateTime.now());
+            suspendJwtSubject(account);
+        }
+        audit(enabled ? AuditEventType.SLA_ACCOUNT_ENABLED : AuditEventType.SLA_ACCOUNT_DISABLED,
+                nullSafe(operator), enabled ? "ENABLE" : "DISABLE",
+                Map.of("account", account.getName(), "subject", subjectOf(account)));
+        return toView(account);
     }
 
     /**
@@ -307,20 +419,38 @@ public class SlaAccessService {
         return Duration.ofMinutes(accountManager.accessTokenExpirationMinutes()).toSeconds();
     }
 
+    /**
+     * 回收过期的接入令牌与刷新凭据（issue #1218）。
+     *
+     * <p>这两张表此前只增不减：吊销只把 {@code revoked_at} 置位、消费只把 {@code used_at} 置位，
+     * 行本身永久留存。保留期内的行仍保留，供审计比对与问题回溯。</p>
+     *
+     * @param retentionDays 保留天数（小于 1 时按 1 天处理）
+     * @return 两类凭据各自删除的行数
+     */
+    @Transactional
+    public CleanupResult cleanupExpiredCredentials(final int retentionDays) {
+        final LocalDateTime cutoff = LocalDateTime.now().minusDays(Math.max(1, retentionDays));
+        final int refreshRemoved = refreshTokenRepository.deleteStale(cutoff);
+        final int bootstrapRemoved = bootstrapTokenRepository.deleteStale(cutoff);
+        return new CleanupResult(refreshRemoved, bootstrapRemoved);
+    }
+
     private SlaBootstrapTokenEntity requireValidBootstrapToken(final String token, final String clientIp,
                                                               final LocalDateTime now) {
-        if (token == null || token.isBlank()) {
-            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "缺少 SLA 接入令牌", ErrorCode.TOKEN_REQUIRED.status());
-        }
-        final SlaBootstrapTokenEntity row = bootstrapTokenRepository.findByTokenHash(sha256(token))
+        final SlaBootstrapTokenEntity row = bootstrapTokenRepository
+                .findByTokenHash(sha256(requirePlainToken(token, "缺少 SLA 接入令牌")))
                 .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌无效", ErrorCode.TOKEN_REQUIRED.status()));
         if (row.getUsedAt() != null) {
             throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被使用", ErrorCode.TOKEN_REQUIRED.status());
         }
+        if (row.getRevokedAt() != null) {
+            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被吊销", ErrorCode.TOKEN_REQUIRED.status());
+        }
         if (row.getExpiresAt().isBefore(now)) {
             throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已过期", ErrorCode.TOKEN_REQUIRED.status());
         }
-        if (row.getAllowedIp() != null && !row.getAllowedIp().equals(clientIp)) {
+        if (!matchesBoundIp(row.getAllowedIp(), clientIp)) {
             throw ApiException.of(ErrorCode.FORBIDDEN.code(),
                     "SLA 接入令牌绑定来源 IP 为 " + row.getAllowedIp() + "，当前来源 " + clientIp,
                     ErrorCode.FORBIDDEN.status());
@@ -346,6 +476,7 @@ public class SlaAccessService {
                 .tokenHash(sha256(plain))
                 .issuedAt(now)
                 .expiresAt(now.plus(REFRESH_TTL))
+                .absoluteExpiresAt(now.plus(REFRESH_MAX_LIFETIME))
                 .clientIp(clientIp)
                 .build());
         return plain;
@@ -358,7 +489,7 @@ public class SlaAccessService {
      * 账户表里被解析到；这里存的密码是随机值，意味着该账号<b>永远无法用密码登录</b>控制台，
      * 只能靠一次性令牌换来的凭据工作。</p>
      */
-    private void ensureJwtAccount(final SlaServiceAccountEntity account) {
+    private void ensureJwtAccount(final SlaServiceAccountEntity account, final boolean reactivate) {
         final String username = subjectOf(account);
         final JwtAccountEntity existing = jwtAccountRepository.findByUsername(username).orElse(null);
         final String rolesJson = writeRoles(account.getRoleTemplate());
@@ -374,8 +505,15 @@ public class SlaAccessService {
                     .build());
             return;
         }
+        final boolean suspended = existing.isDeletedAccount() || Boolean.FALSE.equals(existing.getEnabled());
+        if (suspended && !reactivate) {
+            throw ApiException.of(ErrorCode.FORBIDDEN.code(),
+                    "SLA 主体已停用（凭据被吊销或账号被禁用），请重新签发接入令牌",
+                    ErrorCode.FORBIDDEN.status());
+        }
         existing.setRoles(rolesJson);
         existing.setEnabled(true);
+        existing.setDeleted(false);
         existing.setUpdatedAt(LocalDateTime.now());
         jwtAccountRepository.save(existing);
     }
@@ -391,6 +529,97 @@ public class SlaAccessService {
      */
     private static String writeRoles(final String roleTemplate) {
         return "[\"" + roleTemplate + "\"]";
+    }
+
+    /**
+     * 吊销账号名下的全部刷新凭据，并作废全部「尚未被消费」的接入令牌（issue #1210）。
+     *
+     * <p>接入令牌不删行只置 {@code revokedAt}：删了就看不出「这枚令牌曾经存在、被谁拔掉」，
+     * 审计链条会断。已消费或已吊销的行不重复处理，返回值只统计本次真正被吊销的刷新凭据数，
+     * 与接口既有的 {@code revoked} 字段含义保持一致。</p>
+     */
+    private int revokeCredentials(final SlaServiceAccountEntity account, final LocalDateTime now) {
+        final List<SlaRefreshTokenEntity> active = refreshTokenRepository
+                .findByAccountIdAndRevokedAtIsNull(account.getAccountId());
+        active.forEach(token -> token.setRevokedAt(now));
+        refreshTokenRepository.saveAll(active);
+        final List<SlaBootstrapTokenEntity> pending = bootstrapTokenRepository
+                .findByAccountId(account.getAccountId()).stream()
+                .filter(token -> token.getUsedAt() == null && token.getRevokedAt() == null)
+                .toList();
+        pending.forEach(token -> token.setRevokedAt(now));
+        bootstrapTokenRepository.saveAll(pending);
+        return active.size();
+    }
+
+    /**
+     * 停用 {@code jwt_accounts} 里的 SLA 主体，让已签发的访问令牌立即失效（issue #1211）。
+     *
+     * <p>{@link JwtAccountStatusVerifier} 每个请求复核库里的账户状态，{@code enabled=false}
+     * 即拒绝，因此不必等访问令牌自然过期，也就不用引入一套令牌黑名单。</p>
+     */
+    private void suspendJwtSubject(final SlaServiceAccountEntity account) {
+        jwtAccountRepository.findByUsername(subjectOf(account)).ifPresent(existing -> {
+            if (Boolean.FALSE.equals(existing.getEnabled()) && !existing.isDeletedAccount()) {
+                return;
+            }
+            existing.setEnabled(false);
+            existing.setUpdatedAt(LocalDateTime.now());
+            jwtAccountRepository.save(existing);
+        });
+    }
+
+    /**
+     * 单个账号的视图（新建、启停时用）。计数各查一次：这里只处理一个账号，不值得为它走聚合。
+     *
+     * @param account 账号实体
+     * @return 账号视图
+     */
+    private AccountView toView(final SlaServiceAccountEntity account) {
+        return toView(account,
+                refreshTokenRepository.countByAccountIdAndRevokedAtIsNull(account.getAccountId()),
+                bootstrapTokenRepository.countByAccountIdAndUsedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(
+                        account.getAccountId(), LocalDateTime.now()));
+    }
+
+    /**
+     * 列表用的视图构造：计数由调用方批量取好，避免每行再查两次数据库（issue #1219）。
+     *
+     * @param account             账号实体
+     * @param activeRefreshTokens 有效刷新凭据数
+     * @param unusedBootstrapTokens 待用接入令牌数（不含已过期）
+     * @return 账号视图
+     */
+    private static AccountView toView(final SlaServiceAccountEntity account,
+                                     final long activeRefreshTokens,
+                                     final long unusedBootstrapTokens) {
+        return new AccountView(
+                account.getAccountId(),
+                account.getName(),
+                account.getRoleTemplate(),
+                Boolean.TRUE.equals(account.getEnabled()),
+                account.getCreatedBy(),
+                account.getCreatedAt(),
+                account.getLastSeenAt(),
+                activeRefreshTokens,
+                unusedBootstrapTokens);
+    }
+
+    /**
+     * 把 {@code [accountId, count]} 形式的聚合结果收成映射。
+     *
+     * @param rows 聚合结果
+     * @return 账号主键到计数的映射
+     */
+    private static Map<String, Long> countByAccount(final List<Object[]> rows) {
+        final Map<String, Long> counts = new HashMap<>();
+        for (final Object[] row : rows) {
+            if (row == null || row.length < 2 || row[0] == null) {
+                continue;
+            }
+            counts.put(String.valueOf(row[0]), ((Number) row[1]).longValue());
+        }
+        return counts;
     }
 
     private void touchLastSeen(final SlaServiceAccountEntity account) {
@@ -444,12 +673,102 @@ public class SlaAccessService {
         }
     }
 
-    private static String nullSafe(final String value) {
-        return value == null ? "" : value;
+    /** 接入令牌有效期：缺省 15 分钟，超过上限就夹取（issue #1213）。 */
+    private static Duration clampBootstrapTtl(final Integer ttlMinutes) {
+        if (ttlMinutes == null || ttlMinutes <= 0) {
+            return BOOTSTRAP_TTL;
+        }
+        final Duration requested = Duration.ofMinutes(ttlMinutes);
+        return requested.compareTo(MAX_BOOTSTRAP_TTL) > 0 ? MAX_BOOTSTRAP_TTL : requested;
     }
 
-    /** bootstrap 第一段（数据库事务内）的中间结果。 */
-    private record PreparedBootstrap(SlaServiceAccountEntity account, String refreshToken) {
+    /**
+     * 校验并规范化接入令牌绑定的来源 IP（issue #1213）。
+     *
+     * <p>支持单个 IPv4/IPv6 字面量与 IPv4 CIDR；为空表示不绑定来源。</p>
+     *
+     * @param allowedIp 管理员填写的绑定值
+     * @return 去空白后的绑定值，未填写时为 {@code null}
+     */
+    private static String validatedAllowedIp(final String allowedIp) {
+        if (allowedIp == null || allowedIp.isBlank()) {
+            return null;
+        }
+        final String candidate = allowedIp.trim();
+        if (candidate.length() > 64 || !isValidIpExpression(candidate)) {
+            throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
+                    "allowedIp 不是合法的 IP 或 CIDR: " + candidate, ErrorCode.INVALID_REQUEST.status());
+        }
+        return candidate;
+    }
+
+    private static boolean isValidIpExpression(final String value) {
+        if (value.indexOf(':') >= 0) {
+            // IPv6 字面量：允许方括号包裹；压缩格式的合法性交给比较时的规范化处理。
+            final String bare = value.startsWith("[") && value.endsWith("]")
+                    ? value.substring(1, value.length() - 1) : value;
+            return !bare.isEmpty() && IPV6_LITERAL.matcher(bare).matches();
+        }
+        final String[] parts = value.split("/", -1);
+        if (parts.length > 2 || !isIpv4Literal(parts[0])) {
+            return false;
+        }
+        return parts.length == 1 || isIpv4Prefix(parts[1]);
+    }
+
+    private static boolean isIpv4Literal(final String value) {
+        final String[] octets = value.split("\\.", -1);
+        if (octets.length != 4) {
+            return false;
+        }
+        for (String octet : octets) {
+            if (octet.isEmpty() || octet.length() > 3 || !octet.chars().allMatch(Character::isDigit)) {
+                return false;
+            }
+            if (Integer.parseInt(octet) > 255) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isIpv4Prefix(final String value) {
+        if (value.isEmpty() || value.length() > 2 || !value.chars().allMatch(Character::isDigit)) {
+            return false;
+        }
+        final int prefix = Integer.parseInt(value);
+        return prefix >= 0 && prefix <= 32;
+    }
+
+    /**
+     * 判定来源 IP 是否命中绑定值（issue #1213）。
+     *
+     * <p>绑定值为空表示不绑定；任一参数是 IPv6 时按规范化后的全等比较，否则按 IPv4 CIDR 匹配。
+     * 精确字符串比较会漏掉 {@code 0:0:0:0:0:0:0:1} 与 {@code ::1} 这类等价写法。</p>
+     */
+    private static boolean matchesBoundIp(final String allowed, final String clientIp) {
+        if (allowed == null) {
+            return true;
+        }
+        if (clientIp == null || clientIp.isBlank()) {
+            return false;
+        }
+        if (allowed.indexOf(':') >= 0 || clientIp.indexOf(':') >= 0) {
+            return IpUtils.canonicalizeIp(allowed).equalsIgnoreCase(IpUtils.canonicalizeIp(clientIp));
+        }
+        return IpUtils.matchesCidr(clientIp, allowed);
+    }
+
+    /** 明文凭据入参判空：{@code null} 直接走到摘要计算会抛 NPE 并变成 500（issue #1214）。 */
+    private static String requirePlainToken(final String token, final String message) {
+        if (token == null || token.isBlank()) {
+            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), message, ErrorCode.TOKEN_REQUIRED.status());
+        }
+        return token;
+    }
+
+    private static String nullSafe(final String value) {
+        return value == null ? "" : value;
     }
 
     /**
@@ -480,6 +799,26 @@ public class SlaAccessService {
      * @param expiresIn      剩余秒数
      */
     public record IssueResult(String bootstrapToken, LocalDateTime expiresAt, long expiresIn) {
+    }
+
+    /**
+     * 列表顶部的汇总指标（issue #1219）。
+     *
+     * @param accounts      账号总数
+     * @param enabled       启用状态的账号数
+     * @param refreshTokens 全平台未吊销的刷新凭据数
+     * @param pendingTokens 全平台待用（未消费、未吊销、未过期）的接入令牌数
+     */
+    public record AccountSummary(long accounts, long enabled, long refreshTokens, long pendingTokens) {
+    }
+
+    /**
+     * 凭据回收结果（issue #1218）。
+     *
+     * @param refreshTokens   删除的刷新凭据行数
+     * @param bootstrapTokens 删除的接入令牌行数
+     */
+    public record CleanupResult(int refreshTokens, int bootstrapTokens) {
     }
 
     /**

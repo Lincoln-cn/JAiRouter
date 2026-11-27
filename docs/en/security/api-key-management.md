@@ -467,6 +467,9 @@ to a default, so use these names verbatim when filtering, exporting or building 
 - `SLA_BOOTSTRAP_CONSUMED`: the SLA tool exchanged it for access + refresh credentials (the token is burned immediately)
 - `SLA_REFRESH`: a refresh credential produced a new access token (every renewal is recorded, so it reconciles with "last seen")
 - `SLA_CREDENTIAL_REVOKED`: credentials were revoked (host swap, leak, decommission); deleting an account records one too
+- `SLA_ACCOUNT_CREATED`: an SLA access account was created (the subject is the operator, not the `sla:` principal)
+- `SLA_ACCOUNT_DISABLED`: the account was disabled (credentials revoked, unconsumed tokens invalidated, login principal suspended)
+- `SLA_ACCOUNT_ENABLED`: the account was re-enabled (only the switch; the login principal is not restored automatically)
 
 #### System Events
 `SYSTEM_CLEANUP` · `SYSTEM_MAINTENANCE`

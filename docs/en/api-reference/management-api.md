@@ -162,7 +162,11 @@ Response `data`:
 - A disabled account returns 403.
 - The plaintext appears only at issuance and in this response; the database stores SHA-256.
 - `expiresIn` is in **seconds** (default 3600); the same applies to `refresh`.
-- Failure semantics: missing / invalid / already used / expired token ⇒ `401`; bound IP mismatch or
+- Bootstrap TTL defaults to 15 minutes and is capped at 60 (a larger value is clamped on issue); the token is
+  **single-use** (concurrent double-spend is caught by the row-level optimistic lock).
+- The source IP can be bound up front: a single IPv4/IPv6 literal or an IPv4 CIDR such as `10.0.0.0/24`;
+  a mismatch returns `403`.
+- Failure semantics: missing / invalid / already used / revoked / expired token ⇒ `401`; bound IP mismatch or
   disabled account ⇒ `403`; unknown account ⇒ `404`.
 
 ##### `POST /api/auth/sla/refresh`
@@ -175,15 +179,38 @@ Exchange a refresh credential for a new access token.
 
 Response `data`: `{ "accessToken": "...", "expiresIn": 3600 }`.
 
-- The refresh credential lives 90 days by default and rolls forward on every use (`lastUsedAt`, `expiresAt`, `clientIp` updated).
+- The refresh credential lives 90 days by default and rolls forward on every use (`lastUsedAt`, `expiresAt`, `clientIp` updated),
+  but rolling never passes the **absolute lifetime** (365 days after first issue); past it the call fails with
+  "absolute lifetime reached" and a new bootstrap token is required.
+- A changed source IP does **not** block the refresh (NAT egress and dual-stack hosts move legitimately); it only logs a
+  warning and records a `REFRESH_IP_CHANGED` audit entry.
+- A missing or blank `refreshToken` returns `401` instead of falling through to an internal error.
 - Revoked ⇒ "SLA refresh credential has been revoked"; expired ⇒ "SLA refresh credential has expired".
+- A suspended login principal (credentials revoked or account disabled) ⇒ `403`, and the principal is **not**
+  revived automatically: reconnecting requires a newly issued bootstrap token.
 
 #### Base path: `/api/security/sla` (needs `system:sla:read` / `system:sla:manage`)
 
+Every endpoint in this group runs its blocking database work on the `boundedElastic` pool instead of the
+Netty event loop. `/api/auth/sla/**` and `/api/security/sla/**` share one per-source-IP rate-limit bucket
+(120 requests per minute and 1000 per hour by default, keys `jairouter.auth.sla-rate-limit.per-minute` and
+`.per-hour`); exceeding it returns `429`.
+
 ##### `GET /api/security/sla/accounts`
 
-Lists SLA accounts: `accountId`, `name`, `roleTemplate`, `enabled`, `createdBy`, `createdAt`, `lastSeenAt`, plus
-`activeRefreshTokens` and `unusedBootstrapTokens`. Requires `system:sla:read`.
+Pages through SLA accounts with `page` (zero-based), `size` (1–100, default 20) and `keyword` (name substring):
+
+```
+GET /api/security/sla/accounts?page=0&size=20&keyword=build
+```
+
+The response has two parts: `page` is the current page (`content` rows carry `accountId`, `name`,
+`roleTemplate`, `enabled`, `createdBy`, `createdAt`, `lastSeenAt`, `activeRefreshTokens`,
+`unusedBootstrapTokens`, alongside `totalElements` / `totalPages` / `hasNext`), and `summary` holds
+platform-wide totals (`accounts` / `enabled` / `refreshTokens` / `pendingTokens`).
+
+The summary ships with the list because summing the current page no longer equals the total once paginated.
+`pendingTokens` counts only tokens that are unused, not revoked and not expired. Requires `system:sla:read`.
 
 ##### `POST /api/security/sla/accounts`
 
@@ -201,16 +228,56 @@ Issues a one-time bootstrap token (**the response is the only place the plaintex
 { "ttlMinutes": 15, "allowedIp": "10.0.0.8" }
 ```
 
-Both fields are optional (defaults: 15 minutes, any IP). Response: `{ "bootstrapToken": "...", "expiresAt": "...", "expiresIn": 900 }`.
+Both fields are optional (defaults: 15 minutes, any IP). `ttlMinutes` is clamped to 60; `allowedIp` accepts a single
+IPv4/IPv6 literal or an IPv4 CIDR, and a malformed value returns `400` instead of being stored. Response:
+`{ "bootstrapToken": "...", "expiresAt": "...", "expiresIn": 900 }`.
 
 ##### `POST /api/security/sla/accounts/{accountId}/revoke`
 
-Revokes every active refresh credential of that account and returns `{ "revoked": 2 }`. Refresh fails immediately afterwards;
-already-issued access tokens simply expire.
+Revokes every credential of that account and returns `{ "revoked": 2 }` (the number of refresh credentials revoked in this call).
+One call does three things:
+
+1. every refresh credential gets `revoked_at`, so the next refresh fails immediately;
+2. every unconsumed bootstrap token is invalidated as well (also flagged with `revoked_at`, never deleted, so the audit trail survives);
+3. the matching `sla:<name>` principal in `jwt_accounts` is set to `enabled=false`.
+
+Step 3 makes **already-issued access tokens fail on their very next request** (the principal is re-checked on every request)
+instead of waiting for them to expire. The trade-off is that revoking cannot be used for a zero-downtime "issue new, then revoke old"
+rotation: after a revoke the account has to be issued a new bootstrap token to come back.
+
+> Reconnect in the order "revoke, then issue": a new bootstrap token restores the principal, so doing it the other way around lets
+> old access tokens come back to life for the remainder of their lifetime.
+
+##### `POST /api/security/sla/accounts/{accountId}/enabled`
+
+Enables or disables the account.
+
+```json
+{ "enabled": false }
+```
+
+`enabled` must be given explicitly (a missing field returns `400`; it never defaults to disabling). Disabling equals
+"revoke plus seal": every refresh credential is revoked, unconsumed bootstrap tokens are invalidated and the `jwt_accounts`
+principal is suspended, so issued access tokens stop working immediately. Enabling only restores the account switch and
+does **not** restore the principal — a bootstrap token still has to be issued before the SLA can reconnect.
+Returns the updated account view with the same fields as the list endpoint. Requires `system:sla:manage`.
 
 ##### `DELETE /api/security/sla/accounts/{accountId}`
 
 Deletes the account together with its bootstrap tokens, refresh credentials and the corresponding `sla:<name>` principal in `jwt_accounts`.
+
+#### Credential cleanup
+
+Expired and revoked rows in both credential tables are reclaimed once an hour by a built-in task. It deletes only rows that
+are already expired or revoked **and** older than the retention window, so anything inside the window is still available for
+audit comparison and troubleshooting:
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `jairouter.security.sla.retention-days` | `30` | How many days expired or revoked rows are kept |
+| `jairouter.security.sla.cleanup-cron` | `0 40 * * * ?` | Cleanup schedule (minute 40 of every hour) |
+
+Cleanup runs a single `DELETE ... WHERE` per table instead of loading everything into memory.
 
 ### Login Protection {#login-guard}
 
