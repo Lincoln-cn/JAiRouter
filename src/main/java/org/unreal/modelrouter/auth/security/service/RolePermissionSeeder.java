@@ -25,7 +25,9 @@ import java.util.stream.Collectors;
  *
  * <p>应用启动完成后执行（仿启动期 ApplicationRunner 模式）：
  * <ul>
- *   <li>表为空：种入 4 个角色模板（ADMIN / OPERATOR / USER / VIEWER）——全新安装路径，内容不变。</li>
+ *   <li>表为空：种入全部内置角色模板（清单见 {@link #buildDefaultRoleTemplates()}，
+ *   当前为 ADMIN / OPERATOR / USER / VIEWER / AUDITOR / SLA_READONLY / SLA_OPERATOR）——
+ *   全新安装路径。</li>
  *   <li>表非空：执行「只增不删」的增量收敛，而不是跳过。仅对「未被手工定制」的角色补种
  *   {@code 模板 ∩ 规则所需 − 已持有} 的权限码；角色持有模板外权限码则视为手工定制、整个角色跳过；
  *   无任何权限行的角色同样跳过。</li>
@@ -161,7 +163,8 @@ public class RolePermissionSeeder implements ApplicationRunner {
     }
 
     /**
-     * 表空则种入全部角色模板（当前 6 个）；表非空则增量收敛（只增不删，见类注释）。
+     * 表空则种入全部内置角色模板（数量以 {@link #buildDefaultRoleTemplates()} 为准）；
+     * 表非空则增量收敛（只增不删，见类注释）。
      *
      * <p>「表非空」时**仍然**会为「库里一行都没有」的角色播种完整模板（#1174 运行态实测补的漏）：
      * 新增内置角色（如 SLA_READONLY / SLA_OPERATOR）只改了代码，存量库的 {@code role_permissions}
@@ -295,7 +298,8 @@ public class RolePermissionSeeder implements ApplicationRunner {
     }
 
     /**
-     * 已知角色名集合（ADMIN / OPERATOR / USER / VIEWER / SLA_READONLY / SLA_OPERATOR，
+     * 已知角色名集合（取自 {@link #buildDefaultRoleTemplates()} 的键，
+     * 当前为 ADMIN / OPERATOR / USER / VIEWER / AUDITOR / SLA_READONLY / SLA_OPERATOR，
      * 供权限管理 API 校验 roleName 合法性）
      *
      * @return 角色名集合（大写）
@@ -339,10 +343,6 @@ public class RolePermissionSeeder implements ApplicationRunner {
     }
 
     /**
-     * USER：dashboard + config:*:read + lb/cb/rl + monitoring:*:read + tracing dashboard+search +
-     * ai:playground:use（兼容现有 USER 默认集，开发计划2026 L1142）
-     */
-    /**
      * USER 模板：只保留「在控制台里有入口」的码。
      *
      * <p>历史包袱：早期 USER 还持有一批 {@code config:*:read} 与全局观测码，那时这些页面
@@ -368,7 +368,6 @@ public class RolePermissionSeeder implements ApplicationRunner {
         );
     }
 
-    /** SLA 只读角色名（外部巡检工具的运行主体，issue #1174）。 */
     /**
      * 第三方审计角色（issue #1183）。
      *
@@ -378,6 +377,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
      */
     public static final String AUDITOR_ROLE = "AUDITOR";
 
+    /** SLA 只读角色名（外部巡检工具的运行主体，issue #1174）。 */
     public static final String SLA_READONLY_ROLE = "SLA_READONLY";
 
     /** SLA 运维角色名（只读 + 配置写，供升级后回归与场景编排使用，issue #1174）。 */
