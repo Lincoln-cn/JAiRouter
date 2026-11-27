@@ -488,6 +488,9 @@ jairouter:
 - `SLA_BOOTSTRAP_CONSUMED`：SLA 用一次性令牌换到 access + refresh 凭据（令牌当场作废）
 - `SLA_REFRESH`：用 refresh 凭据换新的 access token（每次刷新都留痕，可与「上次使用时间」对账）
 - `SLA_CREDENTIAL_REVOKED`：凭据被吊销（换机、泄露、下线）；删除账号同样记一条
+- `SLA_ACCOUNT_CREATED`：新建 SLA 接入账号（主体记操作员，不记 `sla:` 主体）
+- `SLA_ACCOUNT_DISABLED`：禁用账号（连带吊销凭据、作废未消费令牌、停用登录主体）
+- `SLA_ACCOUNT_ENABLED`：重新启用账号（只恢复开关，不自动恢复登录主体）
 
 #### 系统事件
 `SYSTEM_CLEANUP` · `SYSTEM_MAINTENANCE`

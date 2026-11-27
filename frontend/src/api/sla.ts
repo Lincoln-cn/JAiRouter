@@ -8,7 +8,8 @@ import type { RouterResponse } from '@/types'
  * - GET    /api/security/sla/accounts                      账号列表
  * - POST   /api/security/sla/accounts                      新建账号（绑角色模板）
  * - POST   /api/security/sla/accounts/{id}/bootstrap       签发一次性接入令牌
- * - POST   /api/security/sla/accounts/{id}/revoke          吊销该账号所有刷新凭据
+ * - POST   /api/security/sla/accounts/{id}/revoke          吊销该账号所有凭据（含已签发访问令牌）
+ * - POST   /api/security/sla/accounts/{id}/enabled         启用/禁用账号
  * - DELETE /api/security/sla/accounts/{id}                 删除账号与凭据
  *
  * 注意：这里只管**管理端**。SLA 部署侧自己调
@@ -72,7 +73,19 @@ export async function issueSlaBootstrap(
   return response.data.data as SlaBootstrapIssue
 }
 
-/** 吊销该账号所有刷新凭据 */
+/** 启用或禁用账号；禁用会连带吊销凭据并停用登录主体 */
+export async function setSlaAccountEnabled(
+  accountId: string,
+  enabled: boolean
+): Promise<SlaAccount> {
+  const response = await request.post<RouterResponse<SlaAccount>>(
+    `/security/sla/accounts/${accountId}/enabled`,
+    { enabled }
+  )
+  return response.data.data as SlaAccount
+}
+
+/** 吊销该账号所有凭据（含已签发的访问令牌） */
 export async function revokeSlaCredentials(accountId: string): Promise<number> {
   const response = await request.post<RouterResponse<{ revoked: number }>>(
     `/security/sla/accounts/${accountId}/revoke`

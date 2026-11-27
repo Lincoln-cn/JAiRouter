@@ -112,7 +112,8 @@ public class SlaAccessService {
                     final LocalDateTime now = LocalDateTime.now();
                     final SlaBootstrapTokenEntity row = requireValidBootstrapToken(bootstrapToken, clientIp, now);
                     final SlaServiceAccountEntity account = requireEnabledAccount(row.getAccountId());
-                    ensureJwtAccount(account);
+                    // 签发新接入令牌 = 管理员主动批准重新接入，允许把被吊销的主体恢复回来（#1212）。
+                    ensureJwtAccount(account, true);
                     row.setUsedAt(now);
                     try {
                         bootstrapTokenRepository.save(row);
@@ -156,7 +157,8 @@ public class SlaAccessService {
                         throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 刷新凭据已过期", ErrorCode.TOKEN_REQUIRED.status());
                     }
                     final SlaServiceAccountEntity account = requireEnabledAccount(row.getAccountId());
-                    ensureJwtAccount(account);
+                    // 主体被停用（凭据被吊销或账户被禁用）时不允许靠 refresh 自己复活（#1212）。
+                    ensureJwtAccount(account, false);
                     row.setLastUsedAt(now);
                     row.setClientIp(clientIp);
                     row.setExpiresAt(now.plus(REFRESH_TTL));
@@ -181,16 +183,7 @@ public class SlaAccessService {
     @Transactional(readOnly = true)
     public List<AccountView> listAccounts() {
         return accountRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map(account -> new AccountView(
-                        account.getAccountId(),
-                        account.getName(),
-                        account.getRoleTemplate(),
-                        Boolean.TRUE.equals(account.getEnabled()),
-                        account.getCreatedBy(),
-                        account.getCreatedAt(),
-                        account.getLastSeenAt(),
-                        refreshTokenRepository.countByAccountIdAndRevokedAtIsNull(account.getAccountId()),
-                        bootstrapTokenRepository.countByAccountIdAndUsedAtIsNull(account.getAccountId())))
+                .map(this::toView)
                 .toList();
     }
 
@@ -225,6 +218,8 @@ public class SlaAccessService {
                 .createdAt(now)
                 .build();
         accountRepository.save(account);
+        audit(AuditEventType.SLA_ACCOUNT_CREATED, nullSafe(createdBy), "CREATE",
+                Map.of("account", trimmed, "roleTemplate", template));
         return new AccountView(account.getAccountId(), account.getName(), account.getRoleTemplate(),
                 true, createdBy, now, null, 0L, 0L);
     }
@@ -256,7 +251,8 @@ public class SlaAccessService {
                 .createdAt(now)
                 .build());
         audit(AuditEventType.SLA_BOOTSTRAP_ISSUED, subjectOf(account), "ISSUE",
-                Map.of("ttlMinutes", ttl.toMinutes(), "allowedIp", nullSafe(allowedIp)));
+                Map.of("ttlMinutes", ttl.toMinutes(), "allowedIp", nullSafe(allowedIp),
+                        "operator", nullSafe(createdBy)));
         return new IssueResult(plain, now.plus(ttl), ttl.toSeconds());
     }
 
@@ -272,12 +268,43 @@ public class SlaAccessService {
         final SlaServiceAccountEntity account = accountRepository.findById(accountId)
                 .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId, ErrorCode.NOT_FOUND.status()));
         final LocalDateTime now = LocalDateTime.now();
-        final List<SlaRefreshTokenEntity> active = refreshTokenRepository.findByAccountIdAndRevokedAtIsNull(accountId);
-        active.forEach(token -> token.setRevokedAt(now));
-        refreshTokenRepository.saveAll(active);
+        final int revoked = revokeCredentials(account, now);
+        suspendJwtSubject(account);
         audit(AuditEventType.SLA_CREDENTIAL_REVOKED, subjectOf(account), "REVOKE",
-                Map.of("revoked", active.size(), "operator", nullSafe(operator)));
-        return active.size();
+                Map.of("revoked", revoked, "operator", nullSafe(operator)));
+        return revoked;
+    }
+
+    /**
+     * 启用或禁用 SLA 账号（issue #1212）。
+     *
+     * <p>禁用与「吊销」同义：吊销全部刷新凭据、作废全部未消费接入令牌、停用 {@code jwt_accounts}
+     * 里的主体，这样已签发的访问令牌在 {@code JwtAccountStatusVerifier} 复核时立刻失效。
+     * 启用只恢复账号本身的开关，<b>不会</b>自动恢复主体 —— 恢复接入需要重新签发接入令牌，
+     * 让「谁能重新进来」这件事始终留下一条签发记录。</p>
+     *
+     * @param accountId 账号主键
+     * @param enabled   目标状态
+     * @param operator  操作人
+     * @return 账号最新视图
+     */
+    @Transactional
+    public AccountView setAccountEnabled(final String accountId, final boolean enabled, final String operator) {
+        final SlaServiceAccountEntity account = accountRepository.findById(accountId)
+                .orElseThrow(() -> ApiException.of(ErrorCode.NOT_FOUND.code(), "SLA 账号不存在: " + accountId, ErrorCode.NOT_FOUND.status()));
+        if (Boolean.TRUE.equals(account.getEnabled()) == enabled) {
+            return toView(account);
+        }
+        account.setEnabled(enabled);
+        accountRepository.save(account);
+        if (!enabled) {
+            revokeCredentials(account, LocalDateTime.now());
+            suspendJwtSubject(account);
+        }
+        audit(enabled ? AuditEventType.SLA_ACCOUNT_ENABLED : AuditEventType.SLA_ACCOUNT_DISABLED,
+                nullSafe(operator), enabled ? "ENABLE" : "DISABLE",
+                Map.of("account", account.getName(), "subject", subjectOf(account)));
+        return toView(account);
     }
 
     /**
@@ -316,6 +343,9 @@ public class SlaAccessService {
                 .orElseThrow(() -> ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌无效", ErrorCode.TOKEN_REQUIRED.status()));
         if (row.getUsedAt() != null) {
             throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被使用", ErrorCode.TOKEN_REQUIRED.status());
+        }
+        if (row.getRevokedAt() != null) {
+            throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已被吊销", ErrorCode.TOKEN_REQUIRED.status());
         }
         if (row.getExpiresAt().isBefore(now)) {
             throw ApiException.of(ErrorCode.TOKEN_REQUIRED.code(), "SLA 接入令牌已过期", ErrorCode.TOKEN_REQUIRED.status());
@@ -358,7 +388,7 @@ public class SlaAccessService {
      * 账户表里被解析到；这里存的密码是随机值，意味着该账号<b>永远无法用密码登录</b>控制台，
      * 只能靠一次性令牌换来的凭据工作。</p>
      */
-    private void ensureJwtAccount(final SlaServiceAccountEntity account) {
+    private void ensureJwtAccount(final SlaServiceAccountEntity account, final boolean reactivate) {
         final String username = subjectOf(account);
         final JwtAccountEntity existing = jwtAccountRepository.findByUsername(username).orElse(null);
         final String rolesJson = writeRoles(account.getRoleTemplate());
@@ -374,8 +404,15 @@ public class SlaAccessService {
                     .build());
             return;
         }
+        final boolean suspended = existing.isDeletedAccount() || Boolean.FALSE.equals(existing.getEnabled());
+        if (suspended && !reactivate) {
+            throw ApiException.of(ErrorCode.FORBIDDEN.code(),
+                    "SLA 主体已停用（凭据被吊销或账号被禁用），请重新签发接入令牌",
+                    ErrorCode.FORBIDDEN.status());
+        }
         existing.setRoles(rolesJson);
         existing.setEnabled(true);
+        existing.setDeleted(false);
         existing.setUpdatedAt(LocalDateTime.now());
         jwtAccountRepository.save(existing);
     }
@@ -391,6 +428,57 @@ public class SlaAccessService {
      */
     private static String writeRoles(final String roleTemplate) {
         return "[\"" + roleTemplate + "\"]";
+    }
+
+    /**
+     * 吊销账号名下的全部刷新凭据，并作废全部「尚未被消费」的接入令牌（issue #1210）。
+     *
+     * <p>接入令牌不删行只置 {@code revokedAt}：删了就看不出「这枚令牌曾经存在、被谁拔掉」，
+     * 审计链条会断。已消费或已吊销的行不重复处理，返回值只统计本次真正被吊销的刷新凭据数，
+     * 与接口既有的 {@code revoked} 字段含义保持一致。</p>
+     */
+    private int revokeCredentials(final SlaServiceAccountEntity account, final LocalDateTime now) {
+        final List<SlaRefreshTokenEntity> active = refreshTokenRepository
+                .findByAccountIdAndRevokedAtIsNull(account.getAccountId());
+        active.forEach(token -> token.setRevokedAt(now));
+        refreshTokenRepository.saveAll(active);
+        final List<SlaBootstrapTokenEntity> pending = bootstrapTokenRepository
+                .findByAccountId(account.getAccountId()).stream()
+                .filter(token -> token.getUsedAt() == null && token.getRevokedAt() == null)
+                .toList();
+        pending.forEach(token -> token.setRevokedAt(now));
+        bootstrapTokenRepository.saveAll(pending);
+        return active.size();
+    }
+
+    /**
+     * 停用 {@code jwt_accounts} 里的 SLA 主体，让已签发的访问令牌立即失效（issue #1211）。
+     *
+     * <p>{@link JwtAccountStatusVerifier} 每个请求复核库里的账户状态，{@code enabled=false}
+     * 即拒绝，因此不必等访问令牌自然过期，也就不用引入一套令牌黑名单。</p>
+     */
+    private void suspendJwtSubject(final SlaServiceAccountEntity account) {
+        jwtAccountRepository.findByUsername(subjectOf(account)).ifPresent(existing -> {
+            if (Boolean.FALSE.equals(existing.getEnabled()) && !existing.isDeletedAccount()) {
+                return;
+            }
+            existing.setEnabled(false);
+            existing.setUpdatedAt(LocalDateTime.now());
+            jwtAccountRepository.save(existing);
+        });
+    }
+
+    private AccountView toView(final SlaServiceAccountEntity account) {
+        return new AccountView(
+                account.getAccountId(),
+                account.getName(),
+                account.getRoleTemplate(),
+                Boolean.TRUE.equals(account.getEnabled()),
+                account.getCreatedBy(),
+                account.getCreatedAt(),
+                account.getLastSeenAt(),
+                refreshTokenRepository.countByAccountIdAndRevokedAtIsNull(account.getAccountId()),
+                bootstrapTokenRepository.countByAccountIdAndUsedAtIsNull(account.getAccountId()));
     }
 
     private void touchLastSeen(final SlaServiceAccountEntity account) {

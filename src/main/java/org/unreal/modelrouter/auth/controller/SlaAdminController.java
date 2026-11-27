@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.service.SlaAccessService;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 
 import java.util.List;
 import java.util.Map;
@@ -92,12 +94,40 @@ public class SlaAdminController {
      * @return 吊销数量
      */
     @PostMapping("/accounts/{accountId}/revoke")
-    @Operation(summary = "吊销账号名下全部刷新凭据",
-            description = "轮换时先签发新令牌、SLA 切换完成后再调用本接口吊销旧凭据，不会中断采集。")
+    @Operation(summary = "吊销账号名下全部凭据",
+            description = "同时吊销刷新凭据、作废未消费的接入令牌、停用 jwt 主体："
+                    + "已签发的访问令牌在下一个请求即被拒。重新接入需再签发一枚接入令牌。")
     public RouterResponse<Map<String, Object>> revokeAll(
             @PathVariable final String accountId, final Authentication authentication) {
         final int revoked = slaAccessService.revokeAll(accountId, operatorOf(authentication));
         return RouterResponse.success(Map.of("revoked", revoked));
+    }
+
+    /**
+     * 启用或禁用 SLA 账号（issue #1212）。
+     *
+     * <p>禁用等价于「吊销 + 封存」：吊销全部凭据、作废未消费接入令牌、停用 {@code jwt_accounts}
+     * 主体，已签发的访问令牌随即失效。启用只恢复账号开关，不会自动恢复主体 —— 重新接入需要
+     * 重新签发一枚接入令牌，让「谁能回来」这件事始终有一条签发记录可查。</p>
+     *
+     * @param accountId      账号主键
+     * @param request        目标状态（缺字段按入参不合法拒绝，不默认成禁用）
+     * @param authentication 当前操作人
+     * @return 账号最新视图
+     */
+    @PostMapping("/accounts/{accountId}/enabled")
+    @Operation(summary = "启用或禁用 SLA 服务账号",
+            description = "禁用会连带吊销凭据并停用 jwt 主体，已签发访问令牌随即失效；重新启用不会自动恢复主体。")
+    public RouterResponse<SlaAccessService.AccountView> setAccountEnabled(
+            @PathVariable final String accountId,
+            @RequestBody final EnabledRequest request,
+            final Authentication authentication) {
+        if (request == null || request.enabled() == null) {
+            throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
+                    "缺少 enabled 字段（true 启用 / false 禁用）", ErrorCode.INVALID_REQUEST.status());
+        }
+        return RouterResponse.success(slaAccessService.setAccountEnabled(
+                accountId, request.enabled(), operatorOf(authentication)));
     }
 
     /**
@@ -130,6 +160,14 @@ public class SlaAdminController {
      * @param roleTemplate 角色模板（{@code SLA_READONLY} / {@code SLA_OPERATOR}）
      */
     public record CreateAccountRequest(String name, String roleTemplate) {
+    }
+
+    /**
+     * 启用/禁用请求体。
+     *
+     * @param enabled {@code true} 启用、{@code false} 禁用；为空视为入参不合法
+     */
+    public record EnabledRequest(Boolean enabled) {
     }
 
     /**

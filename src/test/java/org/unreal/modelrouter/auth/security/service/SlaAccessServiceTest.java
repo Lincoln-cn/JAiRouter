@@ -10,11 +10,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaBootstrapTokenEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaRefreshTokenEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaServiceAccountEntity;
@@ -106,6 +108,21 @@ class SlaAccessServiceTest {
                 .allowedIp(allowedIp)
                 .createdAt(LocalDateTime.now())
                 .version(0L)
+                .build();
+    }
+
+    private SlaBootstrapTokenEntity revokedBootstrapRow() {
+        final SlaBootstrapTokenEntity row = bootstrapRow(LocalDateTime.now().plusMinutes(5), null, null);
+        row.setRevokedAt(LocalDateTime.now());
+        return row;
+    }
+
+    private JwtAccountEntity jwtSubject(final boolean enabled, final boolean deleted) {
+        return JwtAccountEntity.builder()
+                .username(SUBJECT)
+                .roles("[\"SLA_READONLY\"]")
+                .enabled(enabled)
+                .deleted(deleted)
                 .build();
     }
 
@@ -212,6 +229,52 @@ class SlaAccessServiceTest {
 
             assertTrue(error.getMessage().contains("无效"));
         }
+
+        @Test
+        @DisplayName("被吊销的接入令牌不能再用（#1210）")
+        void rejectsRevoked() {
+            when(bootstrapTokenRepository.findByTokenHash(SlaAccessService.sha256(PLAIN_BOOTSTRAP)))
+                    .thenReturn(Optional.of(revokedBootstrapRow()));
+
+            ApiException error = assertThrows(ApiException.class,
+                    () -> service.bootstrap(PLAIN_BOOTSTRAP, "10.0.0.7").block());
+
+            assertTrue(error.getMessage().contains("已被吊销"));
+            verify(accountManager, never()).issueTokenForAccount(anyString());
+        }
+
+        @Test
+        @DisplayName("并发消费同一令牌：乐观锁冲突翻译成「已被使用」（#1221）")
+        void rejectsConcurrentDoubleSpend() {
+            SlaBootstrapTokenEntity row = bootstrapRow(LocalDateTime.now().plusMinutes(5), null, null);
+            when(bootstrapTokenRepository.findByTokenHash(SlaAccessService.sha256(PLAIN_BOOTSTRAP)))
+                    .thenReturn(Optional.of(row));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+            when(bootstrapTokenRepository.save(any()))
+                    .thenThrow(new ObjectOptimisticLockingFailureException(SlaBootstrapTokenEntity.class, "bt-1"));
+
+            ApiException error = assertThrows(ApiException.class,
+                    () -> service.bootstrap(PLAIN_BOOTSTRAP, "10.0.0.7").block());
+
+            assertTrue(error.getMessage().contains("已被使用"));
+            // 只有一方能换到凭据：冲突方不得再落一条刷新凭据
+            verify(refreshTokenRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("签发新接入令牌时恢复被停用的主体（#1212）")
+        void reactivatesSuspendedSubject() {
+            JwtAccountEntity subject = jwtSubject(false, false);
+            when(jwtAccountRepository.findByUsername(SUBJECT)).thenReturn(Optional.of(subject));
+            when(bootstrapTokenRepository.findByTokenHash(SlaAccessService.sha256(PLAIN_BOOTSTRAP)))
+                    .thenReturn(Optional.of(bootstrapRow(LocalDateTime.now().plusMinutes(5), null, null)));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            assertNotNull(service.bootstrap(PLAIN_BOOTSTRAP, "10.0.0.7").block());
+
+            assertTrue(Boolean.TRUE.equals(subject.getEnabled()), "重新接入应恢复主体");
+            verify(jwtAccountRepository).save(subject);
+        }
     }
 
     @Nested
@@ -261,6 +324,23 @@ class SlaAccessServiceTest {
 
             assertTrue(error.getMessage().contains("已过期"));
         }
+
+        @Test
+        @DisplayName("主体被停用时刷新被拒且不自行复活（#1212）")
+        void rejectsSuspendedSubject() {
+            JwtAccountEntity subject = jwtSubject(false, false);
+            when(refreshTokenRepository.findByTokenHash(SlaAccessService.sha256(PLAIN_REFRESH)))
+                    .thenReturn(Optional.of(refreshRow(LocalDateTime.now().plusDays(30), null)));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+            when(jwtAccountRepository.findByUsername(SUBJECT)).thenReturn(Optional.of(subject));
+
+            ApiException error = assertThrows(ApiException.class,
+                    () -> service.refresh(PLAIN_REFRESH, "10.0.0.7").block());
+
+            assertTrue(error.getMessage().contains("主体已停用"));
+            assertFalse(Boolean.TRUE.equals(subject.getEnabled()), "刷新不得自行恢复主体");
+            verify(accountManager, never()).issueTokenForAccount(anyString());
+        }
     }
 
     @Nested
@@ -285,6 +365,17 @@ class SlaAccessServiceTest {
                     () -> service.createAccount("builder", "SLA_ROOT", "admin"));
 
             assertTrue(error.getMessage().contains("不支持的角色模板"));
+        }
+
+        @Test
+        @DisplayName("新建账号写一条 SLA_ACCOUNT_CREATED，主体记操作员（#1220）")
+        void createsAccountWithAudit() {
+            service.createAccount("builder", "SLA_READONLY", "alice");
+
+            ArgumentCaptor<SecurityAuditEvent> auditCaptor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
+            verify(securityAuditService).recordEvent(auditCaptor.capture());
+            assertEquals(AuditEventType.SLA_ACCOUNT_CREATED.name(), auditCaptor.getValue().getEventType());
+            assertEquals("alice", auditCaptor.getValue().getUserId());
         }
 
         @Test
@@ -329,6 +420,68 @@ class SlaAccessServiceTest {
         }
 
         @Test
+        @DisplayName("吊销同时作废未消费的接入令牌（#1210）")
+        void revokesPendingBootstrapTokens() {
+            SlaBootstrapTokenEntity pending = bootstrapRow(LocalDateTime.now().plusMinutes(10), null, null);
+            SlaBootstrapTokenEntity consumed = bootstrapRow(LocalDateTime.now().plusMinutes(10), LocalDateTime.now(), null);
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+            when(bootstrapTokenRepository.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(pending, consumed));
+
+            service.revokeAll(ACCOUNT_ID, "admin");
+
+            assertNotNull(pending.getRevokedAt(), "未消费的接入令牌必须被作废");
+            assertTrue(consumed.getRevokedAt() == null, "已消费的令牌不需要再打吊销标记");
+        }
+
+        @Test
+        @DisplayName("吊销同时停用 jwt 主体，已签发访问令牌随即失效（#1211）")
+        void revokeSuspendsJwtSubject() {
+            JwtAccountEntity subject = jwtSubject(true, false);
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+            when(jwtAccountRepository.findByUsername(SUBJECT)).thenReturn(Optional.of(subject));
+
+            service.revokeAll(ACCOUNT_ID, "admin");
+
+            assertTrue(Boolean.FALSE.equals(subject.getEnabled()), "吊销应停用主体");
+            verify(jwtAccountRepository).save(subject);
+        }
+
+        @Test
+        @DisplayName("禁用账号：置 enabled=false、吊销凭据、停用主体并写审计（#1212）")
+        void disablesAccount() {
+            SlaServiceAccountEntity account = account(true, "SLA_READONLY");
+            SlaRefreshTokenEntity active = refreshRow(LocalDateTime.now().plusDays(30), null);
+            JwtAccountEntity subject = jwtSubject(true, false);
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account));
+            when(refreshTokenRepository.findByAccountIdAndRevokedAtIsNull(ACCOUNT_ID)).thenReturn(List.of(active));
+            when(jwtAccountRepository.findByUsername(SUBJECT)).thenReturn(Optional.of(subject));
+
+            SlaAccessService.AccountView view = service.setAccountEnabled(ACCOUNT_ID, false, "admin");
+
+            assertFalse(view.enabled());
+            assertFalse(Boolean.TRUE.equals(account.getEnabled()));
+            assertNotNull(active.getRevokedAt());
+            assertTrue(Boolean.FALSE.equals(subject.getEnabled()));
+
+            ArgumentCaptor<SecurityAuditEvent> auditCaptor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
+            verify(securityAuditService).recordEvent(auditCaptor.capture());
+            assertEquals(AuditEventType.SLA_ACCOUNT_DISABLED.name(), auditCaptor.getValue().getEventType());
+            assertEquals("admin", auditCaptor.getValue().getUserId(), "账号状态类事件记操作员，不记 sla: 主体");
+        }
+
+        @Test
+        @DisplayName("重复启用是幂等的：不重复吊销、不写审计")
+        void enableIsIdempotent() {
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            SlaAccessService.AccountView view = service.setAccountEnabled(ACCOUNT_ID, true, "admin");
+
+            assertTrue(view.enabled());
+            verify(securityAuditService, never()).recordEvent(any());
+            verify(refreshTokenRepository, never()).findByAccountIdAndRevokedAtIsNull(anyString());
+        }
+
+        @Test
         @DisplayName("列表带出未消费令牌数与有效凭据数")
         void listsAccounts() {
             when(accountRepository.findAllByOrderByCreatedAtDesc())
@@ -351,13 +504,15 @@ class SlaAccessServiceTest {
             when(refreshTokenRepository.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(refreshRow(LocalDateTime.now(), null)));
             when(bootstrapTokenRepository.findByAccountId(ACCOUNT_ID))
                     .thenReturn(List.of(bootstrapRow(LocalDateTime.now(), null, null)));
+            JwtAccountEntity subject = jwtSubject(true, false);
+            when(jwtAccountRepository.findByUsername(SUBJECT)).thenReturn(Optional.of(subject));
 
             service.deleteAccount(ACCOUNT_ID, "admin");
 
             verify(refreshTokenRepository).deleteAll(any());
             verify(bootstrapTokenRepository).deleteAll(any());
             verify(accountRepository).delete(any(SlaServiceAccountEntity.class));
-            verify(jwtAccountRepository, never()).delete(any());
+            verify(jwtAccountRepository).delete(subject);
         }
     }
 

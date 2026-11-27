@@ -43,6 +43,9 @@ public enum AuditEventType {
     SLA_BOOTSTRAP_CONSUMED, // SLA 一次性接入令牌被消费（换取长期凭据）
     SLA_REFRESH,            // SLA 用刷新凭据换新访问令牌
     SLA_CREDENTIAL_REVOKED, // SLA 凭据被吊销
+    SLA_ACCOUNT_CREATED,    // SLA 账号被创建（issue #1220）
+    SLA_ACCOUNT_DISABLED,   // SLA 账号被禁用（连带吊销凭据与停用主体）
+    SLA_ACCOUNT_ENABLED,    // SLA 账号被重新启用（不自动恢复主体）
 
     // 登录保护（issue #1176）：锁定阈值变更与手动解锁
     LOGIN_GUARD_CONFIG_CHANGED, // 登录保护阈值变更

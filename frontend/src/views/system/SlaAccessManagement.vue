@@ -75,6 +75,13 @@
             <el-tag size="small" effect="plain">{{ row.roleTemplate }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column :label="t('slaAccess.colStatus')" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.enabled ? 'success' : 'info'" size="small" effect="plain">
+              {{ row.enabled ? t('slaAccess.statusEnabled') : t('slaAccess.statusDisabled') }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('slaAccess.colRefreshTokens')" width="110" align="center">
           <template #default="{ row }">{{ row.activeRefreshTokens }}</template>
         </el-table-column>
@@ -90,8 +97,20 @@
         <el-table-column :label="t('slaAccess.colCreator')" min-width="110">
           <template #default="{ row }">{{ row.createdBy || '—' }}</template>
         </el-table-column>
-        <el-table-column :label="t('slaAccess.colActions')" width="230" fixed="right">
+        <el-table-column :label="t('slaAccess.colActions')" width="320" fixed="right">
           <template #default="{ row }">
+            <ConfirmAction
+              v-permission="'system:sla:manage'"
+              :title="row.enabled ? t('slaAccess.disableConfirm') : t('slaAccess.enableConfirm')"
+              :width="300"
+              :confirm-text="row.enabled ? t('slaAccess.disable') : t('slaAccess.enable')"
+              :type="row.enabled ? 'warning' : 'primary'"
+              @confirm="handleToggleEnabled(row)"
+            >
+              <el-button link :type="row.enabled ? 'warning' : 'primary'" size="small">
+                {{ row.enabled ? t('slaAccess.disable') : t('slaAccess.enable') }}
+              </el-button>
+            </ConfirmAction>
             <el-button
               v-permission="'system:sla:manage'"
               link
@@ -232,6 +251,7 @@ import {
   getSlaAccounts,
   issueSlaBootstrap,
   revokeSlaCredentials,
+  setSlaAccountEnabled,
   type SlaAccount,
   type SlaBootstrapIssue
 } from '@/api/sla'
@@ -377,6 +397,20 @@ async function copyToken(): Promise<void> {
     ElMessage.success(t('slaAccess.copySuccess'))
   } catch {
     ElMessage.error(t('slaAccess.copyFailed'))
+  }
+}
+
+async function handleToggleEnabled(account: SlaAccount): Promise<void> {
+  try {
+    await setSlaAccountEnabled(account.accountId, !account.enabled)
+    ElMessage.success(
+      account.enabled ? t('slaAccess.disableSuccess') : t('slaAccess.enableSuccess')
+    )
+    await loadAccounts()
+  } catch (error) {
+    ElMessage.error(
+      errorMessage(error, account.enabled ? t('slaAccess.disableFailed') : t('slaAccess.enableFailed'))
+    )
   }
 }
 

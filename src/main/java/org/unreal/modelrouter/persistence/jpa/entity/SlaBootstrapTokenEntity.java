@@ -24,6 +24,10 @@ import java.time.LocalDateTime;
  *
  * <p>可选绑定来源 IP（{@code allowedIp}）与固定 15 分钟 TTL 一起构成两道收敛：即使令牌被
  * 截获，也只能在使用方发起的那段时间窗口里、从那个地址换一次凭据。</p>
+ *
+ * <p>管理侧「吊销」会写 {@code revokedAt} 而不是复用 {@code usedAt}：两者在审计上语义不同 ——
+ * 前者是管理员主动作废（issue #1210），后者是令牌真的被换取过。分开记才能回答
+ * 「这枚令牌是被用了，还是被拔掉了」。</p>
  */
 @Data
 @Builder
@@ -56,6 +60,15 @@ public class SlaBootstrapTokenEntity {
     /** 被消费的时间；非空即视为已作废。 */
     @Column(name = "used_at")
     private LocalDateTime usedAt;
+
+    /**
+     * 被吊销的时间；非空即视为作废（issue #1210）。
+     *
+     * <p>与 {@link #usedAt} 区分：吊销是管理动作，消费是使用方动作。两者互不影响，
+     * 校验时任一非空都拒绝。</p>
+     */
+    @Column(name = "revoked_at")
+    private LocalDateTime revokedAt;
 
     /** 允许使用该令牌的来源 IP（为空表示不限制）。 */
     @Column(name = "allowed_ip", length = 64)

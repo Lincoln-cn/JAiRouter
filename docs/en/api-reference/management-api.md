@@ -162,7 +162,7 @@ Response `data`:
 - A disabled account returns 403.
 - The plaintext appears only at issuance and in this response; the database stores SHA-256.
 - `expiresIn` is in **seconds** (default 3600); the same applies to `refresh`.
-- Failure semantics: missing / invalid / already used / expired token ⇒ `401`; bound IP mismatch or
+- Failure semantics: missing / invalid / already used / revoked / expired token ⇒ `401`; bound IP mismatch or
   disabled account ⇒ `403`; unknown account ⇒ `404`.
 
 ##### `POST /api/auth/sla/refresh`
@@ -177,6 +177,8 @@ Response `data`: `{ "accessToken": "...", "expiresIn": 3600 }`.
 
 - The refresh credential lives 90 days by default and rolls forward on every use (`lastUsedAt`, `expiresAt`, `clientIp` updated).
 - Revoked ⇒ "SLA refresh credential has been revoked"; expired ⇒ "SLA refresh credential has expired".
+- A suspended login principal (credentials revoked or account disabled) ⇒ `403`, and the principal is **not**
+  revived automatically: reconnecting requires a newly issued bootstrap token.
 
 #### Base path: `/api/security/sla` (needs `system:sla:read` / `system:sla:manage`)
 
@@ -205,8 +207,33 @@ Both fields are optional (defaults: 15 minutes, any IP). Response: `{ "bootstrap
 
 ##### `POST /api/security/sla/accounts/{accountId}/revoke`
 
-Revokes every active refresh credential of that account and returns `{ "revoked": 2 }`. Refresh fails immediately afterwards;
-already-issued access tokens simply expire.
+Revokes every credential of that account and returns `{ "revoked": 2 }` (the number of refresh credentials revoked in this call).
+One call does three things:
+
+1. every refresh credential gets `revoked_at`, so the next refresh fails immediately;
+2. every unconsumed bootstrap token is invalidated as well (also flagged with `revoked_at`, never deleted, so the audit trail survives);
+3. the matching `sla:<name>` principal in `jwt_accounts` is set to `enabled=false`.
+
+Step 3 makes **already-issued access tokens fail on their very next request** (the principal is re-checked on every request)
+instead of waiting for them to expire. The trade-off is that revoking cannot be used for a zero-downtime "issue new, then revoke old"
+rotation: after a revoke the account has to be issued a new bootstrap token to come back.
+
+> Reconnect in the order "revoke, then issue": a new bootstrap token restores the principal, so doing it the other way around lets
+> old access tokens come back to life for the remainder of their lifetime.
+
+##### `POST /api/security/sla/accounts/{accountId}/enabled`
+
+Enables or disables the account.
+
+```json
+{ "enabled": false }
+```
+
+`enabled` must be given explicitly (a missing field returns `400`; it never defaults to disabling). Disabling equals
+"revoke plus seal": every refresh credential is revoked, unconsumed bootstrap tokens are invalidated and the `jwt_accounts`
+principal is suspended, so issued access tokens stop working immediately. Enabling only restores the account switch and
+does **not** restore the principal — a bootstrap token still has to be issued before the SLA can reconnect.
+Returns the updated account view with the same fields as the list endpoint. Requires `system:sla:manage`.
 
 ##### `DELETE /api/security/sla/accounts/{accountId}`
 
