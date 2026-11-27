@@ -64,7 +64,7 @@ surfaces:
   - /actuator/**  # 健康、就绪、Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   约 600 个测试类、约 5,100 个测试方法
+  scale:   650+ 个测试类、5,400+ 个测试方法
 license: Apache-2.0
 ```
 
@@ -77,6 +77,10 @@ Micrometer 与 Prometheus，外加一个读起来像管理后台的控制台。
 
 它不打算做万能代理。它要做一个**中小规模部署里真正能运维**的网关：授权细到权限码，
 审计经得起事后翻阅，配置改了不用重启。
+
+适合：栈里已有 JVM 与容器化运维、要自托管推理集群、需要在网关里做权限与审计分层。
+
+不适合：只做多渠道转发与计费（看 One-API / new-api）、需要通用 L7 网关能力（看 Nginx / Kong）、不愿自建而要交给 SaaS 代理（本项目没有 SaaS 形态）。
 
 ## 它是什么
 
@@ -169,7 +173,7 @@ Xinference、LocalAI——以及云端供应商（OpenAI、Anthropic、Gemini，
 所以不用准备 GPU、不用申请 API Key、也不用装 JDK。
 
 ```bash
-docker compose -f deploy/demo/docker-compose.yml pull        # 拿到 v3.8.1 及之后的镜像
+docker compose -f deploy/demo/docker-compose.yml pull        # 拿到当前镜像
 docker compose -f deploy/demo/docker-compose.yml up -d      # 等两个容器都 healthy
 node scripts/demo/run-demo.mjs
 ```
@@ -267,7 +271,7 @@ print(response.choices[0].message.content)
 | `src/main/java/org/unreal/modelrouter/config/` | 配置服务：热重载、版本与回滚、校验、控制台接口 |
 | `src/main/resources/config/**` | 模块化 YAML 配置，由 `application.yml` 的 `spring.config.import` 引入 |
 | `src/main/resources/db/migration/{h2,postgres}/` | 版本化 schema 迁移（`Flyway`），两种方言各一个目录 |
-| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`；约 5,100 个测试方法 |
+| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`；5,400+ 个测试方法 |
 | `frontend/` | Vue 3 + TypeScript 控制台（Vite `base: /admin/`） |
 | `docs/zh/`、`docs/en/` | MkDocs 文档，中英保持对称 |
 | `deploy/` | Kubernetes 清单、compose 文件、部署脚本 |
@@ -314,35 +318,30 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 - **JWT** —— 头名可配置，默认 `Jairouter_Token`。
 - **API Key** —— 头 `X-API-Key`。网关凭据与下游供应商密钥彻底分离：`x-api-key` 只被网关消费、
   绝不透传，实例级下游凭据请放在该实例自己的 `headers.Authorization`。
-- **RBAC** —— 数据驱动：76 个权限码、6 个角色模板（`ADMIN` / `OPERATOR` / `USER` / `VIEWER`）、
+- **RBAC** —— 数据驱动：79 个权限码、7 个角色模板（`ADMIN` / `OPERATOR` / `USER` / `VIEWER` / `AUDITOR` / `SLA_READONLY` / `SLA_OPERATOR`）、
   URL 规则矩阵 + 方法级 `@PreAuthorize`。未命中任何规则的请求按
   `jairouter.security.rbac.unmatched-policy` 处理，默认 `DENY_ALL`；`ROLE_ADMIN` 恒直通。
   `/v1/**` 需要认证，但有意不进权限矩阵。
 
-## 能力清单
+## 实现口径与默认值
 
-已实现、且有测试套件覆盖：
+上文列的是功能面。这一节列运维真正会碰到的默认值与边界，取值都来自代码：
 
-- **适配器** —— Ollama、vLLM、GPUStack、Xinference、LocalAI、OpenAI、Anthropic（原生）、
-  Gemini（原生），以及在 `adapter-definitions` 里声明的任意 OpenAI 兼容厂商。
-- **负载均衡** —— 轮询、加权、最少连接、IP 哈希、一致性哈希、EWMA 延迟感知、随机。
-- **规则引擎** —— 按模型、服务类型、请求头、客户端 IP、权重、实例标签做条件路由，带命中统计；
-  控制台可视化编辑。
-- **韧性** —— 实例级熔断、请求级失败转移到另一健康实例、限流（令牌桶 / 漏桶 / 滑动窗口）、
-  确定性请求的响应缓存（可选开启，按租户隔离键）。
-- **配额** —— 多维度、多窗口账本（`MINUTE`/`HOUR`/`DAY`/`MONTH`），Redis 分布式计数并本地降级
-  （`jairouter.quota.enabled`，默认关闭）。
+- **韧性** —— 实例级熔断、请求级失败转移到另一健康实例、令牌桶 / 漏桶 / 滑动窗口限流、
+  确定性请求的响应缓存（可选，按租户隔离键）。
+- **配额** —— 多维度、多窗口账本（`MINUTE`/`HOUR`/`DAY`/`MONTH`），Redis 分布式计数并本地降级。
+  **默认关闭**（`jairouter.quota.enabled`）。
 - **记录治理** —— 调用历史三档：仅元数据 / 脱敏摘要 / AES-256-GCM 加密全文；解密端点仅 ADMIN。
-- **可观测性** —— Prometheus 指标、OpenTelemetry 链路追踪、慢查询分析、错误追踪、安全告警。
+- **可观测性** —— Prometheus 指标、OpenTelemetry 链路、慢查询分析、错误追踪、安全告警。
   告警出口被有意限定为 **Prometheus 指标 + 结构化日志**——仓内不实现任何推送通道
   （邮件/Webhook/IM），请在 Alertmanager 或日志平台里接。
-- **持久化** —— 默认 H2；当 `DATABASE_URL` 指向 PostgreSQL 时用 PostgreSQL（配 `Flyway` 迁移）；
-  多副本部署用 Redis 承载共享状态。
+- **持久化** —— 默认 H2；`DATABASE_URL` 指向 PostgreSQL 时切 PostgreSQL（`Flyway` 迁移）；
+  多副本用 Redis 承载共享状态。
 - **多副本** —— 跨副本事件广播、共享限流/配额计数、定时任务的分布式锁（含告警冷却）。
-- **控制台** —— `/admin/` 的 Vue 3 界面：服务、实例、适配器、规则、版本与回滚、配额、调用历史、
-  链路追踪、告警、API Key、RBAC，深/浅主题，中英双语。
+- **语义缓存** —— SimHash 近似复用非流式响应。**默认关闭**（`jairouter.semantic-cache.enabled`）。
+- **控制台** —— 与网关同一个 jar，在 `/admin/` 提供；中英双语 + 明暗主题。
 
-未实现：仓内通知推送。**语义缓存**（用 SimHash 近似复用非流式响应）已提供但默认关闭，见 `jairouter.semantic-cache.enabled`。
+未实现：仓内通知推送。
 逐版本说明见[更新日志](docs/zh/reference/changelog.md)。
 
 ## 架构
@@ -378,7 +377,11 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 控制台导览
 
-控制台是一个 Vue 3 单页应用，由同一个 Spring Boot jar 在 `/admin/` 提供 —— 不用单独部署前端容器，也不额外占端口。界面双语（zh-CN / en-US），自带亮色与暗色主题。下面的截图都取自运行中的实例（演示数据），因此需要流量累积的面板显示的是空态，而不是专门摆拍的界面。
+控制台是 Vue 3 单页应用，由同一个 Spring Boot jar 在 `/admin/` 提供 —— 不用单独部署前端容器，也不额外占端口。界面双语（zh-CN / en-US），自带亮色与暗色主题。
+
+侧栏是 **8 个分组、39 个菜单项、53 个页面**：同一菜单项下的多个页面收为 tab，每组菜单项不超过 8 个 —— 所以五十多个页面不会变成五十多行侧栏。菜单可见性由权限码决定，缺码的项直接不渲染，而不是点了才报 403。
+
+下面四节是这个控制台平时怎么用。逐页读法、路径速查与排查动线见[Web 控制台操作手册](docs/zh/getting-started/web-console.md)。截图都取自运行中的实例（演示数据），因此需要流量累积的面板显示的是空态，不是摆拍。
 
 ### 指挥中心 —— 一屏回答「哪里坏了」
 
@@ -388,85 +391,35 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 顶部那一行是这套部署的清单：服务、实例、模型、健康实例数、不健康实例数、账号数。下面是与「要不要重启」直接相关的系统指标 —— JVM 内存、线程数、CPU 负载、运行时长、认证成功与失败、审计事件 —— 以及一条**治理链**，报告每个请求都要经过的四个环节各自的状态：规则命中、限流、断路器、负载均衡。客户端报错时，先在这里判断是哪一环出的问题。
 
-### 服务管理 —— 服务类型、适配器与策略
+### 服务与实例 —— 从三元组到真实端点
 
 <p align="center">
   <img src="screenshots/service-management-zh-CN-light.png" alt="服务管理 —— 服务类型、适配器与负载均衡策略">
 </p>
 
-一个服务就是（服务类型、适配器、负载均衡策略）三元组。列表里是网关能提供的七种服务类型 —— 对话、向量化、重排、语音转文字、文字转语音、图像生成、图像编辑 —— 各自绑定一个适配器（GPUStack、vLLM、Ollama、OpenAI……）和一套策略，从轮询到最少连接、IP 哈希。页面顶部的四步引导就是接一个新后端该走的顺序：配置适配器 → 创建服务 → 添加实例 → 去演练场试一次。适配器配错了会在第一步就暴露，而不是等第一个真实请求打进来。
+一个服务就是（服务类型、适配器、负载均衡策略）三元组，覆盖对话、向量化、重排、语音转文字、文字转语音、图像生成、图像编辑七类；一个实例就是一个真实端点：Base URL、路径、权重、单实例请求头与标签。每一行实例自带限流与断路器，某个上游出问题时可以只隔离它、只修它。
 
-### 实例管理 —— 服务背后的真实端点
+页面顶部的四步引导就是接新后端的顺序：配置适配器 → 创建服务 → 添加实例 → 去演练场试一次 —— 适配器配错会在第一步就暴露，而不是等第一个真实请求打进来。路由规则在任何负载均衡决策之前生效，命中计数实时更新，所以一条从不命中的规则是看得见的。
 
-<p align="center">
-  <img src="screenshots/instance-management-zh-CN-light.png" alt="实例管理 —— Base URL、权重、请求头、标签与单实例控制">
-</p>
-
-一个实例就是一个真实端点：Base URL、路径、权重、单实例请求头与标签，按服务类型分页签。权重供加权类策略使用，标签供规则条件使用，单实例请求头则是让下游凭据只留在那一个上游的写法。每一行都自带限流与断路器，某个上游出问题时可以只隔离它、只修它，不用动整个服务。
-
-### 路由规则 —— 条件、优先级与目标
-
-<p align="center">
-  <img src="screenshots/rule-management-zh-CN-light.png" alt="路由规则 —— 条件、优先级、命中计数与目标实例">
-</p>
-
-规则在任何负载均衡决策之前生效。上图这条规则把请求头 `x-tenant` 等于 `tenant-a` 的请求以优先级 90 固定到 `internal-gpu-1`。规则可以拖拽排序，可以停用而不必删除，命中计数是实时更新的 —— 所以一条从不命中的规则是看得见的，不会悄悄变成死配置。常用形态（租户固定、灰度分流、按请求头 A/B）有模板可直接套。
-
-### 调用历史分析 —— 三档记录，一个看板
+### 观测与记录 —— 三档记录，一个看板
 
 <p align="center">
   <img src="screenshots/call-history-dashboard-zh-CN-light.png" alt="调用历史看板 —— 统计卡、每日趋势、模型与服务类型分布">
 </p>
 
-每一次调用都按三档之一记录 —— 仅元数据、脱敏摘要、AES-256-GCM 加密全文 —— 这个页面把记录收敛成运维真正要看的数：总请求与失败请求、成功率、平均响应时间、Token 消耗与单请求均值，再往下是每日趋势、Top 10 模型、服务类型构成和 24 小时分布。顶部的时间范围会一次性筛掉所有面板，原始记录就在旁边的页签里。
+每次调用按三档之一记录 —— 仅元数据、脱敏摘要、AES-256-GCM 加密全文 —— 这个页面把记录收敛成运维真正要看的数：总请求与失败请求、成功率、平均响应时间、Token 消耗与单请求均值，再往下是每日趋势、Top 10 模型、服务类型构成与 24 小时分布。
 
-### 慢查询分析 —— 延迟到底花在哪
+慢查询分析回答「延迟到底花在哪」：按操作归类给出次数、平均、最大、最小与总耗时，旁边两个数字是告警**触发**与**抑制**。抑制走冷却逻辑 —— 同一热点持续越过阈值只记一次，所以「抑制多、触发少」是设计在正常工作，而不是阈值坏了。
 
-<p align="center">
-  <img src="screenshots/extra-slow-query-analysis-zh-CN-light.png" alt="慢查询分析 —— 慢查询计数、按操作类型的耗时与告警统计">
-</p>
-
-慢查询会被计数、按操作归类，并给出每组的次数、平均、最大、最小与总耗时，另有一张热点表指向最差的那几个。右侧两个数字容易读错：告警**触发**次数与告警**抑制**次数。抑制走的是冷却逻辑 —— 同一个热点持续越过阈值只记一次，之后安静下来，所以「抑制多、触发少」是设计在正常工作，而不是阈值坏了。
-
-### AI 演练场 —— 接客户端之前先验模型
+### 演练场与接入 —— 接客户端之前先验模型
 
 <p align="center">
   <img src="screenshots/playground-chat-zh-CN-light.png" alt="AI 演练场 —— 对话、向量化、重排、语音与图像测试台">
 </p>
 
-一个模型选择器后面挂了五个测试台：对话、向量化、重排、语音服务与图像服务。验证一个新加入的实例能不能正确应答，这是最快的路径 —— 凭据、路由与记录治理都和真实客户端一致，但请求和流式响应都直接显示在页面上。没选模型之前发送是禁用的，不会出现「点了没反应」。
+一个模型选择器后面挂了五个测试台：对话、向量化、重排、语音服务与图像服务。凭据、路由与记录治理都和真实客户端一致，但请求与流式响应直接显示在页面上 —— 验证一个新加入的实例能不能正确应答，这是最快的路径。没选模型之前发送是禁用的，不会出现「点了没反应」。
 
-### 配额运行时配置 —— 哪些立即生效，哪些要重启
-
-<p align="center">
-  <img src="screenshots/quota-config-zh-CN-light.png" alt="配额运行时配置 —— 热改配置与需重启的只读字段">
-</p>
-
-配额设置按「生效代价」分成两类。**可热改**的 —— 启用配额、失败放行（Fail Open）、统计窗口（分钟 / 小时 / 天 / 月）—— 保存即生效。**需重启**的字段是只读的、带角标说明，而不是让人改完才发现没生效。页面顶部的状态条会把当前实际状态摊开：启用还是关闭、存储后端（本地或 Redis）、是否失败放行、刷写间隔。配额默认关闭，这里就是打开它的地方。
-
-### 配额用量监控 —— 多维筛选，且如实说明自身状态
-
-<p align="center">
-  <img src="screenshots/quota-monitoring-zh-CN-light.png" alt="配额用量监控 —— 后端类型、降级状态与多维度筛选">
-</p>
-
-用量可以同时按六个维度筛 —— 租户、API Key、用户、服务类型、模型、窗口 —— 按租户对账或按 Key 复盘事故都不必先导出数据。上方四张状态卡先回答真正该问的问题（账本是否启用、用的是哪个后端、是否降级、有几个活跃窗口），再展示数字；没有数据时它直接说明原因（配额账本未启用），而不是渲染一张空表让人猜。
-
-### 客户端接入指引 —— 一页带一个团队上手
-
-<p align="center">
-  <img src="screenshots/client-access-zh-CN-light.png" alt="客户端接入指引 —— Base URL、认证头、curl 与 OpenAI SDK 示例">
-</p>
-
-新团队应该第一个打开的页面：Base URL、`X-API-Key` 请求头、`GET /v1/models`、`POST /v1/chat/completions` 及其流式写法，然后是同一段调用的 `curl` 版本与 OpenAI Python SDK 版本，每个块都有复制按钮。Base URL 取自这个实例自己的配置，所以复制到的就是这台网关实际对外提供的地址。
-
-### 暗色主题
-
-<p align="center">
-  <img src="screenshots/dashboard-zh-CN-dark.png" alt="指挥中心的暗色主题">
-</p>
-
-同一个控制台，内置暗色主题 —— 顶栏一个开关，不需要另起构建，也不用加查询参数。zh-CN / en-US 切换就在它旁边。
+给外部团队用的那一页是客户端接入指引：Base URL、`X-API-Key` 请求头、`GET /v1/models` 与 `POST /v1/chat/completions`（含流式写法），然后是同一段调用的 `curl` 与 OpenAI Python SDK 版本，每块都有复制按钮。Base URL 取自这台网关自己的配置，复制到的就是它实际对外提供的地址。
 
 ## 状态
 
@@ -498,10 +451,8 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 | 能力 | JAiRouter | Nginx | One-API | LangChain |
 |------|:---------:|:-----:|:-------:|:---------:|
-| OpenAI 兼容 | ✅ | ❌ | ✅ | ✅ |
 | 负载均衡 | ✅ | ✅ | ✅ | ❌ |
 | 熔断 | ✅ | ❌ | ❌ | ❌ |
-| 限流 | ✅ | ✅ | ✅ | ❌ |
 | Web 控制台 | ✅ | ❌ | ✅ | ❌ |
 | 配置热重载 | ✅ | ❌ | ✅ | ❌ |
 | 版本管理 | ✅ | ❌ | ❌ | ❌ |
@@ -516,7 +467,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 提 PR 前请先跑：
 
 ```bash
-./mvnw test -o                       # 约 600 个测试类、约 5,100 个测试方法，必须保持全绿
+./mvnw test -o                       # 650+ 个测试类、5,400+ 个测试方法，必须保持全绿
 cd frontend && npm run type-check    # 前端类型门闩
 ```
 

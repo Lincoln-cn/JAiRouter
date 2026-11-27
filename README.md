@@ -65,7 +65,7 @@ surfaces:
   - /actuator/**  # health, readiness, Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   ~5,100 test methods across ~600 test classes
+  scale:   5,400+ test methods across 650+ test classes
 license: Apache-2.0
 ```
 
@@ -80,6 +80,9 @@ Micrometer and Prometheus, and a console that reads like an admin page.
 It is not a universal proxy. It is an operable gateway for a small-to-mid deployment:
 authorization down to permission codes, audit that survives review, and configuration you can
 change without a restart.
+Fits: you already run JVM services and container ops, you host your own inference cluster, and you want permissions and audit layered in at the gateway.
+
+Does not fit: pure multi-channel forwarding and billing (see One-API / new-api), general-purpose L7 gateway duties (see Nginx / Kong), or anything that must be handed to a SaaS proxy — this project has no SaaS form.
 
 ## What it is
 
@@ -192,7 +195,7 @@ response cache, and reversible sanitization. A mock upstream stands in for a rea
 no GPU to provision, no API key to obtain, and no JDK to install.
 
 ```bash
-docker compose -f deploy/demo/docker-compose.yml pull        # v3.8.1 or newer
+docker compose -f deploy/demo/docker-compose.yml pull        # current image
 docker compose -f deploy/demo/docker-compose.yml up -d      # wait until both are healthy
 node scripts/demo/run-demo.mjs
 ```
@@ -299,7 +302,7 @@ Details worth knowing:
 | `src/main/java/org/unreal/modelrouter/config/` | Configuration service: hot reload, versioning/rollback, validation, console API |
 | `src/main/resources/config/**` | Modular YAML config, imported via `spring.config.import` in `application.yml` |
 | `src/main/resources/db/migration/{h2,postgres}/` | Versioned schema migrations (`Flyway`), one dialect directory each |
-| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`; ~5,100 test methods |
+| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`; 5,400+ test methods |
 | `frontend/` | Vue 3 + TypeScript console (Vite `base: /admin/`) |
 | `docs/zh/`, `docs/en/` | MkDocs documentation, kept symmetrical |
 | `deploy/` | Kubernetes manifests, compose files, deployment scripts |
@@ -348,41 +351,37 @@ Error bodies are protocol-shaped per surface: on `/v1/messages` an Anthropic-sha
 - **API key** — header `X-API-Key`. Gateway credentials are separate from downstream provider keys:
   `x-api-key` is consumed by the gateway and never forwarded, so per-instance downstream credentials
   belong in the instance's own `headers.Authorization`.
-- **RBAC** — data-driven: 76 permission codes, 6 role templates (`ADMIN` / `OPERATOR` / `USER` /
-  `VIEWER`), a URL rule matrix plus method-level `@PreAuthorize`. Requests that match no rule follow
+- **RBAC** — data-driven: 79 permission codes, 7 role templates (`ADMIN` / `OPERATOR` / `USER` / `VIEWER` / `AUDITOR` / `SLA_READONLY` / `SLA_OPERATOR`), a URL rule matrix plus method-level
+  `@PreAuthorize`. Requests that match no rule follow
   `jairouter.security.rbac.unmatched-policy`, whose default is `DENY_ALL`; `ROLE_ADMIN` short-circuits
   everything. `/v1/**` is authenticated but intentionally outside the permission matrix.
 
-## Feature inventory
+## Implementation notes
 
-Implemented and exercised by the test suite:
+The list above is the feature surface. This section is the default values and boundaries an
+operator actually hits, taken from the code:
 
-- **Adapters** — Ollama, vLLM, GPUStack, Xinference, LocalAI, OpenAI, Anthropic (native), Gemini
-  (native), plus any OpenAI-compatible provider declared in `adapter-definitions`.
-- **Load balancing** — round-robin, weighted, least-connections, IP hash, consistent hash, EWMA
-  latency-aware, random.
-- **Rule engine** — conditional routing on model, service type, header, client IP, weight and
-  instance tags, with hit statistics; visual editing in the console.
-- **Resilience** — circuit breaker per instance, request-level failover to another healthy instance,
-  rate limiting (token bucket / leaky bucket / sliding window), response cache for deterministic
-  requests (opt-in, tenant-isolated keys).
-- **Quota** — multi-dimensional, multi-window ledger (MINUTE/HOUR/DAY/MONTH) with Redis distributed
-  counting and local fallback (`jairouter.quota.enabled`, off by default).
+- **Resilience** — circuit breaker per instance, request-level failover to another healthy
+  instance, rate limiting (token bucket / leaky bucket / sliding window), response cache for
+  deterministic requests (opt-in, tenant-isolated keys).
+- **Quota** — multi-dimensional, multi-window ledger (MINUTE/HOUR/DAY/MONTH) with Redis
+  distributed counting and local fallback. **Off by default** (`jairouter.quota.enabled`).
 - **Record governance** — call history at three levels: metadata only, desensitized summary, or
   AES-256-GCM-encrypted full content; ADMIN-only decryption endpoint.
-- **Observability** — Prometheus metrics, OpenTelemetry tracing, slow-query analysis, error tracking,
-  security alerts. Alert outlets are deliberately limited to **Prometheus metrics + structured logs** —
-  the repository implements no push channels (email/webhook/IM); wire those up in Alertmanager or your
-  log platform.
-- **Persistence** — H2 by default; PostgreSQL (with `Flyway` migrations) when `DATABASE_URL` points at
-  it; Redis for shared state in multi-replica deployments.
+- **Observability** — Prometheus metrics, OpenTelemetry tracing, slow-query analysis, error
+  tracking, security alerts. Alert outlets are deliberately limited to **Prometheus metrics +
+  structured logs** — the repository implements no push channels (email/webhook/IM); wire those up
+  in Alertmanager or your log platform.
+- **Persistence** — H2 by default; PostgreSQL (with `Flyway` migrations) when `DATABASE_URL`
+  points at it; Redis for shared state in multi-replica deployments.
 - **Multi-replica** — cross-replica event broadcast, shared rate-limit/quota counters, and a
   distributed lock for scheduled tasks (including the alert cooldown).
-- **Console** — Vue 3 SPA at `/admin/`: services, instances, adapters, rules, versions & rollback,
-  quota, call history, tracing, alerts, API keys, RBAC, dark/light theme, zh-CN / en-US.
+- **Semantic cache** — SimHash near-match reuse of non-streaming responses. **Off by default**
+  (`jairouter.semantic-cache.enabled`).
+- **Console** — ships in the same jar, served at `/admin/`; zh-CN / en-US plus dark and light
+  themes.
 
-Not implemented: in-repo notification delivery. A **semantic cache** (SimHash near-match reuse of
-non-streaming responses) exists but is off by default — see `jairouter.semantic-cache.enabled`.
+Not implemented: in-repo notification delivery.
 See the [changelog](docs/en/reference/changelog.md) for per-release notes.
 
 ## Architecture
@@ -418,11 +417,19 @@ See the [changelog](docs/en/reference/changelog.md) for per-release notes.
 
 ## Console tour
 
-The console is a Vue 3 SPA served at `/admin/` from the same Spring Boot jar — no separate frontend
-container, no extra port to expose. It is bilingual (zh-CN / en-US) and ships light and dark themes.
-The screenshots below are the pages you will actually use in the first ten minutes. They come from a
-running instance with demo data, so a panel that needs accumulated traffic shows its empty state, not
-a mock-up.
+The console is a Vue 3 SPA served at `/admin/` from the same Spring Boot jar — no separate
+frontend container, no extra port to expose. It is bilingual (zh-CN / en-US) and ships light and
+dark themes.
+
+The sidebar is **8 groups, 39 menu items, 53 pages**: pages that belong to one menu item are
+folded into tabs, and no group holds more than 8 items — so fifty-odd pages never become
+fifty-odd rows. Menu visibility is driven by permission codes: a missing code removes the entry
+instead of failing with a 403 after it is clicked.
+
+The four sections below are how the console is used day to day. Page-by-page reading, path lookup
+and troubleshooting flows live in the [Web Console handbook](docs/en/getting-started/web-console.md).
+Screenshots come from a running instance with demo data, so a panel that needs accumulated traffic
+shows its empty state, not a mock-up.
 
 ### Command Center — one screen for "is anything broken?"
 
@@ -430,128 +437,63 @@ a mock-up.
   <img src="screenshots/dashboard-en-US-light.png" alt="Command Center — service, instance and model counters, system metrics and the governance chain">
 </p>
 
-The top row is the inventory of this deployment: services, instances, models, healthy and unhealthy
-instances, accounts. Under it sit the system metrics that answer "should I restart something" — JVM
-memory, threads, CPU load, uptime, authentication success and failure, audit events — and a
-**governance chain** that reports the state of the four stages every request passes through: rule
-hits, rate limiting, circuit breakers and load balancing. When a client reports an error, this is the
-page that tells you which stage to look at next.
+The top row is the inventory of this deployment: services, instances, models, healthy and
+unhealthy instances, accounts. Under it sit the system metrics that answer "should I restart
+something" — JVM memory, threads, CPU load, uptime, authentication success and failure, audit
+events — and a **governance chain** that reports the state of the four stages every request passes
+through: rule hits, rate limiting, circuit breakers and load balancing. When a client reports an
+error, this is the page that tells you which stage to look at next.
 
-### Service management — service type, adapter, strategy
+### Services and instances — from triple to real endpoint
 
 <p align="center">
   <img src="screenshots/service-management-en-US-light.png" alt="Service management — service types, adapters and load-balancing strategies">
 </p>
 
-A service is the triple (service type, adapter, load-balancing strategy). The list shows the seven
-service types the gateway can serve — Chat, Embedding, Rerank, Speech-to-Text, Text-to-Speech, Image
-Generation and Image Editing — each bound to an adapter (GPUStack, vLLM, Ollama, OpenAI, …) and to its
-own strategy, from round-robin to least-connections or IP hash. The four-step guide at the top is the
-intended order for wiring a new backend: configure adapter → create service → add instance → try it in
-the playground. Adapter mistakes surface at step one instead of on the first real request.
+A service is the triple (service type, adapter, load-balancing strategy) and covers seven service
+types — Chat, Embedding, Rerank, Speech-to-Text, Text-to-Speech, Image Generation and Image
+Editing. An instance is one real endpoint: base URL, path, weight, per-instance headers and tags,
+and every row carries its own rate limiter and circuit breaker, so a single misbehaving endpoint
+can be isolated without touching the rest of the service.
 
-### Instance management — the endpoints behind a service
+The four-step guide at the top is the intended order for wiring a new backend: configure
+adapter → create service → add instance → try it in the playground — adapter mistakes surface at
+step one instead of on the first real request. Routing rules are evaluated before any balancing
+decision and their hit counter updates in place, so a rule that never matches is visible instead
+of quietly dead.
 
-<p align="center">
-  <img src="screenshots/instance-management-en-US-light.png" alt="Instance management — base URLs, weights, headers, tags and per-instance controls">
-</p>
-
-An instance is one real endpoint: base URL, path, weight, per-instance headers and tags, grouped into
-tabs by service type. Weight feeds the weighted strategies, tags feed rule conditions, and per-instance
-headers are how a downstream credential stays local to that one upstream. Every row carries its own
-rate limiter and circuit breaker, so a single misbehaving endpoint can be isolated and healed without
-touching the rest of the service.
-
-### Routing rules — condition, priority, target
-
-<p align="center">
-  <img src="screenshots/rule-management-en-US-light.png" alt="Routing rules — condition, priority, hit counter and target instance">
-</p>
-
-Rules are evaluated before any balancing decision. The row above sends every request whose `x-tenant`
-header equals `tenant-a` to `internal-gpu-1` at priority 90. Rows are reordered by drag-and-drop, a rule
-can be disabled without being deleted, and the hit counter updates in place — so a rule that never
-matches is visible instead of quietly dead. Templates cover the usual shapes.
-
-### Call history analytics — three record levels, one dashboard
+### Observability and records — three record levels, one dashboard
 
 <p align="center">
   <img src="screenshots/call-history-dashboard-en-US-light.png" alt="Call history dashboard — counters, daily trend, model and service-type distribution">
 </p>
 
-Every call is recorded at one of three levels — metadata only, desensitized summary, or AES-256-GCM
-encrypted full content — and this page reduces that record to what an operator needs: total and failed
-requests, success rate, average response time, tokens consumed and tokens per request, then daily
-trend, top-10 models, service-type mix and a 24-hour distribution. The time-range picker at the top
-narrows all of it at once, and the raw records live one tab over.
+Every call is recorded at one of three levels — metadata only, desensitized summary, or
+AES-256-GCM encrypted full content — and this page reduces that record to what an operator needs:
+total and failed requests, success rate, average response time, tokens consumed and tokens per
+request, then daily trend, top-10 models, service-type mix and a 24-hour distribution.
 
-### Slow query analysis — where the latency went
+Slow query analysis answers where the latency went: slow queries grouped by operation with count,
+average, max, min and total duration, next to two figures that are easy to misread — alerts
+triggered versus suppressed. Suppression is the cooldown path: a hotspot that keeps breaching the
+threshold is counted once and then quietened, so a large suppressed count beside a small triggered
+count is the design working.
 
-<p align="center">
-  <img src="screenshots/extra-slow-query-analysis-en-US-light.png" alt="Slow query analysis — slow-query counts, per-operation durations and alert statistics">
-</p>
-
-Slow queries are counted, grouped by operation, and reported with count, average, max, min and total
-duration per group, plus a hotspot table for the worst offenders. The two figures on the right are easy
-to misread: alerts **triggered** versus alerts **suppressed**. Suppression is the cooldown path — a
-single hotspot that keeps breaching the threshold is counted once and then quietened, so a large
-suppressed count next to a small triggered count is the design working, not a broken threshold.
-
-### AI Playground — test a model before wiring a client
+### Playground and access — prove a model before wiring a client
 
 <p align="center">
   <img src="screenshots/playground-chat-en-US-light.png" alt="AI Playground — chat, embedding, rerank, audio and image benches">
 </p>
 
-Five benches behind one model picker: Chat, Embedding, Rerank, Audio Service and Image Service. It is
-the quickest way to prove that a newly added instance answers correctly — same credentials, same
-routing and same record governance as a real client, but with the request and the streamed response
-visible on the page. Pick a model, or nothing sends; the composer stays disabled until you do.
+Five benches behind one model picker: Chat, Embedding, Rerank, Audio Service and Image Service.
+Same credentials, same routing and same record governance as a real client, but the request and
+the streamed response are visible on the page — the quickest way to prove a newly added instance
+answers correctly. Pick a model, or nothing sends; the composer stays disabled until you do.
 
-### Quota runtime configuration — what applies now, what needs a restart
-
-<p align="center">
-  <img src="screenshots/quota-config-en-US-light.png" alt="Quota runtime configuration — hot-editable settings and restart-required read-only fields">
-</p>
-
-Quota settings are split by what it takes to apply them. **Hot-editable** — enable quota, fail-open
-behavior and the statistical windows (minute / hour / day / month) — takes effect on save. **Restart
-required** fields are read-only and badged instead of silently ignored, so nobody spends an afternoon
-editing a value that only lands on the next boot. The header restates the live state: enabled or
-disabled, storage backend (local or Redis), fail-open, flush interval. Quota is off by default; this
-page is where you turn it on.
-
-### Quota usage monitoring — multi-dimensional and honest about its state
-
-<p align="center">
-  <img src="screenshots/quota-monitoring-en-US-light.png" alt="Quota usage monitoring — backend, degradation status and multi-dimensional filters">
-</p>
-
-Usage can be filtered on six dimensions at once — tenant, API key, user, service type, model and
-window — which is what makes a per-tenant review or a per-key incident possible without exporting
-anything. The four status cards answer the question you actually ask during an incident (is the ledger
-enabled, which backend, is it degraded, how many windows are active) before showing a single number,
-and the empty state says why it is empty rather than rendering a blank table.
-
-### Client access guide — onboarding a team in one page
-
-<p align="center">
-  <img src="screenshots/client-access-en-US-light.png" alt="Client access guide — base URL, auth header, curl and OpenAI SDK examples">
-</p>
-
-The page a new team should open first: base URL, the `X-API-Key` header, `GET /v1/models`, `POST
-/v1/chat/completions` with its streaming form, and then the same call as `curl` and as the OpenAI
-Python SDK, each with a copy button. The base URL is read from this instance's own configuration, so
-what you copy is what this gateway actually serves.
-
-### Dark theme
-
-<p align="center">
-  <img src="screenshots/dashboard-en-US-dark.png" alt="Dashboard in the built-in dark theme">
-</p>
-
-The same console in the built-in dark theme — one toggle in the header, no separate build and no query
-parameter. The zh-CN / en-US switch sits next to it.
+The client access guide is the page to hand a new team: base URL, the `X-API-Key` header, `GET
+/v1/models` and `POST /v1/chat/completions` including its streaming form, then the same call as
+`curl` and as the OpenAI Python SDK, each with a copy button. The base URL is read from this
+instance's own configuration, so what you copy is what this gateway actually serves.
 
 ## Status
 
@@ -587,10 +529,8 @@ behind the changelog — one source of truth is the only version that stays true
 
 | Feature | JAiRouter | Nginx | One-API | LangChain |
 |---------|:---------:|:-----:|:-------:|:---------:|
-| OpenAI compatible | ✅ | ❌ | ✅ | ✅ |
 | Load balancing | ✅ | ✅ | ✅ | ❌ |
 | Circuit breaker | ✅ | ❌ | ❌ | ❌ |
-| Rate limiting | ✅ | ✅ | ✅ | ❌ |
 | Web console | ✅ | ❌ | ✅ | ❌ |
 | Config hot reload | ✅ | ❌ | ✅ | ❌ |
 | Version control | ✅ | ❌ | ❌ | ❌ |
@@ -605,7 +545,7 @@ Security issues: please do not open a public issue — report them privately per
 Before opening a pull request:
 
 ```bash
-./mvnw test -o                       # ~600 test classes, ~5,100 test methods, must stay green
+./mvnw test -o                       # 650+ test classes, 5,400+ test methods, must stay green
 cd frontend && npm run type-check    # the frontend type gate
 ```
 
