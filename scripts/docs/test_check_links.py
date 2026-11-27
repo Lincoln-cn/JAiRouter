@@ -119,7 +119,14 @@ def main():
         这类只能靠登记降级，否则每次改 docs 的 PR 都会被它判红。
         """
         registry = module.TOLERATED_FLAKY_URL_PREFIXES
-        for expected in ("https://regexr.com/", "https://jairouter.com/"):
+        for expected in (
+            "https://regexr.com/",
+            "https://jairouter.com/",
+            # GitHub 对机房出口的 blob 路径稳定 503；两处出现都在 release notes 模板代码块内，
+            # 那是给 GitHub Release 用的绝对地址，改相对路径在 Release 页面里不成立。
+            "https://github.com/Lincoln-cn/JAiRouter/blob/master/docs/",
+            "https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE",
+        ):
             assert expected in registry, f"登记表缺少已知抖动源: {expected}（实际: {registry}）"
         assert len(registry) == len(set(registry)), f"登记表不应有重复项: {registry}"
 

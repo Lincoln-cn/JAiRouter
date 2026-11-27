@@ -687,9 +687,6 @@ Get performance statistics.
 #### `GET /api/tracing/query/performance/latency`
 Get latency metrics.
 
-#### `GET /api/tracing/query/performance/errors`
-Get error metrics.
-
 #### `GET /api/tracing/query/performance/throughput`
 Get throughput metrics.
 
