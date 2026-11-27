@@ -21,6 +21,20 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [Unreleased] - Removal of `/api/tracing/query/performance/errors`
+
+`GET /api/tracing/query/performance/errors` has been removed. It was a functional subset of
+`/api/tracing/query/error-analysis` — `errorTrend` came from the same method, and the error-rate
+distribution lacked the `operation` / `instance` / `client` filters — and its `commonErrors` field
+was always an empty array (the code comment said "simulated"). After the console switched its error
+trend to `/error-analysis`, nothing called it.
+
+- **Callers must migrate**: scripts still hitting this endpoint will get 404; use
+  `GET /api/tracing/query/error-analysis` instead (three filters, `errorTrend`, three ranking
+  dimensions and `filterOptions`).
+- **Cleaned up alongside**: the frontend `getErrorAnalysis()` helper and the `ErrorAnalysis` /
+  `ServiceErrorRate` / `CommonError` type definitions.
+
 ### [Unreleased] - Console menu re-grouping, dark-mode readability and list-page consistency
 
 - **Menu re-grouping** (URLs, permission codes and page count unchanged — still **8 groups / 35 items / 49 pages**):

@@ -22,6 +22,19 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### [Unreleased] - 下线 `/api/tracing/query/performance/errors`
+
+`GET /api/tracing/query/performance/errors` 已移除。它是 `/api/tracing/query/error-analysis` 的
+功能子集 —— `errorTrend` 来自同一个方法，错误率分布少了 `operation` / `instance` / `client`
+三个过滤维度 —— 并且 `commonErrors` 字段从来只是空数组（代码注释写着「模拟」）。控制台的
+错误趋势改由 `/error-analysis` 取数后，它已无调用方。
+
+- **调用方需要改**：仍调这个端点的外部脚本会收到 404，改用
+  `GET /api/tracing/query/error-analysis`（支持三个过滤参数，返回 `errorTrend`、三个维度的
+  排行与 `filterOptions`）。
+- **同时清理**：前端 `getErrorAnalysis()` 与 `ErrorAnalysis` / `ServiceErrorRate` /
+  `CommonError` 三个类型定义。
+
 ### [Unreleased] - 控制台菜单重分类、深色可读性与列表页统一
 
 - **菜单重分类**（不改变 URL、权限码与页面数量，仍是 **8 组 35 项 / 49 个页面**）：

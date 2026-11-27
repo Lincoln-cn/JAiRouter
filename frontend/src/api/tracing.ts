@@ -2,7 +2,6 @@ import request from '@/utils/request'
 import type {
     RouterResponse,
     LatencyAnalysis,
-    ErrorAnalysis,
     ThroughputAnalysis,
     TimeRange,
     TrendPoint
@@ -126,12 +125,6 @@ export const cleanupExpiredTraces = (retentionHours: number = 24) => {
 
 export const getLatencyAnalysis = (timeRange?: TimeRange) => {
     return request.get<RouterResponse<LatencyAnalysis>>('/tracing/query/performance/latency', {
-        params: timeRange
-    })
-}
-
-export const getErrorAnalysis = (timeRange?: TimeRange) => {
-    return request.get<RouterResponse<ErrorAnalysis>>('/tracing/query/performance/errors', {
         params: timeRange
     })
 }

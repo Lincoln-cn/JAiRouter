@@ -233,7 +233,6 @@ sequenceDiagram
 - `GET /health` - 查询服务健康检查
 - `GET /performance/stats` - 获取性能统计
 - `GET /performance/latency` - 获取延迟分析
-- `GET /performance/errors` - 获取错误分析
 - `GET /performance/throughput` - 获取吞吐量分析
 
 ### 性能 API (`/api/tracing/performance`)

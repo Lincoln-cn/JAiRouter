@@ -679,9 +679,6 @@ GET /api/security/sla/accounts?page=0&size=20&keyword=build
 #### `GET /api/tracing/query/performance/latency`
 获取延迟指标。
 
-#### `GET /api/tracing/query/performance/errors`
-获取错误指标。
-
 #### `GET /api/tracing/query/performance/throughput`
 获取吞吐量指标。
 

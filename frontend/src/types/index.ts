@@ -323,12 +323,6 @@ export interface LatencyAnalysis {
   percentiles: PercentileData
 }
 
-export interface ErrorAnalysis {
-  errorRateDistribution: ServiceErrorRate[]
-  errorTrend: TrendPoint[]
-  commonErrors: CommonError[]
-}
-
 export interface ThroughputAnalysis {
   requestDistribution: ServiceThroughput[]
   qpsTrend: TrendPoint[]
@@ -349,25 +343,10 @@ export interface PercentileData {
   p999: number
 }
 
-export interface ServiceErrorRate {
-  service: string
-  errorRate: number
-  totalRequests: number
-  errorCount: number
-}
-
 export interface ServiceThroughput {
   service: string
   requestsPerSecond: number
   totalRequests: number
-}
-
-export interface CommonError {
-  errorType: string
-  service: string
-  operation: string
-  count: number
-  lastOccurrence: string
 }
 
 // Common Types

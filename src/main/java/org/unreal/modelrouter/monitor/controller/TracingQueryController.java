@@ -487,51 +487,6 @@ public class TracingQueryController {
             .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
-    @GetMapping("/performance/errors")
-    @Operation(summary = "获取错误分析", description = "获取错误分析数据")
-    @ApiResponse(responseCode = "200", description = "成功返回错误分析")
-    public Mono<ResponseEntity<Map<String, Object>>> getErrorAnalysis(
-            @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
-            @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime) {
-        
-        long endMs = endTime != null ? parseTimeString(endTime) : System.currentTimeMillis();
-        long startMs = startTime != null ? parseTimeString(startTime) : endMs - 3600000L;
-        long bucketMs = Math.max(60_000L, (endMs - startMs) / 24L);
-
-        return traceQueryService.getServiceStatistics()
-            .map(services -> {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                
-                // 构建错误分析数据结构
-                Map<String, Object> errorData = new HashMap<>();
-                
-                // 错误率分布数据 - 适配前端期望的字段名
-                List<Map<String, Object>> errorRateDistribution = new ArrayList<>();
-                for (Map<String, Object> service : services) {
-                    Map<String, Object> serviceData = new HashMap<>();
-                    serviceData.put("service", service.get("name"));
-                    serviceData.put("errorRate", service.get("errorRate"));
-                    serviceData.put("totalRequests", service.get("traces"));
-                    serviceData.put("errorCount", service.get("errors"));
-                    errorRateDistribution.add(serviceData);
-                }
-                errorData.put("errorRateDistribution", errorRateDistribution);
-                
-                // 错误趋势：按时间桶聚合本副本真实 trace（见 #1150）
-                List<Map<String, Object>> errorTrend = traceQueryService.errorTrend(startMs, endMs, bucketMs);
-                errorData.put("errorTrend", errorTrend);
-                
-                // 常见错误数据（模拟）
-                List<Map<String, Object>> commonErrors = new ArrayList<>();
-                errorData.put("commonErrors", commonErrors);
-                
-                response.put("data", errorData);
-                return ResponseEntity.ok(response);
-            })
-            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
-    }
-
     @GetMapping("/error-analysis")
     @Operation(summary = "获取异常聚合", description = "按 operation / 上游实例 / 客户端聚合错误，并给出错误时间线")
     @ApiResponse(responseCode = "200", description = "成功返回异常聚合")
