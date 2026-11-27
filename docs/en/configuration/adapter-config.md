@@ -245,6 +245,40 @@ A typo (for example `openai-compat` missing its `ible`) is reported per finding 
 `jairouter.config.validation.strict-mode=true` to fail the startup instead. See
 [validation rules](validation-rules.md).
 
+### At runtime: instances whose adapter is not registered are skipped during selection
+
+The startup check only logs by default, so a bad reference can still enter the runtime configuration
+(for example when an instance's `adapter` is edited after startup). Since v3.9.1 the selection stage
+drops instances whose effective adapter is not registered, instead of failing later at forward time:
+
+```text
+WARN  o.u.m.r.model.ModelServiceRegistry - 跳过 1 个生效 adapter 未注册的实例
+     （service=chat, model=qwen3:4b）：qwen3:4b → no-such-adapter；
+     已注册清单见 GET /api/config/adapter/list
+```
+
+- **Another instance is still usable**: the request is routed to a resolvable instance and you only
+  get one extra WARN line plus one counter increment.
+- **Every candidate is unresolvable**: the gateway returns `503` with the instance name and the
+  adapter name in the message, instead of the misleading "all instances busy" text:
+
+  ```json
+  {"error":{"message":"No routable instances for model 'qwen3:4b' in service type 'chat':
+   their adapter is not registered (qwen3:4b → no-such-adapter). 请核对 model.services 下的
+   adapter 配置，已注册清单见 GET /api/config/adapter/list","code":"503"}}
+  ```
+
+Two things to watch from the operations side:
+
+| Signal | Where |
+| --- | --- |
+| Which instance was skipped, and why | WARN log (`ModelServiceRegistry`), one line per batch with `instance → adapter` |
+| How many times it happened | Prometheus metric `jairouter_routing_adapter_unresolvable_total{service,adapter}` |
+
+List the registered adapters with `GET /api/config/adapter/list`. The instance query endpoint
+(`GET /api/config/instance/{serviceType}`) also returns `adapterResolved` and `adapterWarning`, so you
+can check whether an instance's adapter resolves without editing anything.
+
 ### Via API
 
 ```bash

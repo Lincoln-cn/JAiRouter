@@ -365,7 +365,7 @@ public class AdapterRegistry {
      */
     public ServiceCapability getAdapter(final ModelServiceRegistry.ServiceType serviceType,
                                         final ModelRouterProperties.ModelInstance instance) {
-        String adapterName = getAdapterName(serviceType, instance);
+        String adapterName = resolveAdapterName(serviceType, instance);
         ServiceCapability adapter = adapters.get(adapterName.toLowerCase());
 
         if (adapter == null) {
@@ -404,10 +404,17 @@ public class AdapterRegistry {
     }
 
     /**
-     * 获取指定实例的adapter名称（实例级适配器优先）
+     * 解析实例生效的 adapter 名（实例级 → 服务级 → 全局，三级回退，#1238）.
+     *
+     * <p>选路前的可解析性判定与转发阶段的适配器获取必须用同一套回退口径，
+     * 否则「判定时算出的名字」与「真取适配器时用的名字」会漂移。</p>
+     *
+     * @param serviceType 服务类型
+     * @param instance    实例，可为 {@code null}
+     * @return 生效的 adapter 名，永不为 {@code null}
      */
-    private String getAdapterName(final ModelServiceRegistry.ServiceType serviceType,
-                                  final ModelRouterProperties.ModelInstance instance) {
+    public String resolveAdapterName(final ModelServiceRegistry.ServiceType serviceType,
+                                     final ModelRouterProperties.ModelInstance instance) {
         if (instance != null && instance.getAdapter() != null && !instance.getAdapter().trim().isEmpty()) {
             return instance.getAdapter();
         }

@@ -245,6 +245,38 @@ adapter-definitions:
 打开 `jairouter.config.validation.strict-mode=true` 则直接启动失败。详见
 [配置校验规则](validation-rules.md)。
 
+### 运行期：未注册 adapter 的实例不参与选路
+
+启动期校验默认只打日志，漏网的错误引用还会留在运行时配置里（例如启动后再改实例的 `adapter`）。
+从 v3.9.1 起，选路阶段会把「生效 adapter 未注册」的实例剔除，而不是等到转发阶段才失败：
+
+```text
+WARN  o.u.m.r.model.ModelServiceRegistry - 跳过 1 个生效 adapter 未注册的实例
+     （service=chat, model=qwen3:4b）：qwen3:4b → no-such-adapter；
+     已注册清单见 GET /api/config/adapter/list
+```
+
+- **同服务还有可用实例**：请求照常被路由到可解析的实例，只多一条 WARN 与一个计数。
+- **全部候选都不可解析**：直接返回 `503`，消息里点明实例名与 adapter 名，而不是落到
+  「所有实例繁忙」这类误导性文案：
+
+  ```json
+  {"error":{"message":"No routable instances for model 'qwen3:4b' in service type 'chat':
+   their adapter is not registered (qwen3:4b → no-such-adapter). 请核对 model.services 下的
+   adapter 配置，已注册清单见 GET /api/config/adapter/list","code":"503"}}
+  ```
+
+运维侧有两个观测点：
+
+| 观测点 | 位置 |
+| --- | --- |
+| 跳过了谁、为什么 | WARN 日志（`ModelServiceRegistry`），一行列出实例名 → adapter 名 |
+| 跳过了多少次 | Prometheus 指标 `jairouter_routing_adapter_unresolvable_total{service,adapter}` |
+
+核对可用 adapter 清单：`GET /api/config/adapter/list`。实例查询接口
+（`GET /api/config/instance/{serviceType}`）还会回 `adapterResolved` 与 `adapterWarning` 两个字段，
+可在不改配置的前提下先看一眼某个实例的 adapter 是否可解析。
+
 ### 通过API验证
 
 ```bash
