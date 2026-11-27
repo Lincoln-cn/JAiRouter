@@ -36,6 +36,10 @@ TOLERATED_FLAKY_URL_PREFIXES = (
     "https://jairouter.com/",
     "https://lincoln-cn.github.io/JAiRouter",
     "https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE",
+    # 同类：GitHub 对机房出口的 blob 路径稳定返回 503（curl -L 直连即 503，浏览器打开正常）。
+    # 出现位置是 docs/{zh,en}/development/contributing.md 的 release notes 模板代码块，
+    # 那两行是给 GitHub Release 用的绝对地址，改成相对路径在 Release 页面里不成立。
+    "https://github.com/Lincoln-cn/JAiRouter/blob/master/docs/",
     # issue #934：站点侧对机房出口 IP 直接断开（CI 上稳定复现 socket hang up，
     # 浏览器打开正常，重试 2 次也无效）。链接本身有效，属目标站点侧限制。
     "https://regexr.com/",

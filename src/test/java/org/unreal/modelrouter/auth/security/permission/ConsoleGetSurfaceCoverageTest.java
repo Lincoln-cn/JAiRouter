@@ -123,7 +123,6 @@ class ConsoleGetSurfaceCoverageTest {
                 "/api/tracing/actuator/health",
                 "/api/tracing/actuator/stats",
                 "/api/tracing/actuator/status",
-                "/api/tracing/query/performance/errors",
                 "/api/tracing/query/performance/latency",
                 "/api/tracing/query/performance/throughput",
                 "/api/tracing/query/recent",

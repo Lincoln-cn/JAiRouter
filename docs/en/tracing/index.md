@@ -178,7 +178,6 @@ Structured logging component:
 - `GET /health` - Query service health check
 - `GET /performance/stats` - Get performance stats
 - `GET /performance/latency` - Get latency analysis
-- `GET /performance/errors` - Get error analysis
 - `GET /performance/throughput` - Get throughput analysis
 
 ### Performance API (`/api/tracing/performance`)

@@ -283,29 +283,6 @@ class TracingQueryControllerTest {
     }
 
     @Nested
-    @DisplayName("获取错误分析测试")
-    class GetErrorAnalysisTests {
-
-        @Test
-        @DisplayName("获取成功")
-        void getSuccess() {
-            Map<String, Object> serviceStats = new HashMap<>();
-            serviceStats.put("name", "chat");
-            serviceStats.put("errorRate", 0.05);
-            serviceStats.put("traces", 100L);
-            serviceStats.put("errors", 5L);
-            when(traceQueryService.getServiceStatistics()).thenReturn(Mono.just(List.of(serviceStats)));
-
-            StepVerifier.create(controller.getErrorAnalysis(null, null))
-                    .assertNext(response -> {
-                        assert response.getStatusCode().is2xxSuccessful();
-                        assert response.getBody() != null;
-                    })
-                    .verifyComplete();
-        }
-    }
-
-    @Nested
     @DisplayName("获取吞吐量分析测试")
     class GetThroughputAnalysisTests {
 

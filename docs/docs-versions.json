@@ -60,10 +60,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-11-27T13:04:30.358403",
-      "ContentHash": "c152f8930f46330e",
-      "GitCommit": "6d2c71da",
+      "Version": "1.0.10",
+      "LastModified": "2026-11-27T17:49:38.758590",
+      "ContentHash": "f121886015f927a8",
+      "GitCommit": "fb5e6e7b",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -863,11 +863,11 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.33",
-      "LastModified": "2026-11-20T08:46:52.579305",
-      "ContentHash": "a69c552a4a7505b5",
-      "GitCommit": "5d680276",
-      "Author": "Lincoln",
+      "Version": "1.0.34",
+      "LastModified": "2026-11-27T17:49:39.175372",
+      "ContentHash": "052dc0c60528a3b9",
+      "GitCommit": "fb5e6e7b",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1077,10 +1077,10 @@
     },
     "docs/en/tracing/index.md": {
       "FilePath": "docs/en/tracing/index.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:36.070872",
-      "ContentHash": "9f8a765ff167ad1a",
-      "GitCommit": "88f67b49",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-27T17:49:39.283187",
+      "ContentHash": "9a2a84e874afc1cb",
+      "GitCommit": "fb5e6e7b",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1088,8 +1088,7 @@
         "docs/en/tracing/quickstart.md",
         "docs/en/tracing/troubleshooting.md",
         "docs/en/tracing/usage-guide.md"
-      ],
-      "ReviewedAt": "2026-11-27T19:23:43.994150"
+      ]
     },
     "docs/en/tracing/operations-guide.md": {
       "FilePath": "docs/en/tracing/operations-guide.md",
@@ -1245,10 +1244,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-11-27T13:04:31.111982",
-      "ContentHash": "f7885215a7e860aa",
-      "GitCommit": "6d2c71da",
+      "Version": "1.0.10",
+      "LastModified": "2026-11-27T17:49:39.375072",
+      "ContentHash": "fdc671aa7d11c406",
+      "GitCommit": "fb5e6e7b",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2054,11 +2053,11 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.33",
-      "LastModified": "2026-11-20T08:46:59.200667",
-      "ContentHash": "faffc0b90fbc7b79",
-      "GitCommit": "5d680276",
-      "Author": "Lincoln",
+      "Version": "1.0.34",
+      "LastModified": "2026-11-27T17:49:39.817988",
+      "ContentHash": "1f64f1a9905f7a0b",
+      "GitCommit": "fb5e6e7b",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -2270,10 +2269,10 @@
     },
     "docs/zh/tracing/index.md": {
       "FilePath": "docs/zh/tracing/index.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.956217",
-      "ContentHash": "72c655192cd0c962",
-      "GitCommit": "88f67b49",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-27T17:49:39.928420",
+      "ContentHash": "492cb2bf781457bb",
+      "GitCommit": "fb5e6e7b",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2281,8 +2280,7 @@
         "docs/zh/tracing/quickstart.md",
         "docs/zh/tracing/troubleshooting.md",
         "docs/zh/tracing/usage-guide.md"
-      ],
-      "ReviewedAt": "2026-11-27T19:23:43.994150"
+      ]
     },
     "docs/zh/tracing/operations-guide.md": {
       "FilePath": "docs/zh/tracing/operations-guide.md",
@@ -9071,7 +9069,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-27T13:04:31.682917",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T17:49:38.758596",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.33",
+      "NewVersion": "1.0.34",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T17:49:39.175384",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/index.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T17:49:39.283196",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T17:49:39.375093",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.33",
+      "NewVersion": "1.0.34",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T17:49:39.817999",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/index.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T17:49:39.928431",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-27T13:04:31.869954"
+  "last_updated": "2026-11-27T17:49:40.011362"
 }
