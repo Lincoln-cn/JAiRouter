@@ -60,10 +60,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-11-17T18:20:51.753115",
-      "ContentHash": "89ac910b3c319a48",
-      "GitCommit": "3509988c",
+      "Version": "1.0.9",
+      "LastModified": "2026-11-27T13:04:30.358403",
+      "ContentHash": "c152f8930f46330e",
+      "GitCommit": "6d2c71da",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -313,18 +313,17 @@
     },
     "docs/en/configuration/state-persistence.md": {
       "FilePath": "docs/en/configuration/state-persistence.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T15:24:46.337682",
-      "ContentHash": "8c1948d565631d65",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-27T13:04:30.448980",
+      "ContentHash": "da46557e70213f0a",
+      "GitCommit": "5fe27adf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/circuit-breaker.md",
         "docs/en/configuration/rate-limiting.md",
         "docs/en/configuration/store-config.md"
-      ],
-      "ReviewedAt": "2026-11-27T19:23:43.994150"
+      ]
     },
     "docs/en/configuration/store-config.md": {
       "FilePath": "docs/en/configuration/store-config.md",
@@ -646,10 +645,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-11-27T10:31:25.625287",
-      "ContentHash": "bbef060edbccbf75",
-      "GitCommit": "1a74cc1c",
+      "Version": "1.0.11",
+      "LastModified": "2026-11-27T13:04:30.695774",
+      "ContentHash": "1ecdcefd8a1fba12",
+      "GitCommit": "90d96182",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -932,10 +931,10 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-17T18:20:52.374420",
-      "ContentHash": "064e2aaa6eac095e",
-      "GitCommit": "b16a012e",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-27T13:04:30.911355",
+      "ContentHash": "ddcb857c69035494",
+      "GitCommit": "6d2c71da",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1246,10 +1245,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-11-17T18:20:52.598628",
-      "ContentHash": "b972210bf0f10389",
-      "GitCommit": "3509988c",
+      "Version": "1.0.9",
+      "LastModified": "2026-11-27T13:04:31.111982",
+      "ContentHash": "f7885215a7e860aa",
+      "GitCommit": "6d2c71da",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1498,18 +1497,17 @@
     },
     "docs/zh/configuration/state-persistence.md": {
       "FilePath": "docs/zh/configuration/state-persistence.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T15:24:49.503702",
-      "ContentHash": "1f1b918765998e0b",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-27T13:04:31.205369",
+      "ContentHash": "b4975ca415cfa21f",
+      "GitCommit": "5fe27adf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/circuit-breaker.md",
         "docs/zh/configuration/rate-limiting.md",
         "docs/zh/configuration/store-config.md"
-      ],
-      "ReviewedAt": "2026-11-27T19:23:43.994150"
+      ]
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
@@ -1833,10 +1831,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-11-27T10:31:26.557235",
-      "ContentHash": "5bccc9bb9fe0d994",
-      "GitCommit": "1a74cc1c",
+      "Version": "1.0.11",
+      "LastModified": "2026-11-27T13:04:31.454476",
+      "ContentHash": "517aa7bebf023682",
+      "GitCommit": "90d96182",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2125,10 +2123,10 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-17T18:20:53.249537",
-      "ContentHash": "3db07c726477897c",
-      "GitCommit": "b16a012e",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-27T13:04:31.682907",
+      "ContentHash": "f5fdcb2dc3fd6d90",
+      "GitCommit": "6d2c71da",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -9009,7 +9007,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-27T10:31:26.557244",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T13:04:30.358412",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/state-persistence.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T13:04:30.448990",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T13:04:30.695783",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T13:04:30.911364",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T13:04:31.111991",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/state-persistence.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T13:04:31.205378",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T13:04:31.454486",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T13:04:31.682917",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-27T19:23:43.995156"
+  "last_updated": "2026-11-27T13:04:31.869954"
 }
