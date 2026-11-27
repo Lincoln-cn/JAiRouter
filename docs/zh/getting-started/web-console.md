@@ -447,7 +447,7 @@ README 只保留四组主截图（指挥中心、服务与实例、观测与记�
 
 | 分组 | 菜单项 | Tab 与路由路径（顺序即 tab 顺序） |
 |------|--------|-----------------------------------|
-| 概览 | 仪表板 | `/dashboard/main` |
+| 概览 | 仪表板 | 管理员 `/dashboard/main` ｜ 运维 `/dashboard/operations` ｜ 普通用户 `/dashboard/mine` ｜ 观察者 `/dashboard/trends`（四个角色各有落地页，同一菜单位置互斥出现） |
 | 运行观测 | 调用历史 | 调用记录 `/call-history/list` ｜ 调用历史仪表盘 `/call-history/dashboard` |
 | 运行观测 | 链路追踪 | 链路搜索 `/tracing/search` ｜ 追踪仪表盘 `/tracing/dashboard` |
 | 运行观测 | 异常管理 | 异常列表 `/exceptions/list` ｜ 统计分析 `/exceptions/statistics`（详情 `/exceptions/detail/:id` 为独立深链，不出现在侧栏） |
@@ -455,7 +455,7 @@ README 只保留四组主截图（指挥中心、服务与实例、观测与记�
 | 运行观测 | 用量统计 | Token 用量 `/call-history/token-usage` ｜ 配额使用 `/monitoring/quota` |
 | 流量治理 | 路由规则 | `/config/rules` |
 | 流量治理 | 负载均衡 | 实时监控 `/load-balancers/monitoring` ｜ 策略配置 `/load-balancers/strategy-config` |
-| 流量治理 | 限流 | 限流监控 `/rate-limiters/monitoring` |
+| 流量治理 | 限流 | 限流监控 `/rate-limiters/monitoring` ｜ 限流配置 `/rate-limiters/config` |
 | 流量治理 | 熔断 | 熔断监控 `/circuit-breakers/monitoring` ｜ 熔断历史 `/circuit-breakers/history` ｜ 全局配置 `/circuit-breakers/global-config` |
 | 流量治理 | 资源池 | `/config/pools` |
 | 模型与实例 | 适配器管理 | `/config/adapters` |
@@ -471,6 +471,8 @@ README 只保留四组主截图（指挥中心、服务与实例、观测与记�
 | 安全 | 登录保护 | `/security/login-guard` |
 | 平台设置 | 账户管理 | `/system/accounts` |
 | 平台设置 | 权限管理 | `/system/permissions` |
+| 平台设置 | SLA 接入 | `/system/sla` |
+| 平台设置 | 页面访问热度 | `/system/page-heat` |
 | 平台设置 | 追踪配置 | `/tracing/management` |
 | 平台设置 | 监控配置 | 监控配置 `/monitoring/config` ｜ 运行时与应急 `/monitoring/config/runtime` |
 | 平台设置 | 响应缓存管理 | `/config/cache` |

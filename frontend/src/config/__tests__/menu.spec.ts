@@ -260,3 +260,66 @@ describe('menu.ts 组图标', () => {
     expect(unused.every(key => key === 'user')).toBe(true)
   })
 })
+
+/**
+ * 手册附录 ↔ menu.ts 一致性守卫（#1207）。
+ *
+ * 背景：`docs/{zh,en}/getting-started/web-console.md` 文末的「页面路径速查表」是人找页面的
+ * 第一入口，但它长期是手工维护的 —— 曾漏登记限流配置 tab（`/rate-limiters/config`）、
+ * SLA 接入（`/system/sla`）、页面访问热度（`/system/page-heat`）与三个角色的落地页。
+ * 表里查不到的页面，读者只能靠猜；而菜单里删掉的页面若还留在表里，则是死链。
+ *
+ * 判定 = 双向相等：menu.ts 的每条菜单项/tab 路由都要在表里，表里的每条路径都要是真实
+ * 菜单路由（少数非菜单路径在 `NON_MENU_PATHS` 里显式登记）。
+ */
+const WEB_CONSOLE_DOCS = [
+  { label: 'zh', file: '../docs/zh/getting-started/web-console.md', anchor: '## 附录：页面路径速查表' },
+  { label: 'en', file: '../docs/en/getting-started/web-console.md', anchor: '## Appendix: Page Path Quick Reference' }
+]
+
+/**
+ * 不是侧栏菜单项的路径：
+ * - `/api/**` 是网关 HTTP 入口前缀的说明，不属任何页面；
+ * - `/exceptions/detail/:id` 是详情深链，正文已注明「不出现在侧栏」。
+ */
+const NON_MENU_PATHS = new Set(['/api/**', '/exceptions/detail/:id'])
+
+const menuRouteSet = (): Set<string> =>
+  new Set(
+    menuGroups.flatMap(group =>
+      group.children.flatMap(item => [item.path, ...item.tabs.map(tab => tab.to)])
+    )
+  )
+
+for (const { label, file, anchor } of WEB_CONSOLE_DOCS) {
+  describe(`Web 控制台手册附录（${label}）与 menu.ts 一致（#1207）`, () => {
+    const docPaths = (): Set<string> => {
+      const source = readFileSync(resolve(process.cwd(), file), 'utf-8')
+      const start = source.indexOf(anchor)
+      expect(start, `手册里找不到附录标题：${anchor}`).toBeGreaterThan(-1)
+      return new Set(
+        [...source.slice(start).matchAll(/`(\/[^`]+)`/g)].map(match => match[1])
+      )
+    }
+
+    it('menu.ts 的每条菜单项与 tab 路由都出现在速查表里', () => {
+      const doc = docPaths()
+      const missing = [...menuRouteSet()].filter(route => !doc.has(route)).sort()
+      expect(missing).toEqual([])
+    })
+
+    it('速查表里的路径都是真实菜单路由（非菜单路径已显式登记）', () => {
+      const menu = menuRouteSet()
+      const extra = [...docPaths()]
+        .filter(route => !menu.has(route) && !NON_MENU_PATHS.has(route))
+        .sort()
+      expect(extra).toEqual([])
+    })
+
+    it('限流菜单的监控与配置两个 tab 都在（#1207 回归点）', () => {
+      const doc = docPaths()
+      expect(doc.has('/rate-limiters/monitoring')).toBe(true)
+      expect(doc.has('/rate-limiters/config')).toBe(true)
+    })
+  })
+}
