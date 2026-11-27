@@ -55,6 +55,15 @@ public class SlaRefreshTokenEntity {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
+    /**
+     * 绝对过期时间（issue #1214）：滚动续期也不能越过它。
+     *
+     * <p>没有这一列时，滚动续期等于「只要还在用就永不过期」，凭据一旦泄漏可以无限续命。
+     * 存量行的该列为空，读取时按 {@code issuedAt + 365 天} 兜底，并在下次刷新时回填。</p>
+     */
+    @Column(name = "absolute_expires_at")
+    private LocalDateTime absoluteExpiresAt;
+
     /** 吊销时间；非空即视为失效。 */
     @Column(name = "revoked_at")
     private LocalDateTime revokedAt;

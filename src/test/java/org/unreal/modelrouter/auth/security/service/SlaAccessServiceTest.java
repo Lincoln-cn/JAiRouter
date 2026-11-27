@@ -14,6 +14,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
@@ -26,6 +27,7 @@ import org.unreal.modelrouter.persistence.jpa.repository.SlaRefreshTokenReposito
 import org.unreal.modelrouter.persistence.jpa.repository.SlaServiceAccountRepository;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -513,6 +515,147 @@ class SlaAccessServiceTest {
             verify(bootstrapTokenRepository).deleteAll(any());
             verify(accountRepository).delete(any(SlaServiceAccountEntity.class));
             verify(jwtAccountRepository).delete(subject);
+        }
+    }
+
+    @Nested
+    @DisplayName("凭据策略：有效期上限、来源绑定与回收（#1213 #1214 #1217 #1218）")
+    class CredentialPolicyTests {
+
+        @Test
+        @DisplayName("签发时把超过上限的 TTL 夹取到 60 分钟（#1213）")
+        void clampsBootstrapTtl() {
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            SlaAccessService.IssueResult result = service.issueBootstrap(ACCOUNT_ID, 1440, null, "admin");
+
+            assertEquals(Duration.ofMinutes(60).toSeconds(), result.expiresIn());
+        }
+
+        @Test
+        @DisplayName("签发时拒绝非法 allowedIp（#1213）")
+        void rejectsMalformedAllowedIp() {
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            ApiException ex = assertThrows(ApiException.class,
+                    () -> service.issueBootstrap(ACCOUNT_ID, 15, "10.0.0.0/33", "admin"));
+
+            assertEquals(ErrorCode.INVALID_REQUEST.code(), ex.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("绑定 CIDR 时按网段匹配，而非字符串全等（#1213）")
+        void matchesBoundCidr() {
+            when(bootstrapTokenRepository.findByTokenHash(anyString()))
+                    .thenReturn(Optional.of(bootstrapRow(LocalDateTime.now().plusMinutes(5), null, "10.0.0.0/24")));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            assertNotNull(service.bootstrap(PLAIN_BOOTSTRAP, "10.0.0.7").block());
+        }
+
+        @Test
+        @DisplayName("来源 IP 落在网段之外时拒绝（#1213）")
+        void rejectsClientOutsideCidr() {
+            when(bootstrapTokenRepository.findByTokenHash(anyString()))
+                    .thenReturn(Optional.of(bootstrapRow(LocalDateTime.now().plusMinutes(5), null, "10.0.0.0/24")));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            ApiException ex = assertThrows(ApiException.class,
+                    () -> service.bootstrap(PLAIN_BOOTSTRAP, "10.0.1.7").block());
+
+            assertEquals(ErrorCode.FORBIDDEN.code(), ex.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("IPv6 绑定按规范化形式比较，压缩写法不再误判（#1213）")
+        void matchesEquivalentIpv6() {
+            when(bootstrapTokenRepository.findByTokenHash(anyString()))
+                    .thenReturn(Optional.of(bootstrapRow(LocalDateTime.now().plusMinutes(5), null, "2001:0db8::1")));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            assertNotNull(service.bootstrap(PLAIN_BOOTSTRAP, "2001:db8:0:0:0:0:0:1").block());
+        }
+
+        @Test
+        @DisplayName("刷新凭据缺失时返回 401，而不是把空指针变成 500（#1214）")
+        void refreshWithoutTokenIsUnauthorized() {
+            ApiException ex = assertThrows(ApiException.class, () -> service.refresh(null, "1.2.3.4").block());
+
+            assertEquals(ErrorCode.TOKEN_REQUIRED.code(), ex.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("超过绝对有效期的刷新凭据被拒，滚动续期不能无限延长（#1214）")
+        void rejectsPastAbsoluteLifetime() {
+            SlaRefreshTokenEntity row = refreshRow(LocalDateTime.now().plusDays(30), null);
+            row.setIssuedAt(LocalDateTime.now().minusDays(400));
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(row));
+
+            ApiException ex = assertThrows(ApiException.class,
+                    () -> service.refresh(PLAIN_REFRESH, "1.2.3.4").block());
+
+            assertEquals(ErrorCode.TOKEN_REQUIRED.code(), ex.getErrorCode());
+            assertTrue(ex.getMessage().contains("绝对有效期"));
+        }
+
+        @Test
+        @DisplayName("续期不能越过绝对有效期（#1214）")
+        void capsRollingExpiry() {
+            LocalDateTime absolute = LocalDateTime.now().plusDays(10);
+            SlaRefreshTokenEntity row = refreshRow(LocalDateTime.now().plusDays(30), null);
+            row.setAbsoluteExpiresAt(absolute);
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(row));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            service.refresh(PLAIN_REFRESH, "1.2.3.4").block();
+
+            assertEquals(absolute, row.getExpiresAt());
+            assertEquals(absolute, row.getAbsoluteExpiresAt());
+        }
+
+        @Test
+        @DisplayName("来源 IP 变更时记录审计但不阻断刷新（#1214）")
+        void recordsIpChange() {
+            SlaRefreshTokenEntity row = refreshRow(LocalDateTime.now().plusDays(30), null);
+            row.setClientIp("1.1.1.1");
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(row));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+
+            assertNotNull(service.refresh(PLAIN_REFRESH, "2.2.2.2").block());
+
+            ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
+            verify(securityAuditService, atLeastOnce()).recordEvent(captor.capture());
+            assertTrue(captor.getAllValues().stream()
+                    .anyMatch(event -> "REFRESH_IP_CHANGED".equals(event.getAction())), "IP 变更必须留审计痕迹");
+            assertEquals("2.2.2.2", row.getClientIp());
+        }
+
+        @Test
+        @DisplayName("签发访问令牌失败时不留下刷新凭据行（#1217）")
+        void doesNotPersistRefreshTokenWhenSigningFails() {
+            when(bootstrapTokenRepository.findByTokenHash(anyString()))
+                    .thenReturn(Optional.of(bootstrapRow(LocalDateTime.now().plusMinutes(5), null, null)));
+            when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true, "SLA_READONLY")));
+            when(accountManager.issueTokenForAccount(SUBJECT)).thenReturn(Mono.error(new IllegalStateException("boom")));
+
+            assertThrows(IllegalStateException.class,
+                    () -> service.bootstrap(PLAIN_BOOTSTRAP, "1.2.3.4").block());
+
+            verify(refreshTokenRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("回收任务按保留期删除两类凭据并回报行数（#1218）")
+        void cleansUpExpiredCredentials() {
+            when(refreshTokenRepository.deleteStale(any())).thenReturn(3);
+            when(bootstrapTokenRepository.deleteStale(any())).thenReturn(5);
+
+            SlaAccessService.CleanupResult result = service.cleanupExpiredCredentials(30);
+
+            assertEquals(3, result.refreshTokens());
+            assertEquals(5, result.bootstrapTokens());
+            verify(refreshTokenRepository).deleteStale(any());
+            verify(bootstrapTokenRepository).deleteStale(any());
         }
     }
 

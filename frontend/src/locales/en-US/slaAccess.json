@@ -35,7 +35,7 @@
     "issueTitle": "Issue one-time bootstrap token",
     "issueDesc": "The token is shown only once and becomes useless as soon as it is consumed. You may bind it to a source IP: requests from other addresses are rejected even with the token.",
     "issueTtl": "Valid for (minutes)",
-    "issueTtlHint": "15 minutes by default, enough to paste it into the deployment config",
+    "issueTtlHint": "15 minutes by default, capped at 60, enough to paste it into the deployment config",
     "issueIp": "Bind source IP (optional)",
     "issueIpPlaceholder": "Leave empty to allow any source",
     "issueConfirm": "Issue",

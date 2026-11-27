@@ -162,6 +162,10 @@ Response `data`:
 - A disabled account returns 403.
 - The plaintext appears only at issuance and in this response; the database stores SHA-256.
 - `expiresIn` is in **seconds** (default 3600); the same applies to `refresh`.
+- Bootstrap TTL defaults to 15 minutes and is capped at 60 (a larger value is clamped on issue); the token is
+  **single-use** (concurrent double-spend is caught by the row-level optimistic lock).
+- The source IP can be bound up front: a single IPv4/IPv6 literal or an IPv4 CIDR such as `10.0.0.0/24`;
+  a mismatch returns `403`.
 - Failure semantics: missing / invalid / already used / revoked / expired token ⇒ `401`; bound IP mismatch or
   disabled account ⇒ `403`; unknown account ⇒ `404`.
 
@@ -175,7 +179,12 @@ Exchange a refresh credential for a new access token.
 
 Response `data`: `{ "accessToken": "...", "expiresIn": 3600 }`.
 
-- The refresh credential lives 90 days by default and rolls forward on every use (`lastUsedAt`, `expiresAt`, `clientIp` updated).
+- The refresh credential lives 90 days by default and rolls forward on every use (`lastUsedAt`, `expiresAt`, `clientIp` updated),
+  but rolling never passes the **absolute lifetime** (365 days after first issue); past it the call fails with
+  "absolute lifetime reached" and a new bootstrap token is required.
+- A changed source IP does **not** block the refresh (NAT egress and dual-stack hosts move legitimately); it only logs a
+  warning and records a `REFRESH_IP_CHANGED` audit entry.
+- A missing or blank `refreshToken` returns `401` instead of falling through to an internal error.
 - Revoked ⇒ "SLA refresh credential has been revoked"; expired ⇒ "SLA refresh credential has expired".
 - A suspended login principal (credentials revoked or account disabled) ⇒ `403`, and the principal is **not**
   revived automatically: reconnecting requires a newly issued bootstrap token.
@@ -203,7 +212,9 @@ Issues a one-time bootstrap token (**the response is the only place the plaintex
 { "ttlMinutes": 15, "allowedIp": "10.0.0.8" }
 ```
 
-Both fields are optional (defaults: 15 minutes, any IP). Response: `{ "bootstrapToken": "...", "expiresAt": "...", "expiresIn": 900 }`.
+Both fields are optional (defaults: 15 minutes, any IP). `ttlMinutes` is clamped to 60; `allowedIp` accepts a single
+IPv4/IPv6 literal or an IPv4 CIDR, and a malformed value returns `400` instead of being stored. Response:
+`{ "bootstrapToken": "...", "expiresAt": "...", "expiresIn": 900 }`.
 
 ##### `POST /api/security/sla/accounts/{accountId}/revoke`
 
@@ -238,6 +249,19 @@ Returns the updated account view with the same fields as the list endpoint. Requ
 ##### `DELETE /api/security/sla/accounts/{accountId}`
 
 Deletes the account together with its bootstrap tokens, refresh credentials and the corresponding `sla:<name>` principal in `jwt_accounts`.
+
+#### Credential cleanup
+
+Expired and revoked rows in both credential tables are reclaimed once an hour by a built-in task. It deletes only rows that
+are already expired or revoked **and** older than the retention window, so anything inside the window is still available for
+audit comparison and troubleshooting:
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `jairouter.security.sla.retention-days` | `30` | How many days expired or revoked rows are kept |
+| `jairouter.security.sla.cleanup-cron` | `0 40 * * * ?` | Cleanup schedule (minute 40 of every hour) |
+
+Cleanup runs a single `DELETE ... WHERE` per table instead of loading everything into memory.
 
 ### Login Protection {#login-guard}
 

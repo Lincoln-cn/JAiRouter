@@ -1,9 +1,13 @@
 package org.unreal.modelrouter.persistence.jpa.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaRefreshTokenEntity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,4 +51,17 @@ public interface SlaRefreshTokenRepository extends JpaRepository<SlaRefreshToken
      * @return 有效凭据数
      */
     long countByAccountIdAndRevokedAtIsNull(String accountId);
+
+    /**
+     * 删除「过期或已吊销」且早于保留期下界的凭据（issue #1218）。
+     *
+     * <p>批量删除而不是逐行删：这类表只增不减，逐行加载会把整表拉进堆里。保留期由调用方
+     * 换算成时间点，SQL 侧只做一次比较。</p>
+     *
+     * @param cutoff 保留期下界（早于它的行会被删）
+     * @return 删除行数
+     */
+    @Modifying
+    @Query("delete from SlaRefreshTokenEntity t where t.expiresAt < :cutoff or t.revokedAt < :cutoff")
+    int deleteStale(@Param("cutoff") LocalDateTime cutoff);
 }

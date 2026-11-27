@@ -189,7 +189,7 @@
         <p class="dialog-desc">{{ t('slaAccess.issueDesc') }}</p>
         <el-form label-width="130px">
           <el-form-item :label="t('slaAccess.issueTtl')">
-            <el-input-number v-model="issueForm.ttlMinutes" :min="1" :max="1440" />
+            <el-input-number v-model="issueForm.ttlMinutes" :min="1" :max="60" />
             <span class="field-hint">{{ t('slaAccess.issueTtlHint') }}</span>
           </el-form-item>
           <el-form-item :label="t('slaAccess.issueIp')">

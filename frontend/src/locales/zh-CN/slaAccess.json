@@ -35,7 +35,7 @@
     "issueTitle": "签发一次性接入令牌",
     "issueDesc": "令牌只显示一次，关掉弹窗就再也看不到；被消费后立即作废。可以绑定来源 IP，非该 IP 的请求即使拿到令牌也会被拒。",
     "issueTtl": "有效期（分钟）",
-    "issueTtlHint": "默认 15 分钟，够 SLA 部署时人工填入配置",
+    "issueTtlHint": "默认 15 分钟、最长 60 分钟：够 SLA 部署时人工填入配置，又不至于长时间有效",
     "issueIp": "绑定来源 IP（可选）",
     "issueIpPlaceholder": "留空 = 不限制来源",
     "issueConfirm": "签发",

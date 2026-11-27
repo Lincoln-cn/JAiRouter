@@ -1,9 +1,13 @@
 package org.unreal.modelrouter.persistence.jpa.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.persistence.jpa.entity.SlaBootstrapTokenEntity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,4 +40,15 @@ public interface SlaBootstrapTokenRepository extends JpaRepository<SlaBootstrapT
      * @return 未消费数量
      */
     long countByAccountIdAndUsedAtIsNull(String accountId);
+
+    /**
+     * 删除「过期、已消费或已吊销」且早于保留期下界的令牌行（issue #1218）。
+     *
+     * @param cutoff 保留期下界（早于它的行会被删）
+     * @return 删除行数
+     */
+    @Modifying
+    @Query("delete from SlaBootstrapTokenEntity t "
+            + "where t.expiresAt < :cutoff or t.usedAt < :cutoff or t.revokedAt < :cutoff")
+    int deleteStale(@Param("cutoff") LocalDateTime cutoff);
 }
