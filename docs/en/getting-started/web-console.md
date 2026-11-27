@@ -447,7 +447,7 @@ One toggle in the top bar switches to dark without a separate build and without 
 
 | Group | Menu Item | Tabs and Route Paths (order = tab order) |
 |-------|-----------|-----------------------------------------|
-| Overview | Dashboard | `/dashboard/main` |
+| Overview | Dashboard | Admin `/dashboard/main` ｜ Maintainer `/dashboard/operations` ｜ User `/dashboard/mine` ｜ Observer `/dashboard/trends` (one landing page per role, mutually exclusive in the same menu slot) |
 | Observability | Call History | Call Records `/call-history/list` ｜ Call History Dashboard `/call-history/dashboard` |
 | Observability | Distributed Tracing | Trace Search `/tracing/search` ｜ Tracing Dashboard `/tracing/dashboard` |
 | Observability | Exceptions | Exception List `/exceptions/list` ｜ Statistics `/exceptions/statistics` (detail `/exceptions/detail/:id` is a deep link, not a sidebar entry) |
@@ -455,7 +455,7 @@ One toggle in the top bar switches to dark without a separate build and without 
 | Observability | Usage | Token Usage `/call-history/token-usage` ｜ Quota Usage `/monitoring/quota` |
 | Traffic Governance | Routing Rules | `/config/rules` |
 | Traffic Governance | Load Balancing | Real-time Monitoring `/load-balancers/monitoring` ｜ Strategy Config `/load-balancers/strategy-config` |
-| Traffic Governance | Rate Limiting | Rate Limit Monitoring `/rate-limiters/monitoring` |
+| Traffic Governance | Rate Limiting | Rate Limit Monitor `/rate-limiters/monitoring` ｜ Rate-limit Config `/rate-limiters/config` |
 | Traffic Governance | Circuit Breakers | Circuit Monitoring `/circuit-breakers/monitoring` ｜ Circuit History `/circuit-breakers/history` ｜ Global Config `/circuit-breakers/global-config` |
 | Platform Settings | Response Cache Management | `/config/cache` |
 | Traffic Governance | Quota Runtime Config | `/config/quota` |
@@ -473,6 +473,8 @@ One toggle in the top bar switches to dark without a separate build and without 
 | Security | Login Protection | `/security/login-guard` |
 | Platform Settings | Account Management | `/system/accounts` |
 | Platform Settings | Permission Management | `/system/permissions` |
+| Platform Settings | SLA Access | `/system/sla` |
+| Platform Settings | Page Access Heat | `/system/page-heat` |
 | Platform Settings | Tracing Config | `/tracing/management` |
 | Platform Settings | Monitoring Config | Monitoring Config `/monitoring/config` ｜ Runtime & Emergency `/monitoring/config/runtime` |
 | Platform Settings | State Persistence | `/config/state-persistence` |
