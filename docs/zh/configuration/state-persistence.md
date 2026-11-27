@@ -103,7 +103,7 @@ jairouter:
 | `/api/state-persistence/details` | GET | 获取所有状态详情 |
 | `/api/state-persistence/sync` | POST | 手动触发同步 |
 | `/api/state-persistence/recovery/all` | POST | 恢复所有状态 |
-| `/api/state-persistence/recovery/{type}/{id}` | POST | 恢复单个状态 |
+| `/api/state-persistence/recovery/{type}/{id}` | POST | 恢复单个状态（`{type}` 取值：`circuit-breaker` / `load-balancer` / `rate-limiter`，对应 `{id}` 依次为实例 ID / 服务类型 / 限流器 ID） |
 | `/api/state-persistence/recovery/rate-limiter/{limiterId}` | POST | 恢复限流器状态 |
 
 ### 示例请求

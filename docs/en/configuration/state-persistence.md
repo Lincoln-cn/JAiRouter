@@ -103,7 +103,7 @@ Supported state types for persistence:
 | `/api/state-persistence/details` | GET | Get all state details |
 | `/api/state-persistence/sync` | POST | Manual sync trigger |
 | `/api/state-persistence/recovery/all` | POST | Recover all states |
-| `/api/state-persistence/recovery/{type}/{id}` | POST | Recover single state |
+| `/api/state-persistence/recovery/{type}/{id}` | POST | Recover a single state (`{type}` is one of `circuit-breaker` / `load-balancer` / `rate-limiter`; `{id}` is the instance ID, service type, or limiter ID respectively) |
 | `/api/state-persistence/recovery/rate-limiter/{limiterId}` | POST | Recover rate limiter state |
 
 ### Example Requests
