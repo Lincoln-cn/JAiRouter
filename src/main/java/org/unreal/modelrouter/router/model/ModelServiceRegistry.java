@@ -1,13 +1,16 @@
 package org.unreal.modelrouter.router.model;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
@@ -118,6 +121,18 @@ public class ModelServiceRegistry {
     // v2.8.7: 规则命中统计(延迟注入,避免循环依赖)
     private RuleStatsService ruleStatsService;
 
+    /**
+     * #1238: adapter 注册表（延迟取）.
+     *
+     * <p>{@link AdapterRegistry} 构造注入了本类，直接反向注入会构成循环引用
+     * （{@code spring.main.allow-circular-references=false}），
+     * 因此这里用 {@link ObjectProvider} 把解析推迟到真正用到它的时候。</p>
+     */
+    private ObjectProvider<AdapterRegistry> adapterRegistryProvider;
+
+    /** #1238: 可选指标出口（actuator 不在时只是不打点，不影响选路）。 */
+    private MeterRegistry meterRegistry;
+
     // v2.8.9: 资源池选择器(延迟注入,避免循环依赖)
     private PoolSelector poolSelector;
 
@@ -142,6 +157,26 @@ public class ModelServiceRegistry {
     @Autowired(required = false)
     public void setRuleStatsService(final RuleStatsService ruleStatsService) {
         this.ruleStatsService = ruleStatsService;
+    }
+
+    /**
+     * #1238: 注入 adapter 注册表的延迟提供者（不触发实例化，避免循环引用）.
+     *
+     * @param adapterRegistryProvider Spring 提供的延迟解析器
+     */
+    @Autowired
+    public void setAdapterRegistryProvider(final ObjectProvider<AdapterRegistry> adapterRegistryProvider) {
+        this.adapterRegistryProvider = adapterRegistryProvider;
+    }
+
+    /**
+     * #1238: 注入可选指标出口.
+     *
+     * @param meterRegistry Micrometer 注册表；未启用 actuator 时为 {@code null}
+     */
+    @Autowired(required = false)
+    public void setMeterRegistry(final MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
     }
 
     /**
@@ -642,6 +677,11 @@ public class ModelServiceRegistry {
             }
         }
 
+        // #1238: 生效 adapter 未注册的实例不参与选路。否则错误要拖到转发阶段取适配器时才抛
+        // （客户端看到 5xx），而健康检查只探网络可达性、一直报 HEALTHY，运维只能翻日志。
+        availableInstances = dropInstancesWithUnresolvableAdapter(
+                availableInstances, serviceType, effectiveModelName);
+
         if (availableInstances.isEmpty()) {
             throw instanceSelector.createAppropriateException(serviceType, effectiveModelName, candidates);
         }
@@ -1124,6 +1164,77 @@ public class ModelServiceRegistry {
                     config.getAdapter(),
                     config.getLoadBalanceConfig() != null ? config.getLoadBalanceConfig().getType() : "default");
         }
+    }
+
+    /**
+     * #1238：从候选里剔除「生效 adapter 未注册」的实例.
+     *
+     * <p>不剔除的话，配置写错的实例会被正常选中，错误拖到转发阶段
+     * {@code AdapterRegistry#getAdapter(serviceType, instance)} 才抛（客户端看到 5xx）。
+     * 这里在选路前判定，把「配置问题」变成「跳过 + 可检索的告警」。</p>
+     *
+     * @param instances   候选实例
+     * @param serviceType 服务类型
+     * @param modelName   请求的模型名（用于日志与错误信息）
+     * @return 过滤后的候选；没有发生过滤时返回入参本身
+     * @throws ResponseStatusException 全部候选都因 adapter 未注册被剔除时（503 + 明确原因）
+     */
+    private List<ModelRouterProperties.ModelInstance> dropInstancesWithUnresolvableAdapter(
+            final List<ModelRouterProperties.ModelInstance> instances,
+            final ServiceType serviceType,
+            final String modelName) {
+        if (adapterRegistryProvider == null || instances == null || instances.isEmpty()) {
+            return instances;
+        }
+        final AdapterRegistry adapterRegistry = adapterRegistryProvider.getIfAvailable();
+        if (adapterRegistry == null) {
+            return instances;
+        }
+
+        final List<ModelRouterProperties.ModelInstance> kept = new ArrayList<>(instances.size());
+        final List<String> skipped = new ArrayList<>();
+        for (final ModelRouterProperties.ModelInstance instance : instances) {
+            final String adapterName = adapterRegistry.resolveAdapterName(serviceType, instance);
+            if (adapterRegistry.isAdapterSupported(adapterName)) {
+                kept.add(instance);
+                continue;
+            }
+            skipped.add(instance.getName() + " → " + adapterName);
+            recordUnresolvableAdapter(serviceType, adapterName);
+        }
+        if (skipped.isEmpty()) {
+            return instances;
+        }
+
+        LOGGER.warn("跳过 {} 个生效 adapter 未注册的实例（service={}, model={}）：{}；"
+                        + "已注册清单见 GET /api/config/adapter/list",
+                skipped.size(), serviceType, modelName, String.join(", ", skipped));
+
+        if (kept.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No routable instances for model '" + modelName + "' in service type '" + serviceType
+                            + "': their adapter is not registered (" + String.join(", ", skipped)
+                            + "). 请核对 model.services 下的 adapter 配置，"
+                            + "已注册清单见 GET /api/config/adapter/list");
+        }
+        return kept;
+    }
+
+    /**
+     * #1238：adapter 不可解析的打点（供运维侧看趋势与告警）.
+     *
+     * @param serviceType 服务类型
+     * @param adapterName 解析出但未注册的 adapter 名
+     */
+    private void recordUnresolvableAdapter(final ServiceType serviceType, final String adapterName) {
+        final MeterRegistry registry = this.meterRegistry;
+        if (registry == null) {
+            return;
+        }
+        registry.counter("jairouter.routing.adapter.unresolvable",
+                "service", serviceType.name().toLowerCase(),
+                "adapter", adapterName).increment();
     }
 
     /**
