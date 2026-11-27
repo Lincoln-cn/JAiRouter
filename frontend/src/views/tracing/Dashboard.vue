@@ -411,13 +411,13 @@ import {
 import type { TraceSpan, TracingServiceStat, TracingStatistics, TracingStatus } from '@/types/tracing'
 import type { LocationQueryRaw } from 'vue-router'
 import type {
-  ErrorAnalysis,
   LatencyAnalysis,
   ThroughputAnalysis,
   TrendPoint,
 } from '@/types'
 import type { ErrorAnalysisAggregated } from '@/api/tracing'
 import TraceDetail from './components/TraceDetail.vue'
+import { errorTrendPoints } from './trendData'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
@@ -462,7 +462,6 @@ const slowTraces = ref<TraceSpan[]>([])
 
 // 趋势图数据源（来自 /tracing/query/performance/*；缺失时渲染空图，不使用占位数据）
 const latencyAnalysis = ref<LatencyAnalysis | null>(null)
-const errorAnalysis = ref<ErrorAnalysis | null>(null)
 const errorAggregated = ref<ErrorAnalysisAggregated | null>(null)
 const errorFilters = reactive({ operation: '', instance: '', client: '' })
 const throughputAnalysis = ref<ThroughputAnalysis | null>(null)
@@ -490,7 +489,7 @@ const selectedTrace = ref<TraceSpan | null>(null)
 const traceTrendEmpty = computed(() => (throughputAnalysis.value?.qpsTrend || []).length === 0)
 const latencyDistEmpty = computed(() => serviceStats.value.length === 0)
 const latencyTrendEmpty = computed(() => (latencyAnalysis.value?.trend || []).length === 0)
-const errorTrendEmpty = computed(() => (errorAggregated.value?.errorTrend || []).length === 0)
+const errorTrendEmpty = computed(() => errorTrendPoints(errorAggregated.value).length === 0)
 const throughputTrendEmpty = computed(() => (throughputAnalysis.value?.qpsTrend || []).length === 0)
 
 /** 环比提示文案（有变化才显示，避免每格都挂一条 0%）。 */
@@ -645,7 +644,7 @@ const initCharts = () => {
 const getTraceTrendOption = () => {
   const chartSkin = skin.value
   const throughput: TrendPoint[] = throughputAnalysis.value?.qpsTrend || []
-  const errors: TrendPoint[] = errorAnalysis.value?.errorTrend || []
+  const errors: TrendPoint[] = errorTrendPoints(errorAggregated.value)
   const errorByHour = new Map(errors.map(p => [p.hour, p.errorCount ?? 0]))
   return {
     tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
@@ -727,10 +726,10 @@ const getLatencyTrendOption = () => {
   }
 }
 
-// 错误率趋势——数据来自 /tracing/query/performance/errors
+// 错误率趋势——数据来自 /tracing/query/error-analysis（与上方错误数同源，避免两次请求口径漂移）
 const getErrorTrendOption = () => {
   const chartSkin = skin.value
-  const points: TrendPoint[] = errorAnalysis.value?.errorTrend || []
+  const points: TrendPoint[] = errorTrendPoints(errorAggregated.value)
   return {
     tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: {
