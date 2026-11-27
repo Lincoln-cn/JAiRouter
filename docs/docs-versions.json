@@ -111,16 +111,15 @@
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T15:24:45.971660",
-      "ContentHash": "15e3bc1606567c29",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-27T18:13:53.901174",
+      "ContentHash": "ed55fcac7a7095f4",
+      "GitCommit": "84db1a7f",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/validation-rules.md"
-      ],
-      "ReviewedAt": "2026-11-27T19:23:43.994150"
+      ]
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
@@ -1295,16 +1294,15 @@
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T15:24:49.156984",
-      "ContentHash": "427785b7c2db78e5",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-27T18:13:54.795871",
+      "ContentHash": "48422781c5017f4d",
+      "GitCommit": "84db1a7f",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/validation-rules.md"
-      ],
-      "ReviewedAt": "2026-11-27T19:23:43.994150"
+      ]
     },
     "docs/zh/configuration/application-config.md": {
       "FilePath": "docs/zh/configuration/application-config.md",
@@ -9117,7 +9115,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-27T17:49:39.928431",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/adapter-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T18:13:53.901183",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/adapter-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-27T18:13:54.795881",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-27T17:49:40.011362"
+  "last_updated": "2026-11-27T18:13:55.696490"
 }
