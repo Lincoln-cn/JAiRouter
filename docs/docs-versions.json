@@ -40,7 +40,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/universal-api.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/api-reference/index.md": {
       "FilePath": "docs/en/api-reference/index.md",
@@ -92,7 +93,8 @@
       "GitCommit": "04791c12",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/api-reference/universal-api.md": {
       "FilePath": "docs/en/api-reference/universal-api.md",
@@ -104,7 +106,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/error-codes.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
@@ -116,7 +119,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/validation-rules.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
@@ -141,7 +145,8 @@
         "docs/en/deployment/index.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/dynamic-config.md": {
       "FilePath": "docs/en/configuration/dynamic-config.md",
@@ -189,7 +194,8 @@
       "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/jwt-persistence.md": {
       "FilePath": "docs/en/configuration/jwt-persistence.md",
@@ -291,7 +297,8 @@
         "docs/en/configuration/rate-limiting.md",
         "docs/en/monitoring/metrics.md",
         "docs/en/reference/changelog.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/routing-rules.md": {
       "FilePath": "docs/en/configuration/routing-rules.md",
@@ -301,7 +308,8 @@
       "GitCommit": "3a02eda1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/state-persistence.md": {
       "FilePath": "docs/en/configuration/state-persistence.md",
@@ -315,7 +323,8 @@
         "docs/en/configuration/circuit-breaker.md",
         "docs/en/configuration/rate-limiting.md",
         "docs/en/configuration/store-config.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/store-config.md": {
       "FilePath": "docs/en/configuration/store-config.md",
@@ -327,7 +336,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/deployment/database.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/validation-rules.md": {
       "FilePath": "docs/en/configuration/validation-rules.md",
@@ -341,7 +351,8 @@
         "docs/en/configuration/index.md",
         "docs/en/deployment/production.md",
         "docs/en/troubleshooting/common-issues.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/configuration/version-management.md": {
       "FilePath": "docs/en/configuration/version-management.md",
@@ -352,7 +363,7 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [],
-      "ReviewedAt": "2026-11-26T00:00:00"
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/deployment/china-optimization.md": {
       "FilePath": "docs/en/deployment/china-optimization.md",
@@ -595,7 +606,8 @@
         "docs/en/getting-started/first-steps.md",
         "docs/en/getting-started/installation.md",
         "docs/en/getting-started/quick-start.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/getting-started/installation.md": {
       "FilePath": "docs/en/getting-started/installation.md",
@@ -611,7 +623,8 @@
         "docs/en/getting-started/first-steps.md",
         "docs/en/getting-started/quick-start.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
@@ -659,7 +672,8 @@
         "docs/en/getting-started/quick-start.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/en/monitoring/alert_rules_guide.md",
@@ -669,7 +683,8 @@
       "GitCommit": "e40a51b1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/monitoring/alerts.md": {
       "FilePath": "docs/en/monitoring/alerts.md",
@@ -684,7 +699,8 @@
         "docs/en/monitoring/performance.md",
         "docs/en/monitoring/testing.md",
         "docs/en/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/monitoring/configuration.md": {
       "FilePath": "docs/en/monitoring/configuration.md",
@@ -724,7 +740,8 @@
       "GitCommit": "e75f4909",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/monitoring/index.md": {
       "FilePath": "docs/en/monitoring/index.md",
@@ -796,7 +813,8 @@
       "GitCommit": "e75f4909",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/monitoring/testing.md": {
       "FilePath": "docs/en/monitoring/testing.md",
@@ -811,7 +829,8 @@
         "docs/en/monitoring/performance.md",
         "docs/en/monitoring/setup.md",
         "docs/en/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/monitoring/troubleshooting.md": {
       "FilePath": "docs/en/monitoring/troubleshooting.md",
@@ -840,7 +859,8 @@
         "docs/en/api-reference/index.md",
         "docs/en/configuration/index.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
@@ -874,7 +894,8 @@
       "GitCommit": "c82b4559",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/reference/index.md": {
       "FilePath": "docs/en/reference/index.md",
@@ -893,7 +914,8 @@
         "docs/en/reference/faq.md",
         "docs/en/reference/glossary.md",
         "docs/en/reference/roadmap.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
@@ -984,7 +1006,8 @@
         "docs/en/security/jwt-authentication.md",
         "docs/en/security/rbac-permissions.md",
         "docs/en/security/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/security/jwt-authentication.md": {
       "FilePath": "docs/en/security/jwt-authentication.md",
@@ -1039,7 +1062,8 @@
         "docs/en/deployment/production.md",
         "docs/en/security/index.md",
         "docs/en/security/rbac-permissions.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/tracing/config-reference.md": {
       "FilePath": "docs/en/tracing/config-reference.md",
@@ -1049,7 +1073,8 @@
       "GitCommit": "88f67b49",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/tracing/index.md": {
       "FilePath": "docs/en/tracing/index.md",
@@ -1064,7 +1089,8 @@
         "docs/en/tracing/quickstart.md",
         "docs/en/tracing/troubleshooting.md",
         "docs/en/tracing/usage-guide.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/tracing/operations-guide.md": {
       "FilePath": "docs/en/tracing/operations-guide.md",
@@ -1092,7 +1118,8 @@
         "docs/en/tracing/config-reference.md",
         "docs/en/tracing/operations-guide.md",
         "docs/en/tracing/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/tracing/quickstart.md": {
       "FilePath": "docs/en/tracing/quickstart.md",
@@ -1107,7 +1134,8 @@
         "docs/en/tracing/performance-tuning.md",
         "docs/en/tracing/troubleshooting.md",
         "docs/en/tracing/usage-guide.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/tracing/troubleshooting.md": {
       "FilePath": "docs/en/tracing/troubleshooting.md",
@@ -1156,7 +1184,8 @@
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/en/troubleshooting/index.md": {
       "FilePath": "docs/en/troubleshooting/index.md",
@@ -1197,7 +1226,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/universal-api.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/api-reference/index.md": {
       "FilePath": "docs/zh/api-reference/index.md",
@@ -1249,7 +1279,8 @@
       "GitCommit": "04791c12",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/api-reference/universal-api.md": {
       "FilePath": "docs/zh/api-reference/universal-api.md",
@@ -1261,7 +1292,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/error-codes.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
@@ -1273,7 +1305,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/validation-rules.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/application-config.md": {
       "FilePath": "docs/zh/configuration/application-config.md",
@@ -1298,7 +1331,8 @@
         "docs/zh/deployment/index.md",
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/dynamic-config.md": {
       "FilePath": "docs/zh/configuration/dynamic-config.md",
@@ -1345,7 +1379,8 @@
       "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/jwt-persistence.md": {
       "FilePath": "docs/zh/configuration/jwt-persistence.md",
@@ -1447,7 +1482,8 @@
         "docs/zh/configuration/rate-limiting.md",
         "docs/zh/monitoring/metrics.md",
         "docs/zh/reference/changelog.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
@@ -1457,7 +1493,8 @@
       "GitCommit": "3a02eda1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/state-persistence.md": {
       "FilePath": "docs/zh/configuration/state-persistence.md",
@@ -1471,7 +1508,8 @@
         "docs/zh/configuration/circuit-breaker.md",
         "docs/zh/configuration/rate-limiting.md",
         "docs/zh/configuration/store-config.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
@@ -1483,7 +1521,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/deployment/database.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/validation-rules.md": {
       "FilePath": "docs/zh/configuration/validation-rules.md",
@@ -1497,7 +1536,8 @@
         "docs/zh/configuration/index.md",
         "docs/zh/deployment/production.md",
         "docs/zh/troubleshooting/common-issues.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/configuration/version-management.md": {
       "FilePath": "docs/zh/configuration/version-management.md",
@@ -1508,7 +1548,7 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [],
-      "ReviewedAt": "2026-11-26T00:00:00"
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/deployment/china-optimization.md": {
       "FilePath": "docs/zh/deployment/china-optimization.md",
@@ -1752,7 +1792,8 @@
         "docs/zh/getting-started/first-steps.md",
         "docs/zh/getting-started/installation.md",
         "docs/zh/getting-started/quick-start.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/getting-started/installation.md": {
       "FilePath": "docs/zh/getting-started/installation.md",
@@ -1768,7 +1809,8 @@
         "docs/zh/getting-started/first-steps.md",
         "docs/zh/getting-started/quick-start.md",
         "docs/zh/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
@@ -1817,7 +1859,8 @@
         "docs/zh/getting-started/quick-start.md",
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/zh/monitoring/alert_rules_guide.md",
@@ -1827,7 +1870,8 @@
       "GitCommit": "c82b4559",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/monitoring/alerts.md": {
       "FilePath": "docs/zh/monitoring/alerts.md",
@@ -1842,7 +1886,8 @@
         "docs/zh/monitoring/performance.md",
         "docs/zh/monitoring/testing.md",
         "docs/zh/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/monitoring/configuration.md": {
       "FilePath": "docs/zh/monitoring/configuration.md",
@@ -1882,7 +1927,8 @@
       "GitCommit": "e75f4909",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/monitoring/index.md": {
       "FilePath": "docs/zh/monitoring/index.md",
@@ -1902,7 +1948,8 @@
         "docs/zh/monitoring/setup.md",
         "docs/zh/monitoring/testing.md",
         "docs/zh/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/monitoring/metrics.md": {
       "FilePath": "docs/zh/monitoring/metrics.md",
@@ -1958,7 +2005,8 @@
       "GitCommit": "e75f4909",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/monitoring/testing.md": {
       "FilePath": "docs/zh/monitoring/testing.md",
@@ -1973,7 +2021,8 @@
         "docs/zh/monitoring/performance.md",
         "docs/zh/monitoring/setup.md",
         "docs/zh/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/monitoring/troubleshooting.md": {
       "FilePath": "docs/zh/monitoring/troubleshooting.md",
@@ -2002,7 +2051,8 @@
         "docs/zh/api-reference/index.md",
         "docs/zh/configuration/index.md",
         "docs/zh/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
@@ -2036,7 +2086,8 @@
       "GitCommit": "c82b4559",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/reference/index.md": {
       "FilePath": "docs/zh/reference/index.md",
@@ -2056,7 +2107,8 @@
         "docs/zh/reference/faq.md",
         "docs/zh/reference/glossary.md",
         "docs/zh/reference/roadmap.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
@@ -2148,7 +2200,8 @@
         "docs/zh/security/jwt-authentication.md",
         "docs/zh/security/rbac-permissions.md",
         "docs/zh/security/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/security/jwt-authentication.md": {
       "FilePath": "docs/zh/security/jwt-authentication.md",
@@ -2203,7 +2256,8 @@
         "docs/zh/deployment/production.md",
         "docs/zh/security/index.md",
         "docs/zh/security/rbac-permissions.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/tracing/config-reference.md": {
       "FilePath": "docs/zh/tracing/config-reference.md",
@@ -2213,7 +2267,8 @@
       "GitCommit": "88f67b49",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/tracing/index.md": {
       "FilePath": "docs/zh/tracing/index.md",
@@ -2228,7 +2283,8 @@
         "docs/zh/tracing/quickstart.md",
         "docs/zh/tracing/troubleshooting.md",
         "docs/zh/tracing/usage-guide.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/tracing/operations-guide.md": {
       "FilePath": "docs/zh/tracing/operations-guide.md",
@@ -2256,7 +2312,8 @@
         "docs/zh/tracing/config-reference.md",
         "docs/zh/tracing/operations-guide.md",
         "docs/zh/tracing/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/tracing/quickstart.md": {
       "FilePath": "docs/zh/tracing/quickstart.md",
@@ -2271,7 +2328,8 @@
         "docs/zh/tracing/performance-tuning.md",
         "docs/zh/tracing/troubleshooting.md",
         "docs/zh/tracing/usage-guide.md"
-      ]
+      ],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/tracing/troubleshooting.md": {
       "FilePath": "docs/zh/tracing/troubleshooting.md",
@@ -2320,7 +2378,8 @@
       "GitCommit": "97163311",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-11-27T19:23:04.474946"
     },
     "docs/zh/troubleshooting/index.md": {
       "FilePath": "docs/zh/troubleshooting/index.md",
@@ -8968,5 +9027,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-27T11:15:51.477564"
+  "last_updated": "2026-11-27T19:23:04.475977"
 }
