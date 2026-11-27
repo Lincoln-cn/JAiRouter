@@ -90,9 +90,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SettingsSwitch: typeof import('./src/components/config/SettingsSwitch.vue')['default']
-    StatCard: typeof import('./src/components/StatCard.vue')['default']
     StatusBar: typeof import('./src/components/StatusBar.vue')['default']
-    StatusPill: typeof import('./src/components/StatusPill.vue')['default']
     TableCards: typeof import('./src/components/TableCards.vue')['default']
     TimeText: typeof import('./src/components/TimeText.vue')['default']
   }

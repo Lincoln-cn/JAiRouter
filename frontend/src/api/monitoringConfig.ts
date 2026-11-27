@@ -120,11 +120,6 @@ export const updateMonitoringPerformance = async (
   await request.put<RouterResponse<unknown>>('/monitoring/config/performance', payload)
 }
 
-export const getMonitoringConfigSnapshot = async (): Promise<MonitoringConfig | null> => {
-  const response = await request.get<RouterResponse<MonitoringConfig>>('/monitoring/config/snapshot')
-  return unwrap(response)
-}
-
 export const getMonitoringHealth = async (): Promise<MonitoringHealth | null> => {
   const response = await request.get<RouterResponse<MonitoringHealth>>('/monitoring/health')
   return unwrap(response)

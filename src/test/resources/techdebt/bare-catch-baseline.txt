@@ -140,7 +140,6 @@ org/unreal/modelrouter/monitor/tracing/DefaultTracingContext.java 10
 org/unreal/modelrouter/monitor/tracing/SpanManager.java 5
 org/unreal/modelrouter/monitor/tracing/SpanStatusManager.java 9
 org/unreal/modelrouter/monitor/tracing/TracingService.java 2
-org/unreal/modelrouter/monitor/tracing/TracingSpanBuilder.java 2
 org/unreal/modelrouter/monitor/tracing/actuator/TracingHealthIndicator.java 1
 org/unreal/modelrouter/monitor/tracing/actuator/TracingInfoContributor.java 1
 org/unreal/modelrouter/monitor/tracing/async/AsyncTracingProcessor.java 3
@@ -157,7 +156,6 @@ org/unreal/modelrouter/monitor/tracing/logger/TracingLogbackAppender.java 1
 org/unreal/modelrouter/monitor/tracing/logger/builder/ErrorLogBuilder.java 1
 org/unreal/modelrouter/monitor/tracing/performance/TracingPerformanceMonitor.java 2
 org/unreal/modelrouter/monitor/tracing/reactive/ReactiveTracingContextHolder.java 2
-org/unreal/modelrouter/monitor/tracing/reactive/TracingOperator.java 3
 org/unreal/modelrouter/monitor/tracing/reactive/WebFluxTracingContextPropagator.java 1
 org/unreal/modelrouter/monitor/tracing/sanitization/TracingSanitizationService.java 2
 org/unreal/modelrouter/monitor/tracing/security/TracingSecurityFilter.java 6
@@ -199,7 +197,6 @@ org/unreal/modelrouter/router/adapter/processor/StreamingRequestProcessor.java 7
 org/unreal/modelrouter/router/adapter/request/NonStreamingRequestProcessor.java 1
 org/unreal/modelrouter/router/adapter/request/TokenUsageExtractor.java 2
 org/unreal/modelrouter/router/adapter/support/MetricsSupport.java 2
-org/unreal/modelrouter/router/adapter/support/TracingSupport.java 4
 org/unreal/modelrouter/router/adapter/tracing/AdapterTracingManager.java 5
 org/unreal/modelrouter/router/adapter/transformer/LocalAiRequestTransformer.java 5
 org/unreal/modelrouter/router/adapter/transformer/LocalAiResponseTransformer.java 3

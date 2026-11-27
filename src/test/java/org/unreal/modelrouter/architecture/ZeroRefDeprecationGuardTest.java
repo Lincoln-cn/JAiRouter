@@ -30,15 +30,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * from the {@code user.dir} system property) instead of the class path, so it sees test sources as
  * well and never depends on build output.
  *
- * <p>Three anti-vacuity checks keep "the scanner found nothing" from being reported as "passed":
+ * <p>Two anti-vacuity checks keep "the scanner found nothing" from being reported as "passed":
  * <ol>
  *   <li>both source roots must exist and yield at least the expected number of files;</li>
- *   <li>at least fourteen types must carry the annotation;</li>
- *   <li>every type of the sweep must be present in the scan result, matched by simple name.</li>
+ *   <li>the annotation parser must recognise a {@code @Deprecated(forRemoval = true)} declaration on a
+ *   probe snippet — once the sweep is finished the tree scan legitimately finds zero such types, so the
+ *   parser is pinned by its own case instead of by a count of surviving annotations.</li>
  * </ol>
  *
- * <p>The expected simple names below are assembled from fragments on purpose: a whole-word mention of
- * one of them inside this file would itself count as a reference and the guard would fail on itself.
+ * <p>The 2026-11 sweep this guard was written for has been deleted (14 types, 2119 lines); the guard
+ * stays because the rule it encodes — a type may only be marked for removal while nothing outside its
+ * own source file mentions it — still applies to whatever gets marked next.
  */
 @DisplayName("guards: @Deprecated(forRemoval = true) implies zero references")
 class ZeroRefDeprecationGuardTest {
@@ -48,7 +50,6 @@ class ZeroRefDeprecationGuardTest {
 
     private static final int MIN_MAIN_FILES = 700;
     private static final int MIN_TEST_FILES = 350;
-    private static final int MIN_DEPRECATED_TYPES = 14;
 
     private static final int MAX_ANNOTATION_LOOKAHEAD = 20;
 
@@ -57,22 +58,6 @@ class ZeroRefDeprecationGuardTest {
     private static final Pattern TYPE_DECL = Pattern.compile(
             "^\\s*(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp)\\s+)*"
                     + "(?:class|interface|record|enum)\\s+(\\w+)");
-
-    private static final List<String> EXPECTED_TYPE_NAMES = List.of(
-            "Tracing" + "SpanBuilder",
-            "Tracing" + "Operator",
-            "SecurityAuditQuery" + "Response",
-            "SecurityAuditQuery" + "Request",
-            "Retry" + "Support",
-            "RequestProcessing" + "Template",
-            "Multipart" + "Support",
-            "Tracing" + "Support",
-            "Service" + "InstanceVO",
-            "ReactiveVersioned" + "StoreManager",
-            "SecurityConfiguration" + "ChangeEvent",
-            "ApiKeyCreation" + "Response",
-            "Create" + "ApiKey" + "Request",
-            "Update" + "ApiKey" + "Request");
 
     @Test
     @DisplayName("both source roots are walked and yield the expected number of files")
@@ -108,18 +93,6 @@ class ZeroRefDeprecationGuardTest {
             deprecated.addAll(deprecatedTypesIn(file, sources.get(file)));
         }
 
-        assertTrue(deprecated.size() >= MIN_DEPRECATED_TYPES,
-                "expected at least " + MIN_DEPRECATED_TYPES + " types annotated with "
-                        + "@Deprecated(forRemoval = true) under " + MAIN_ROOT + " but found "
-                        + deprecated.size() + ": " + foundNames(deprecated)
-                        + " (annotation parsing or the scan root broke; the guard must not pass vacuously)");
-
-        final Set<String> found = foundNames(deprecated);
-        for (final String expected : EXPECTED_TYPE_NAMES) {
-            assertTrue(found.contains(expected), "the scanner did not see the expected deprecated type ["
-                    + expected + "]; it found " + found + " under " + repoRoot());
-        }
-
         final Map<String, List<String>> dangling = new LinkedHashMap<>();
         for (final DeprecatedType type : deprecated) {
             final Pattern mention = Pattern.compile("\\b" + Pattern.quote(type.simpleName()) + "\\b");
@@ -149,6 +122,27 @@ class ZeroRefDeprecationGuardTest {
                     .append(hits.size()).append(" hit(s): ").append(hits).append('\n'));
             return message.toString();
         });
+    }
+
+    @Test
+    @DisplayName("the annotation parser recognises a forRemoval declaration on a probe snippet")
+    void parserRecognisesTheAnnotation() {
+        final Path probeFile = repoRoot().resolve(MAIN_ROOT).resolve("__guard_probe__").resolve("Probe.java");
+        final List<String> lines = List.of(
+                "package __guard_probe__;",
+                "",
+                "@Deprecated(forRemoval = true)",
+                "class GuardProbe {}",
+                "",
+                "@Deprecated",
+                "class PlainProbe {}");
+
+        final List<DeprecatedType> found = deprecatedTypesIn(probeFile, lines);
+
+        assertEquals(1, found.size(),
+                "the parser must see exactly one forRemoval type among the probe lines, saw " + foundNames(found));
+        assertEquals("GuardProbe", found.get(0).simpleName(),
+                "the parser paired the annotation with the wrong declaration");
     }
 
     private static List<DeprecatedType> deprecatedTypesIn(final Path file, final List<String> lines) {

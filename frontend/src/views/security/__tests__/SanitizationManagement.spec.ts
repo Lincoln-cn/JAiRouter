@@ -147,7 +147,6 @@ const stubs = {
   }),
   SettingsSwitch: defineComponent({ props: { modelValue: { type: Boolean, default: false } }, emits: ['update:modelValue'], template: '<span />' }),
   PageSkeleton: { template: '<div><slot /><slot name="stats" /><slot name="actions" /></div>' },
-  StatCard: true,
   'el-alert': true,
   'el-row': true,
   'el-col': true,
