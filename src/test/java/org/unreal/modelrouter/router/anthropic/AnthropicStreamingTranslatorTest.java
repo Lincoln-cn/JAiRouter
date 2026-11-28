@@ -528,4 +528,50 @@ class AnthropicStreamingTranslatorTest {
             assertEquals("end_turn", payload(events.get(5)).get("delta").get("stop_reason").asText());
         }
     }
+
+    @Nested
+    @DisplayName("下游已是 Anthropic 原生事件流")
+    class NativePassthrough {
+
+        private static final String NATIVE_START = """
+                {"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-3","content":[],"usage":{"input_tokens":12,"output_tokens":0}}}""";
+
+        private static final String NATIVE_BLOCK_START = """
+                {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}""";
+
+        private static final String NATIVE_DELTA = """
+                {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"你好"}}""";
+
+        private static final String NATIVE_STOP = """
+                {"type":"message_stop"}""";
+
+        @Test
+        @DisplayName("逐事件原样透传，不再按 choices[] 解析（#1242）")
+        void passesThroughNativeEvents() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(
+                    downstream(NATIVE_START, NATIVE_BLOCK_START, NATIVE_DELTA, NATIVE_STOP),
+                    "claude-3", 12L));
+
+            assertEquals(4, events.size(), "原生流必须逐个透传，不能被本地拼的 message_start 顶替");
+            assertEquals(NATIVE_START, events.get(0).data());
+            assertEquals(NATIVE_BLOCK_START, events.get(1).data());
+            assertEquals(NATIVE_DELTA, events.get(2).data(), "正文增量必须到达客户端");
+            assertEquals(NATIVE_STOP, events.get(3).data());
+            assertFalse(names(events).contains(AnthropicStreamEvent.EVENT_MESSAGE_DELTA),
+                    "透传路径不应再追加本地生成的 message_delta");
+        }
+
+        @Test
+        @DisplayName("OpenAI 风格块仍走翻译（首块无 type 字段）")
+        void stillTranslatesOpenAiChunks() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(
+                    downstream(CHUNK_ROLE, CHUNK_NIHAO, CHUNK_STOP, "[DONE]"),
+                    "deepseek-chat", 11L));
+
+            assertEquals(AnthropicStreamEvent.EVENT_MESSAGE_START, names(events).get(0));
+            assertTrue(events.stream()
+                    .anyMatch(event -> AnthropicStreamEvent.EVENT_MESSAGE_STOP.equals(event.event())),
+                    "OpenAI 风格流仍应产出 message_stop");
+        }
+    }
 }

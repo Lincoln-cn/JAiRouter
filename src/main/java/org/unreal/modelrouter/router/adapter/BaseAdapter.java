@@ -161,9 +161,13 @@ public abstract class BaseAdapter implements ServiceCapability {
                     ? tracingFactory.createTracingWebClient(baseUrl, true)
                     : tracingFactory.createTracingWebClient(baseUrl);
         } catch (Exception e) {
+            // 追踪链路不可用（如 jairouter.tracing.enabled=false）时仍要保住流式超时：
+            // 回退路径按 streaming 选择变体，否则长回答会在 60s 处被掐断，且这条降级此前完全无日志
+            logger.warn("追踪 WebClient 工厂不可用，回退到 WebClientCacheManager（streaming={}）: {}",
+                    streaming, e.toString());
             return org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
                     org.unreal.modelrouter.router.model.WebClientCacheManager.class)
-                    .getOrCreate(baseUrl);
+                    .getOrCreate(baseUrl, streaming);
         }
     }
 
