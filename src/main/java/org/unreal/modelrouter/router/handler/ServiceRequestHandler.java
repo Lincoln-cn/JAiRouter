@@ -437,30 +437,34 @@ public class ServiceRequestHandler {
         // 回滚入口为 QuotaReservation 的恰一次结算，与处理器自身的 settleFailure 叠加不会重复冲正。
         // issue #1246: 单主体并发上限。位置刻意选在所有早退分支之前——限流/配额/缓存命中
         // 都算占用了连接，提前短路请求照样会占着连接池。
-        final ConcurrentStreamLimiter.Lease concurrencyLease = concurrentStreamLimiter == null
-                ? null
-                : concurrentStreamLimiter.acquire(extractCallerId(httpRequest));
-        if (concurrencyLease != null && !concurrencyLease.granted()) {
-            if (exchange != null) {
-                applyRateLimitRetryHints(exchange, HttpStatus.TOO_MANY_REQUESTS.value());
-            }
-            return Mono.error(new ResponseStatusException(
-                    HttpStatus.TOO_MANY_REQUESTS,
-                    "Too many concurrent requests for this caller: at most "
-                            + concurrentStreamLimiter.maxConcurrentPerKey()
-                            + " may be in flight at once (jairouter.ratelimit.max-concurrent-per-key)"));
-        }
+        // issue #1246：名额申请按 concurrent-scope 决定本地还是 Redis 计数，因此先拿到租约再跑主链路。
+        final Mono<ConcurrentStreamLimiter.Lease> leaseMono = concurrentStreamLimiter == null
+                ? Mono.just(ConcurrentStreamLimiter.Lease.unlimited())
+                : concurrentStreamLimiter.acquireMono(extractCallerId(httpRequest));
 
-        return Mono.defer(() -> handleWithInstanceAdapterSync(
-                        endpoint, modelName, authorization, httpRequest,
-                        tracingContext, executor, exchange))
-                .subscribeOn(Schedulers.boundedElastic())
-                .doOnError(error -> QuotaReservation.settleFailure(QuotaReservation.from(httpRequest)))
-                // 非流式：Mono 完成即名额归还；流式：把归还挂到响应的 Flux 终止信号上，
-                // 否则「Mono 完成」时下游才开始读流，名额会被提前释放。
-                .<ResponseEntity<?>>map(response -> releaseConcurrencyAfter(response, concurrencyLease))
-                .doOnError(error -> closeConcurrencyLease(concurrencyLease))
-                .doOnCancel(() -> closeConcurrencyLease(concurrencyLease));
+        return leaseMono.flatMap(concurrencyLease -> {
+            if (!concurrencyLease.granted()) {
+                if (exchange != null) {
+                    applyRateLimitRetryHints(exchange, HttpStatus.TOO_MANY_REQUESTS.value());
+                }
+                return Mono.error(new ResponseStatusException(
+                        HttpStatus.TOO_MANY_REQUESTS,
+                        "Too many concurrent requests for this caller: at most "
+                                + concurrentStreamLimiter.maxConcurrentPerKey()
+                                + " may be in flight at once (jairouter.ratelimit.max-concurrent-per-key)"));
+            }
+
+            return Mono.defer(() -> handleWithInstanceAdapterSync(
+                            endpoint, modelName, authorization, httpRequest,
+                            tracingContext, executor, exchange))
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .doOnError(error -> QuotaReservation.settleFailure(QuotaReservation.from(httpRequest)))
+                    // 非流式：Mono 完成即名额归还；流式：把归还挂到响应的 Flux 终止信号上，
+                    // 否则「Mono 完成」时下游才开始读流，名额会被提前释放。
+                    .<ResponseEntity<?>>map(response -> releaseConcurrencyAfter(response, concurrencyLease))
+                    .doOnError(error -> closeConcurrencyLease(concurrencyLease))
+                    .doOnCancel(() -> closeConcurrencyLease(concurrencyLease));
+        });
     }
 
     /**

@@ -89,6 +89,22 @@ how many requests a service may receive per minute.
 - **Observability**: each rejection logs one `WARN` per caller (at most one per 60 seconds) naming the
   caller, the current in-flight count, the ceiling, and how to raise it or disable it with `0`.
 
+- **Counting scope** (`jairouter.ratelimit.concurrent-scope`, default `local`): by default each replica keeps
+  its own count, which protects that replica's outbound pool; with several replicas the cluster-wide
+  concurrency can reach "replicas × ceiling". Set it to `cluster` to count in Redis instead, so the whole
+  cluster shares one ceiling:
+
+  ```yaml
+  jairouter.ratelimit.concurrent-scope: cluster   # local (default) | cluster
+  jairouter.ratelimit.concurrent-key-ttl-seconds: 700
+  jairouter.security.cache.redis.enabled: true    # prerequisite for cluster mode
+  ```
+
+  `cluster` needs Redis: when the container has no `ReactiveRedisTemplate` (that is,
+  `jairouter.security.cache.redis.enabled` is off) startup logs an `ERROR` and falls back to local counting;
+  a Redis outage at runtime degrades the same way with a `WARN`. Slot keys expire after 700 seconds so a
+  crashed replica cannot leak a slot forever.
+
 > Choosing a value: `100` is the compromise between "far below pool capacity" and "does not block normal
 > batch traffic". If you raise `jairouter.webclient.max-connections`, re-evaluate this together with it —
 > the pool is shared platform-wide, so ceiling × caller count should not exceed pool capacity by much,
