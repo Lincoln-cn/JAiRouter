@@ -51,8 +51,6 @@ class JpaStoreManagerSaveRaceTest {
      * 保证双方都拿到「查不到」的结论再往下走。真实跨副本场景正是这样撞上的。
      */
     private volatile boolean staleRead = false;
-    private final java.util.concurrent.CyclicBarrier staleReadBarrier =
-            new java.util.concurrent.CyclicBarrier(2);
 
     @BeforeEach
     void setUp() {
@@ -62,12 +60,12 @@ class JpaStoreManagerSaveRaceTest {
 
         when(repository.findFirstByConfigKeyAndIsLatestTrue(anyString()))
                 .thenAnswer(inv -> {
-                    if (staleRead && rows.isEmpty()) {
-                        try {
-                            staleReadBarrier.await(2, TimeUnit.SECONDS);
-                        } catch (Exception ignored) {
-                            // 超时说明对方没走到同一分支，按正常时序继续
-                        }
+                    if (staleRead) {
+                        // 模拟两个副本各自的快照：谁都看不见对方尚未提交的插入。
+                        // 早前用「仅在 rows 为空时同步等待」的写法是 flaky 的 —— 一方先插入后，
+                        // 另一方到达时 rows 已非空、不再等待，于是读到已提交行走更新分支，
+                        // 两边都成功、断言「必有一方失败」落空。
+                        return java.util.Optional.<ConfigEntity>empty();
                     }
                     return rows.stream()
                             .filter(row -> KEY.equals(row.getConfigKey())
