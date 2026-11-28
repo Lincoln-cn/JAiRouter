@@ -12,6 +12,7 @@ import org.unreal.modelrouter.auth.security.util.SecretKeyValidator.ValidationRe
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 启动时密钥安全检查器
@@ -50,6 +51,60 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
             return List.of();
         }
         return REMOVED_ENV_NAMES.stream().filter(envNames::contains).toList();
+    }
+
+    /**
+     * {@code ${random.uuid}} 生成值的形态（#1247）。配置项写成 {@code ${JWT_SECRET:${random.uuid}}}
+     * 时，没设环境变量就会拿到一个 UUID —— 它看起来像强密钥，但其实是「每次启动都不一样、
+     * 重启即让全部令牌失效」的一次性值，不能当成「已配置」。
+     */
+    private static final Pattern RANDOM_GENERATED_VALUE = Pattern.compile(
+            "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+
+    /** 与 {@code config/auth/jwt.yml} 里 {@code secret: "${JWT_SECRET:${random.uuid}}"} 对应的绑定键 */
+    static final String JWT_SECRET_PROPERTY = "jairouter.security.jwt.secret";
+
+    /**
+     * 解析某个密钥类变量的「生效值」（issue #1247）。
+     *
+     * <p>此前这里直接读 {@code System.getenv(NAME)}，而 yaml 里的 {@code ${NAME:…}} 是由 Spring 的
+     * {@code Environment} 展开的 —— 后者还包含系统属性与命令行参数（{@code -DNAME=…}、
+     * {@code --NAME=…}），优先级都高于环境变量。于是「门闩检查的值」可能与「真正生效的值」是两个
+     * 不同的东西：用 {@code -D} 传了强密钥，门闩仍读不到，生产环境直接拒绝启动。</p>
+     *
+     * <p>解析顺序与 Spring 的占位符解析保持一致：</p>
+     * <ol>
+     *   <li>{@code environment.getProperty(NAME)} —— 系统属性 / 命令行 / 环境变量三源合一</li>
+     *   <li>{@code environment.getProperty(propertyKey)} —— 配置文件里直接写死（而非走占位符）时，
+     *       真正生效的是这个属性；值为 {@code ${random.uuid}} 的产物时不算「已配置」</li>
+     *   <li>{@code System.getenv(NAME)} —— {@code Environment} 不可用时的兜底</li>
+     * </ol>
+     *
+     * @param environment Spring 环境；为 {@code null} 时退化为只读环境变量
+     * @param envName     变量名，如 {@code JWT_SECRET}
+     * @param propertyKey 可能被直接写死的配置键；没有这类键时传 {@code null}
+     * @return 生效值；三处都没有则返回 {@code null}
+     */
+    static String resolveConfiguredValue(final Environment environment, final String envName,
+                                         final String propertyKey) {
+        if (environment != null) {
+            final String fromEnvironment = environment.getProperty(envName);
+            if (fromEnvironment != null && !fromEnvironment.isBlank()) {
+                return fromEnvironment.trim();
+            }
+            if (propertyKey != null) {
+                final String configured = environment.getProperty(propertyKey);
+                if (configured != null && !configured.isBlank() && !isRandomGenerated(configured)) {
+                    return configured.trim();
+                }
+            }
+        }
+        final String fromSystemEnv = System.getenv(envName);
+        return (fromSystemEnv == null || fromSystemEnv.isBlank()) ? null : fromSystemEnv.trim();
+    }
+
+    private static boolean isRandomGenerated(final String value) {
+        return RANDOM_GENERATED_VALUE.matcher(value.trim()).matches();
     }
 
     private static final String ASCII_ART_BORDER = "\n"
@@ -181,7 +236,8 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
             // 检查是否设置了跳过警告的环境变量。
             // 引用同一个常量（issue #201）：此前这里另写了一个拼写 JAROUTER_SKIP_AUTH_WARNING，
             // 而失败路径读的是 StartupSecurityGate.SKIP_ENV，导致"按提示设置却不生效"。
-            String skipWarning = System.getenv(StartupSecurityGate.SKIP_ENV);
+            // #1247：同上，Environment 覆盖 -D / --NAME 两个源
+            String skipWarning = resolveConfiguredValue(environment, StartupSecurityGate.SKIP_ENV, null);
             if ("true".equalsIgnoreCase(skipWarning)) {
                 log.warn("已设置 {}=true，跳过认证警告", StartupSecurityGate.SKIP_ENV);
                 return true;
@@ -202,7 +258,9 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
         // #674：只读 JWT_SECRET。此前这里先读 DEV_JWT_SECRET 且不分 profile，
         // 而配置绑定读的是 application-{dev,staging,prod}.yml 里的 ${JWT_SECRET:…}
         // ⇒ 两个变量同时存在时，「检查的密钥」与「实际生效的密钥」不是同一个。
-        final String jwtSecret = System.getenv("JWT_SECRET");
+        // #1247：读「生效值」而不是只读环境变量 —— ${JWT_SECRET:…} 的展开走的是同一个
+        // Environment（系统属性 / 命令行参数 的优先级高于环境变量），只读 getenv 会漏掉它们。
+        final String jwtSecret = resolveConfiguredValue(environment, "JWT_SECRET", JWT_SECRET_PROPERTY);
 
         if (jwtSecret == null || jwtSecret.isEmpty()) {
             // #664：基础配置已不再回落到公开默认密钥，缺环境变量时用 ${random.uuid} 随机生成
@@ -249,7 +307,9 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
         // #674：只读 INITIAL_ADMIN_PASSWORD。ADMIN_PASSWORD 别名已移除——配置绑定
         // （config/auth/jwt.yml 的 password）从来没读过它，只设它会让门闩以为口令已设置，
         // 而实际生效的是随机生成、又不打印的值 ⇒ 控制台登不进去。
-        final String adminPassword = System.getenv("INITIAL_ADMIN_PASSWORD");
+        // #1247：同上。accounts 是列表、口令还带 {noop} 前缀，本轮不做「配置文件直写」的识别，
+        // 只把来源从 System.getenv 统一到 Environment（仍保留环境变量兜底）。
+        final String adminPassword = resolveConfiguredValue(environment, "INITIAL_ADMIN_PASSWORD", null);
 
         if (adminPassword == null || adminPassword.isEmpty()) {
             // #664：非生产环境会为 admin 随机生成一次性口令（稍后由 reportGeneratedAdminPassword 打印）
