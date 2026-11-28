@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.9.0
-> **Last Updated**: 2026-11-20
+> **Document Version**: 3.9.1
+> **Last Updated**: 2026-11-28
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -21,7 +21,20 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
-### [Unreleased] - Removal of `/api/tracing/query/performance/errors`
+### [3.9.1] - 2026-11-28 - Billing accuracy, multi-replica consistency and cross-protocol streaming
+
+#### Bug Fixes
+
+- **Cross-protocol streaming body loss**: when a claude / gemini instance was reached over the OpenAI protocol, the adapter's chunk transformer never entered the call chain and the body was dropped entirely. It is now wired in, including for events such as Anthropic `ping` that carry no text.
+- **Missed billing**: both the streaming and non-streaming usage extractors only recognized OpenAI field names, so anthropic `input_tokens` / `output_tokens` and gemini `usageMetadata` were invisible — streaming requests were not recorded at all and non-streaming ones fell back to text estimation. Usage is now normalized per upstream shape, with a rule for filling in a missing `total`.
+- **Concurrent slots across replicas**: added `jairouter.ratelimit.concurrent-scope` (default `local`, preserving previous behaviour). With `cluster`, a Redis key holds the global count; the slot key expires in seconds so a crashed replica releases it automatically.
+- **First-write conflicts on configuration**: a cross-replica first insert that hits the unique constraint is retried (up to 3 attempts) instead of failing the caller.
+
+#### Operator notes
+
+- `concurrent-scope=cluster` requires `jairouter.security.cache.redis.enabled` plus a Redis connection; without them the startup log reports an ERROR and counting falls back to local (one count per replica).
+
+### [3.9.1] - 2026-11-28 - Removal of `/api/tracing/query/performance/errors`
 
 `GET /api/tracing/query/performance/errors` has been removed. It was a functional subset of
 `/api/tracing/query/error-analysis` — `errorTrend` came from the same method, and the error-rate
@@ -35,7 +48,7 @@ trend to `/error-analysis`, nothing called it.
 - **Cleaned up alongside**: the frontend `getErrorAnalysis()` helper and the `ErrorAnalysis` /
   `ServiceErrorRate` / `CommonError` type definitions.
 
-### [Unreleased] - Console menu re-grouping, dark-mode readability and list-page consistency
+### [3.9.1] - 2026-11-28 - Console menu re-grouping, dark-mode readability and list-page consistency
 
 - **Menu re-grouping** (URLs, permission codes and page count unchanged — still **8 groups / 35 items / 49 pages**):
   - Audit Logs moved from Security to Observability;
@@ -45,7 +58,7 @@ trend to `/error-analysis`, nothing called it.
 - **Dark-mode readability fix** ([#1178](https://github.com/Lincoln-cn/JAiRouter/issues/1178)): with a manually selected dark theme the `body` inherited the near-black first-paint color (1.03:1 contrast), making config labels unreadable; text color is now owned by the base rules in `tokens.css`, with `html.dark` first-paint styles plus table-header and `.config-label` colors fixed.
 - **List-page and mixed-page rules applied**: 12 collection pages now follow "metric strip → toolbar → table → empty state", edit forms use right-side drawers and destructive actions use `ConfirmAction`; mixed pages were split into tabs or had their reference blocks moved below the editable ones.
 
-### [Unreleased] - Login protection configuration (persisted thresholds + lock release)
+### [3.9.1] - 2026-11-28 - Login protection configuration (persisted thresholds + lock release)
 
 - **New codes `security:loginguard:read` / `security:loginguard:manage`** (76 permission codes): the first reads thresholds and locked principals, the second changes thresholds and releases locks. The six built-in role templates are unchanged; the paired-read table grows to 11 entries, and OPERATOR (55 codes) does not hold `loginguard:manage`, so B11 also withholds the matching read code.
 - **New table `security_login_guard_config`** (single row, `config_id = 'default'`): `jairouter.auth.login-bruteforce.*` in `config/auth/login-guard.yml` only seeds the row when it is missing; afterwards the database is authoritative (same rule as `jwt_accounts`). The dev profile relaxes it to 20 failures / 5-minute window / 5-minute lock.
@@ -54,7 +67,7 @@ trend to `/error-analysis`, nothing called it.
 - **New page**: Security → Login Protection (`/security/login-guard`) with the threshold form, the list of currently locked principals, and server-side unlock.
 - Migration `V17__login_guard_config.sql` creates the table and widens `security_audit.event_type` to 33 values; an existing deployment seeds the row on its first startup after the upgrade.
 
-### [Unreleased] - SLA access credentials (one-time token + refresh)
+### [3.9.1] - 2026-11-28 - SLA access credentials (one-time token + refresh)
 
 - **New codes `system:sla:read` / `system:sla:manage`** (74 permission codes) and two built-in role templates: `SLA_READONLY` (35 codes, read-only inspection) and `SLA_OPERATOR` (53 codes, inspection plus configuration writes).
 - **New SLA endpoints**: `POST /api/auth/sla/bootstrap` (anonymous; exchanges a one-time token), `POST /api/auth/sla/refresh` (anonymous; exchanges the refresh credential); admin endpoints under `/api/security/sla/**` (accounts, bootstrap issuance, revoke).
@@ -68,7 +81,7 @@ trend to `/error-analysis`, nothing called it.
   - `expiresIn` is in **seconds** (default 3600); the examples used to say 60 and have been corrected.
   - Newly added built-in roles are now seeded from their template into an existing database; the additive reconcile used to skip roles with no rows at all, which left an upgraded deployment signing in and then failing with 403 everywhere.
 
-### [Unreleased] - Call-history bodies split from metadata
+### [3.9.1] - 2026-11-28 - Call-history bodies split from metadata
 
 `callhistory:view` is split into `callhistory:read` + `callhistory:full-content`:
 
@@ -76,7 +89,7 @@ trend to `/error-analysis`, nothing called it.
 * **Role impact**: OPERATOR inherits `callhistory:read` through the "all `:read` codes" rule (54 codes) and can browse records and summaries; `callhistory:full-content` is ADMIN-only by default; USER and VIEWER hold neither (VIEWER excludes it explicitly to stay at 31 codes). The catalogue grows from 70 to 71 codes.
 * **Migration note**: `callhistory:view` no longer exists in the catalogue; deployments that manually granted it must switch to `callhistory:read` under System → Permissions (grant `callhistory:full-content` as well to read bodies).
 
-### [Unreleased] - Monitoring config page, one shared validator, and emergency impact preview
+### [3.9.1] - 2026-11-28 - Monitoring config page, one shared validator, and emergency impact preview
 
 * **New System → Monitoring Config page**: two tabs — `Monitoring Config` (`/monitoring/config`) hot-edits the monitoring switch, metric prefix, collection interval, categories, six sampling ratios and collection performance (in-memory only; a restart restores the config files), and `Runtime & Emergency` (`/monitoring/config/runtime`) shows health, degradation, errors, cache and both circuit breakers while offering error reset, forced recovery, cache clearing and breaker open/close behind a confirmation. Menu visibility uses `monitoring:config:read`, write buttons use `monitoring:config:write`; of the built-in roles only ADMIN and OPERATOR can reach it.
 * **Hot reload and emergency actions are audited**: a new `MONITORING_CONFIG_CHANGED` audit event (`AuditEventType` 26 → 27, with a V15 migration each for H2 and PostgreSQL) records actor, action and detail; an audit write failure never blocks the operation.
