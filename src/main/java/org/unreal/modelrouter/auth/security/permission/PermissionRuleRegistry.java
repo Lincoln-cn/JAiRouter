@@ -107,11 +107,16 @@ public class PermissionRuleRegistry {
                 PermissionRule.get("/api/config/tracing/security/**", PermissionCodes.TRACING_CONFIG_READ),
                 PermissionRule.write("/api/config/tracing/security/**", PermissionCodes.TRACING_CONFIG_MANAGE),
 
-                // ===== 服务子路径规则（保留：前端 service.ts 仍在使用） =====
+                // ===== 服务子路径规则（v2.9.x 旧路径，保留给外部脚本；前端已改用 /api/config/**） =====
+                // frontend/src/api/service.ts 仍定义了 getServiceRateLimitConfig / updateServiceRateLimitConfig，
+                // 但全前端零引用 —— 下线这两条规则前先确认没有外部调用方。
                 PermissionRule.get("/api/services/*/circuitbreaker/**", PermissionCodes.CONFIG_CIRCUITBREAKER_READ),
                 PermissionRule.write("/api/services/*/circuitbreaker/**", PermissionCodes.CONFIG_CIRCUITBREAKER_WRITE),
                 PermissionRule.get("/api/services/*/ratelimit/**", PermissionCodes.RL_MONITORING_READ),
-                PermissionRule.write("/api/services/*/ratelimit/**", PermissionCodes.RL_MONITORING_READ),
+                // #1241：写集必须用 :write 码。此前这里挂的是 RL_MONITORING_READ，任何持该码的主体
+                // （USER / AUDITOR / SLA_READONLY 三种模板都有）都能关掉某个服务类型的全局限流并落库。
+                // GET 保持读码是刻意的：只读不构成越权，改它会破坏按 rl:monitoring:read 读该路径的客户端。
+                PermissionRule.write("/api/services/*/ratelimit/**", PermissionCodes.CONFIG_RATELIMIT_WRITE),
 
                 // ===== 实例配置（/api/config/instance 仍活跃） =====
                 PermissionRule.get("/api/config/instance/**", PermissionCodes.CONFIG_INSTANCES_READ),
