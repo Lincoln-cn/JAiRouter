@@ -85,6 +85,20 @@ jairouter.ratelimit.max-concurrent-per-key: 100
 - **观测**：每次拒绝按主体打一条 `WARN`（同一主体 60 秒内最多一条），点名调用主体、当前并发数与上限，
   并给出调高阈值或设为 `0` 的提示。
 
+- **计数范围**（`jairouter.ratelimit.concurrent-scope`，默认 `local`）：默认每个副本各记一份，正好保护本副本的
+  出站连接池；多副本部署时集群总并发最多可到「副本数 × 上限」。设为 `cluster` 后改用 Redis 全局计数，
+  全集群共用同一个上限：
+
+  ```yaml
+  jairouter.ratelimit.concurrent-scope: cluster   # local（默认）| cluster
+  jairouter.ratelimit.concurrent-key-ttl-seconds: 700
+  jairouter.security.cache.redis.enabled: true    # cluster 模式的前置条件
+  ```
+
+  `cluster` 依赖 Redis：容器里没有 `ReactiveRedisTemplate`（即
+  `jairouter.security.cache.redis.enabled` 未开）时启动会打一条 `ERROR` 并退回本地计数；运行期 Redis
+  不可用时同样降级本地并打 `WARN`。名额键带 700 秒过期，副本崩溃未能归还名额时由过期兜底。
+
 > 取值建议：`100` 是「远低于连接池容量、又不至于拦住正常批量调用」的折中值。把
 > `jairouter.webclient.max-connections` 调大时要同步评估这个值——连接池是全站共享的，
 > 单主体上限乘以主体数量不应超出池容量太多，否则限流只是把排队往后挪。

@@ -136,11 +136,24 @@ public class TokenUsageExtractor {
 
             final JsonNode usage = jsonNode.get("usage");
             if (usage != null) {
-                promptTokens = usage.has("prompt_tokens") ? usage.get("prompt_tokens").asLong() : 0L;
-                completionTokens = usage.has("completion_tokens") ? usage.get("completion_tokens").asLong() : 0L;
+                // OpenAI 用 prompt_tokens/completion_tokens，Anthropic 用 input_tokens/output_tokens；
+                // 只认前者会让 claude 上游的非流式响应落到下面的文本估算分支，用量偏差无法察觉。
+                promptTokens = firstPresentLong(usage, "prompt_tokens", "input_tokens");
+                completionTokens = firstPresentLong(usage, "completion_tokens", "output_tokens");
                 totalTokens = usage.has("total_tokens") ? usage.get("total_tokens").asLong() : 0L;
                 cacheHitTokens = extractCacheHitTokens(usage);
                 cacheMissTokens = extractCacheMissTokens(usage);
+            } else {
+                // Gemini 把用量放在顶层 usageMetadata，且不给 total（promptTokenCount/candidatesTokenCount）
+                final JsonNode geminiUsage = jsonNode.get("usageMetadata");
+                if (geminiUsage != null) {
+                    promptTokens = firstPresentLong(geminiUsage, "promptTokenCount");
+                    completionTokens = firstPresentLong(geminiUsage, "candidatesTokenCount");
+                    totalTokens = firstPresentLong(geminiUsage, "totalTokenCount");
+                }
+            }
+            if (totalTokens <= 0L && (promptTokens > 0L || completionTokens > 0L)) {
+                totalTokens = promptTokens + completionTokens;
             }
 
             if (totalTokens <= 0L) {
@@ -229,6 +242,26 @@ public class TokenUsageExtractor {
     /**
      * 提取 KV 缓存命中 token 数（DeepSeek 的 prompt_cache_hit_tokens / OpenAI 的 cached_tokens）。
      */
+    /**
+     * 按顺序取第一个存在的字段值，全部缺失时返回 0.
+     *
+     * <p>不同上游的用量字段名不一致（OpenAI {@code prompt_tokens} / Anthropic
+     * {@code input_tokens} / Gemini {@code promptTokenCount}），这里只做名称归一，
+     * 不推断单位或倍率。</p>
+     *
+     * @param node   承载用量的 JSON 节点
+     * @param fields 候选字段名，按优先级排列
+     * @return 命中的字段值；都不存在时为 0
+     */
+    private static long firstPresentLong(final JsonNode node, final String... fields) {
+        for (final String field : fields) {
+            if (node.has(field)) {
+                return node.get(field).asLong();
+            }
+        }
+        return 0L;
+    }
+
     private static long extractCacheHitTokens(final JsonNode usage) {
         if (usage.has("prompt_cache_hit_tokens")) {
             return usage.get("prompt_cache_hit_tokens").asLong();

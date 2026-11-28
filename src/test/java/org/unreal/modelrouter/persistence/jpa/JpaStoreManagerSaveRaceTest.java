@@ -52,6 +52,13 @@ class JpaStoreManagerSaveRaceTest {
      */
     private volatile boolean staleRead = false;
 
+    /**
+     * 模拟「撞上唯一约束、重试时对方已提交」：开启后每个线程**第一次**查询返回空，
+     * 之后返回真实数据。
+     */
+    private volatile boolean staleOnce = false;
+    private final java.util.Set<Long> staleOnceThreads = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     @BeforeEach
     void setUp() {
         rows.clear();
@@ -60,6 +67,9 @@ class JpaStoreManagerSaveRaceTest {
 
         when(repository.findFirstByConfigKeyAndIsLatestTrue(anyString()))
                 .thenAnswer(inv -> {
+                    if (staleOnce && staleOnceThreads.add(Thread.currentThread().getId())) {
+                        return java.util.Optional.<ConfigEntity>empty();
+                    }
                     if (staleRead) {
                         // 模拟两个副本各自的快照：谁都看不见对方尚未提交的插入。
                         // 早前用「仅在 rows 为空时同步等待」的写法是 flaky 的 —— 一方先插入后，
@@ -138,8 +148,54 @@ class JpaStoreManagerSaveRaceTest {
     }
 
     @Test
-    @DisplayName("两个实例（模拟两副本）并发时由数据库唯一约束兜底：一个成功、一个明确报错")
-    void concurrentSavesAcrossInstancesFailLoudly() throws Exception {
+    @DisplayName("两个实例（模拟两副本）并发首存：撞唯一约束的一方重试后成功，不把失败抛给调用方")
+    void concurrentSavesAcrossInstancesRecoverAfterConflict() throws Exception {
+        staleOnce = true;
+        staleOnceThreads.clear();
+        JpaStoreManager replicaA = new JpaStoreManager(repository);
+        JpaStoreManager replicaB = new JpaStoreManager(repository);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch fire = new CountDownLatch(1);
+        AtomicReference<Throwable> first = new AtomicReference<>();
+        AtomicReference<Throwable> second = new AtomicReference<>();
+
+        Runnable taskA = () -> {
+            ready.countDown();
+            await(fire);
+            try {
+                replicaA.saveConfig(KEY, payload("a"));
+            } catch (Throwable t) {
+                first.compareAndSet(null, t);
+            }
+        };
+        Runnable taskB = () -> {
+            ready.countDown();
+            await(fire);
+            try {
+                replicaB.saveConfig(KEY, payload("b"));
+            } catch (Throwable t) {
+                second.compareAndSet(null, t);
+            }
+        };
+
+        Thread a = new Thread(taskA, "replica-a");
+        Thread b = new Thread(taskB, "replica-b");
+        a.start();
+        b.start();
+        assertTrue(ready.await(5, TimeUnit.SECONDS));
+        fire.countDown();
+        a.join(5000);
+        b.join(5000);
+
+        assertEquals(null, first.get(), "重试后不应把唯一约束冲突抛给调用方：" + first.get());
+        assertEquals(null, second.get(), "重试后不应把唯一约束冲突抛给调用方：" + second.get());
+        assertEquals(1, rows.size(), "唯一约束生效后库里只能留一行");
+    }
+
+    @Test
+    @DisplayName("重试仍拿不到对方的行时如实抛出，不无限重试也不静默丢配置")
+    void crossReplicaConflictStillFailsAfterRetries() throws Exception {
+        // 永久快照：两个副本始终互相看不见，重试次数用尽只能报错
         staleRead = true;
         JpaStoreManager replicaA = new JpaStoreManager(repository);
         JpaStoreManager replicaB = new JpaStoreManager(repository);
@@ -177,11 +233,10 @@ class JpaStoreManagerSaveRaceTest {
         b.join(5000);
 
         int failures = (first.get() != null ? 1 : 0) + (second.get() != null ? 1 : 0);
-        assertEquals(1, failures,
-                "跨副本并发时数据库约束必须让其中一方失败，而不是两边都写入成功");
-        assertEquals(1, rows.size(), "唯一约束生效后库里只能留一行");
+        assertEquals(1, failures, "重试用尽后必须让其中一方明确失败，而不是吞掉");
+        assertEquals(1, rows.size(), "库里只能留一行");
         Throwable thrown = first.get() != null ? first.get() : second.get();
         assertTrue(thrown instanceof DataIntegrityViolationException,
-                "失败方应拿到唯一约束冲突（可被上层识别为「重试或更新」），实际是 " + thrown);
+                "失败方应拿到唯一约束冲突，实际是 " + thrown);
     }
 }

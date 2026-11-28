@@ -4,6 +4,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.persistence.jpa.entity.ConfigEntity;
@@ -24,6 +25,10 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class JpaStoreManager implements StoreManager {
+
+    /** 跨副本并发首存时，撞唯一约束后的重试次数（#1249）。 */
+    private static final int MAX_SAVE_ATTEMPTS = 3;
+
 
     private final ConfigRepository configRepository;
 
@@ -58,36 +63,55 @@ public class JpaStoreManager implements StoreManager {
             log.warn("saveConfig 收到 null 配置，已忽略: key={}", key);
             return;
         }
-        final Object lock = saveLocks.computeIfAbsent(key, k -> new Object());
-        synchronized (lock) {
+        final String configValue;
         try {
-            String configValue = JacksonHelper.getObjectMapper().writeValueAsString(config);
-
-            // 检查是否已存在配置（不自动创建新版本，只更新当前活跃配置）
-            Optional<ConfigEntity> existingEntity = configRepository.findFirstByConfigKeyAndIsLatestTrue(key);
-            
-            if (existingEntity.isPresent()) {
-                // 更新现有配置（不创建新版本）
-                ConfigEntity entity = existingEntity.get();
-                entity.setConfigValue(configValue);
-                entity.setUpdatedAt(LocalDateTime.now());
-                configRepository.save(entity);
-                log.info("Updated config for key: {} with version: {}", key, entity.getVersion());
-            } else {
-                // 创建新配置
-                ConfigEntity entity = ConfigEntity.builder()
-                        .configKey(key)
-                        .configValue(configValue)
-                        .version(1)
-                        .isLatest(true)
-                        .build();
-                configRepository.save(entity);
-                log.info("Created new config for key: {} with version: 1", key);
-            }
+            configValue = JacksonHelper.getObjectMapper().writeValueAsString(config);
         } catch (JacksonException e) {
             log.error("Failed to serialize config for key: {}", key, e);
             throw new RuntimeException("Failed to save config", e);
         }
+
+        final Object lock = saveLocks.computeIfAbsent(key, k -> new Object());
+        synchronized (lock) {
+            // 单 JVM 内上面这把锁就能把「查不到 → 建行」串起来。跨副本没有共享锁，
+            // 两个进程仍可能同时走插入分支，由 uk_config_data_key_version 兜底（#1249）。
+            // 撞上唯一约束时不该让调用方失败：对方通常已经提交，重查一次就该走更新分支。
+            DataIntegrityViolationException conflict = null;
+            for (int attempt = 1; attempt <= MAX_SAVE_ATTEMPTS; attempt++) {
+                try {
+                    upsertOnce(key, configValue);
+                    return;
+                } catch (DataIntegrityViolationException e) {
+                    conflict = e;
+                    log.warn("保存配置撞上唯一约束，重试 {}/{}: key={}", attempt, MAX_SAVE_ATTEMPTS, key);
+                }
+            }
+            // 连撞多次说明不是并发瞬时冲突（例如约束被别的东西占住），如实抛出而不是吞掉
+            throw conflict;
+        }
+    }
+
+    /**
+     * 单次「查到就更新、查不到就建 version=1」写入，供 {@link #saveConfig} 在冲突时重试。
+     */
+    private void upsertOnce(final String key, final String configValue) {
+        final Optional<ConfigEntity> existingEntity =
+                configRepository.findFirstByConfigKeyAndIsLatestTrue(key);
+        if (existingEntity.isPresent()) {
+            final ConfigEntity entity = existingEntity.get();
+            entity.setConfigValue(configValue);
+            entity.setUpdatedAt(LocalDateTime.now());
+            configRepository.save(entity);
+            log.info("Updated config for key: {} with version: {}", key, entity.getVersion());
+        } else {
+            final ConfigEntity entity = ConfigEntity.builder()
+                    .configKey(key)
+                    .configValue(configValue)
+                    .version(1)
+                    .isLatest(true)
+                    .build();
+            configRepository.save(entity);
+            log.info("Created new config for key: {} with version: 1", key);
         }
     }
 
