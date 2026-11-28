@@ -946,6 +946,9 @@ public class StreamingRequestProcessor {
 
             JsonNode jsonNode = objectMapper.readTree(jsonPart);
 
+            // 本块是否自带 total_tokens；没有时由 prompt+completion 补齐（见方法末尾）
+            boolean explicitTotal = false;
+
             // 提取模型名称
             if (jsonNode.has("model")) {
                 modelRef.set(jsonNode.get("model").asText());
@@ -962,6 +965,7 @@ public class StreamingRequestProcessor {
                 }
                 if (usage.has("total_tokens")) {
                     totalTokens.set(usage.get("total_tokens").asLong());
+                    explicitTotal = true;
                 }
                 // v2.9.0: 提取 KV 缓存命中/未命中 token 数
                 // DeepSeek 形态
@@ -990,8 +994,79 @@ public class StreamingRequestProcessor {
                     }
                 }
             }
+
+            // issue #1242 后续：Anthropic / Gemini 的原生事件既没有 OpenAI 的 usage 形状，也没有
+            // choices[].delta.content。不在原始 chunk 上解析，整条流式请求就会既拿不到真实用量、
+            // 又拿不到内容供降级估算，最终按 0 token 落库（配额与账单都算漏）。
+            final String eventType = jsonNode.path("type").asText("");
+            if ("message_start".equals(eventType)) {
+                applyAnthropicUsage(jsonNode.path("message").path("usage"), promptTokens, completionTokens);
+            } else if ("message_delta".equals(eventType)) {
+                applyAnthropicUsage(jsonNode.path("usage"), promptTokens, completionTokens);
+            }
+            if ("content_block_delta".equals(eventType)) {
+                final JsonNode text = jsonNode.path("delta").path("text");
+                if (text.isTextual()) {
+                    contentBuilder.append(text.asText());
+                }
+            }
+
+            final JsonNode usageMetadata = jsonNode.path("usageMetadata");
+            if (usageMetadata.isObject()) {
+                if (usageMetadata.has("promptTokenCount")) {
+                    promptTokens.set(usageMetadata.get("promptTokenCount").asLong());
+                }
+                if (usageMetadata.has("candidatesTokenCount")) {
+                    completionTokens.set(usageMetadata.get("candidatesTokenCount").asLong());
+                }
+                if (usageMetadata.has("totalTokenCount")) {
+                    totalTokens.set(usageMetadata.get("totalTokenCount").asLong());
+                    explicitTotal = true;
+                }
+            }
+            final JsonNode candidates = jsonNode.path("candidates");
+            if (candidates.isArray() && !candidates.isEmpty()) {
+                final JsonNode parts = candidates.get(0).path("content").path("parts");
+                if (parts.isArray()) {
+                    for (final JsonNode part : parts) {
+                        if (part.path("text").isTextual()) {
+                            contentBuilder.append(part.get("text").asText());
+                        }
+                    }
+                }
+            }
+
+            // Anthropic / Gemini 都不给 total_tokens。total 保持 0 会被上层误判成「后端没给用量」，
+            // 于是用字符估算覆盖真实值，所以在这里补齐。
+            if (!explicitTotal) {
+                final long derived = promptTokens.get() + completionTokens.get();
+                if (derived > 0) {
+                    totalTokens.set(derived);
+                }
+            }
         } catch (Exception e) {
             logger.trace("Failed to parse chunk for usage extraction: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 把 Anthropic 事件里的 usage 字段读进计数器（issue #1242 后续）。
+     *
+     * <p>Anthropic 分两处给用量：{@code message_start.message.usage} 带 {@code input_tokens}，
+     * {@code message_delta.usage} 带累计的 {@code output_tokens}。两处都是绝对值而非增量，
+     * 所以直接覆盖写。</p>
+     */
+    private static void applyAnthropicUsage(final JsonNode usage,
+                                            final AtomicLong promptTokens,
+                                            final AtomicLong completionTokens) {
+        if (usage == null || !usage.isObject()) {
+            return;
+        }
+        if (usage.has("input_tokens")) {
+            promptTokens.set(usage.get("input_tokens").asLong());
+        }
+        if (usage.has("output_tokens")) {
+            completionTokens.set(usage.get("output_tokens").asLong());
         }
     }
 

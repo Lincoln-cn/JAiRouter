@@ -62,9 +62,67 @@ class StreamingRequestProcessorTest {
         ReflectionTestUtils.setField(processor, "responseCacheService", responseCacheService);
     }
 
+    /** extractUsageAndContent 的入参容器，供 #1242 后续用例复用。 */
+    private static final class Capture {
+        final AtomicLong prompt = new AtomicLong();
+        final AtomicLong completion = new AtomicLong();
+        final AtomicLong total = new AtomicLong();
+        final AtomicLong cacheHit = new AtomicLong();
+        final AtomicLong cacheMiss = new AtomicLong();
+        final StringBuilder content = new StringBuilder();
+        final AtomicReference<String> model = new AtomicReference<>("unknown");
+    }
+
     @Nested
     @DisplayName("extractUsageAndContent 测试")
     class ExtractUsageAndContentTests {
+        /** 反射调用私有提取方法；issue #1242 后续新增用例复用。 */
+        private void extract(String chunk, Capture c) throws Exception {
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("extractUsageAndContent",
+                    String.class, AtomicLong.class, AtomicLong.class, AtomicLong.class,
+                    AtomicLong.class, AtomicLong.class,
+                    StringBuilder.class, AtomicReference.class);
+            method.setAccessible(true);
+            method.invoke(processor, chunk, c.prompt, c.completion, c.total,
+                    c.cacheHit, c.cacheMiss, c.content, c.model);
+        }
+
+        @Test
+        @DisplayName("Anthropic 事件序列应累计真实用量，不能落 0")
+        void shouldExtractAnthropicUsage() throws Exception {
+            Capture c = new Capture();
+            extract("{\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":12,\"output_tokens\":1}}}", c);
+            assertEquals(12, c.prompt.get());
+            extract("{\"type\":\"content_block_delta\",\"delta\":{\"text\":\"你好\"}}", c);
+            extract("{\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":40}}", c);
+
+            assertEquals(12, c.prompt.get());
+            assertEquals(40, c.completion.get());
+            assertEquals(52, c.total.get(), "Anthropic 不给 total_tokens，必须由网关补齐");
+        }
+
+        @Test
+        @DisplayName("Anthropic content_block_delta 应累积正文")
+        void shouldAccumulateAnthropicContent() throws Exception {
+            Capture c = new Capture();
+            extract("{\"type\":\"content_block_delta\",\"delta\":{\"text\":\"你好\"}}", c);
+            extract("{\"type\":\"content_block_delta\",\"delta\":{\"text\":\"，世界\"}}", c);
+            extract("{\"type\":\"content_block_stop\"}", c);
+            assertEquals("你好，世界", c.content.toString());
+        }
+
+        @Test
+        @DisplayName("Gemini usageMetadata 与 candidates 应被解析")
+        void shouldExtractGeminiUsageAndContent() throws Exception {
+            Capture c = new Capture();
+            extract("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"hi\"}]}}],"
+                    + "\"usageMetadata\":{\"promptTokenCount\":7,\"candidatesTokenCount\":3,\"totalTokenCount\":10}}", c);
+            assertEquals(7, c.prompt.get());
+            assertEquals(3, c.completion.get());
+            assertEquals(10, c.total.get());
+            assertEquals("hi", c.content.toString());
+        }
+
         @Test
         @DisplayName("应提取 usage 信息")
         void shouldExtractUsageInfo() throws Exception {
