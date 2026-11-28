@@ -99,6 +99,9 @@ class H2FlywayMigrationEquivalenceTest {
             statement.execute("ALTER TABLE security_blacklist ALTER COLUMN expires_at SET NOT NULL");
             // V6 之前的库没有软删除列 —— 不退化掉它，重放 V6 会报 Duplicate column name "deleted"
             statement.execute("ALTER TABLE jwt_accounts DROP COLUMN deleted");
+            // V21 之前的老库没有 config_data 的唯一约束（V21 才加）—— 不退化掉它，
+            // 重放 V21 会报 Constraint "uk_config_data_key_version" already exists
+            statement.execute("ALTER TABLE config_data DROP CONSTRAINT uk_config_data_key_version");
             // 老库本来没有这张表 —— 删掉才能让 Flyway 把它当成「非空且无历史」的库
             statement.execute("DROP TABLE " + HISTORY_TABLE);
         }
