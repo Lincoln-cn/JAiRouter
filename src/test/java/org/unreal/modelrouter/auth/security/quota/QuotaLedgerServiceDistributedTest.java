@@ -421,6 +421,27 @@ class QuotaLedgerServiceDistributedTest {
         assertEquals(1, service.usageAll("key-1").size(), "过期的本地槽位也应被清理");
     }
 
+    @Test
+    @DisplayName("本地槽位缺失（跨窗口结算）时仍向 Redis 冲正，且不为冲正新建桶")
+    void settleWithoutLocalSlot_shouldStillRollbackRedis() {
+        final QuotaLedgerService service = service();
+        final QuotaDimension dimension = QuotaDimension.ofApiKey("key-1");
+        service.reserve(QuotaRequest.of(dimension, 10));
+        assertEquals(4, template.commandCount(), "四个窗口各一次预留");
+        assertEquals(4, template.keys().size());
+
+        // 跨过分钟边界：MINUTE 的 key 指向新窗口，本地没有它的槽位
+        clock.advance(Duration.ofMinutes(1));
+
+        service.settle(new QuotaSettlement(dimension, 10, 0, true));
+
+        assertEquals(8, template.commandCount(),
+            "四个窗口都必须冲正：本地槽位缺失不能连 Redis 冲正一起跳过，"
+                + "否则失败请求的 -1 / -tokens 永久丢失、账本只多不少");
+        assertEquals(4, template.keys().size(),
+            "冲正不得为它新建计数桶（走 incrementIfPresent 而不是 increment）");
+    }
+
     // ==================== 指标 ====================
 
     @Test
