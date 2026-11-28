@@ -111,7 +111,9 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 批量撤销多个令牌。
 
 #### `POST /api/auth/jwt/validate`
-验证 JWT 令牌。
+验证 JWT 令牌，**匿名可用**（前端在用户登录前也要用它判断本地缓存的令牌还能不能用）。
+
+正因为匿名，它是一个天然的「令牌有效性探针」：同一来源 IP 在窗口期内失败到阈值（默认 5 分钟内 20 次）后，该端点直接返回 429，并在首次越阈值时写一条 `BRUTE_FORCE_ATTEMPT` 审计。判据与阈值见 `jairouter.auth.jwt-validate-guard.*`（`enabled` / `max-failures-per-ip` / `window-minutes`）。正常校验令牌的客户端不会碰到这个限制。
 
 #### `GET /api/auth/jwt/blacklist/stats`
 获取 JWT 黑名单统计。
