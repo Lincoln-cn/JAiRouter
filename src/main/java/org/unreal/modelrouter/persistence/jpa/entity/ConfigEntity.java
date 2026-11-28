@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +25,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "config_data")
+@Table(name = "config_data",
+       uniqueConstraints = @UniqueConstraint(name = "uk_config_data_key_version",
+               columnNames = {"config_key", "version"}))
 public class ConfigEntity {
 
     @Id

@@ -107,12 +107,25 @@ public class VersionSyncService {
     private VersionInfo createVersionInfo(final String configKey, final int version) {
         VersionInfo versionInfo = new VersionInfo();
         versionInfo.setVersion(version);
-        versionInfo.setCreatedAt(storeManager.getVersionCreatedTime(configKey, version));
         versionInfo.setCreatedBy("system");
         versionInfo.setDescription("配置版本 " + version);
         versionInfo.setChangeType(version == 1 ? VersionInfo.ChangeType.INITIAL : VersionInfo.ChangeType.UPDATE);
 
-        enrichVersionInfoFromConfig(configKey, version, versionInfo);
+        // #1249：单个版本读不出来时只丢这一个版本的时间/描述，不能把异常一路抛到
+        // ConfigurationService 的 postConstruct —— 那样一条脏数据就等于整个实例起不来。
+        // 典型成因：config_data 里存在重复的 (config_key, version)，按单行查询抛
+        // NonUniqueResultException（V21 迁移会清理存量重复行并加唯一约束）。
+        try {
+            versionInfo.setCreatedAt(storeManager.getVersionCreatedTime(configKey, version));
+        } catch (RuntimeException e) {
+            logger.warn("读取配置版本 {} 的创建时间失败，该版本时间留空：{}", version, e.toString());
+        }
+
+        try {
+            enrichVersionInfoFromConfig(configKey, version, versionInfo);
+        } catch (RuntimeException e) {
+            logger.warn("读取配置版本 {} 的内容失败，该版本描述保留默认值：{}", version, e.toString());
+        }
 
         return versionInfo;
     }

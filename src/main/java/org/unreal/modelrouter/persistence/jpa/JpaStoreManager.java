@@ -27,6 +27,21 @@ public class JpaStoreManager implements StoreManager {
 
     private final ConfigRepository configRepository;
 
+    /**
+     * 按配置键串行化「查 latest → 更新或新建」这段 check-then-act（#1249）。
+     *
+     * <p>{@code saveConfig} 先查 {@code is_latest=true} 的行，查不到就以 {@code version=1} 建行；
+     * 两个请求同时走到「查不到」分支时会各写一行，库表出现重复的 {@code (config_key, version)}，
+     * 之后每次启动都在 {@link org.unreal.modelrouter.config.core.manager.VersionSyncService}
+     * 里按单行查询而抛 {@code NonUniqueResultException}，进程起不来。
+     * 加锁把「查 + 写」串起来，READ COMMITTED 下后到者能看到前者已提交的行、走更新分支。</p>
+     *
+     * <p>只覆盖单 JVM；跨副本并发仍由数据库的
+     * {@code uk_config_data_key_version} 唯一约束兜底（冲突时报错而不是写坏数据）。</p>
+     */
+    private final java.util.concurrent.ConcurrentHashMap<String, Object> saveLocks =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     @Override
     @Transactional
     public void saveConfig(final String key, final Map<String, Object> config) {
@@ -43,6 +58,8 @@ public class JpaStoreManager implements StoreManager {
             log.warn("saveConfig 收到 null 配置，已忽略: key={}", key);
             return;
         }
+        final Object lock = saveLocks.computeIfAbsent(key, k -> new Object());
+        synchronized (lock) {
         try {
             String configValue = JacksonHelper.getObjectMapper().writeValueAsString(config);
 
@@ -70,6 +87,7 @@ public class JpaStoreManager implements StoreManager {
         } catch (JacksonException e) {
             log.error("Failed to serialize config for key: {}", key, e);
             throw new RuntimeException("Failed to save config", e);
+        }
         }
     }
 
