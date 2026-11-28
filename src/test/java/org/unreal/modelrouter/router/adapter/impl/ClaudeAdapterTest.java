@@ -98,6 +98,7 @@ class ClaudeAdapterTest {
             return getAuthorizationHeader(authorization, adapterType);
         }
         public Map<String, String> getAdditionalHeadersPublic() { return getAdditionalHeaders(); }
+        public String transformStreamChunkPublic(String chunk) { return transformStreamChunk(chunk); }
     }
 
     // ========== 基本能力测试 ==========
@@ -384,6 +385,78 @@ class ClaudeAdapterTest {
 
             JsonNode json = toJsonNode(adapter.transformResponsePublic(claudeResponse, "claude"));
             assertEquals("Part 1 Part 2", json.get("choices").get(0).get("message").get("content").asText());
+        }
+    }
+
+    // ========== 流式分块转换（issue #1242） ==========
+
+    @Nested
+    @DisplayName("Anthropic → OpenAI 流式分块转换")
+    class StreamChunkTransformation {
+
+        private JsonNode asJson(String chunk) throws Exception {
+            assertNotNull(chunk, "该事件本应产出 OpenAI 分块");
+            return objectMapper.readTree(chunk);
+        }
+
+        @Test
+        @DisplayName("message_start 产出带 role 的空分块")
+        void messageStartCarriesRole() throws Exception {
+            String chunk = adapter.transformStreamChunkPublic(
+                    "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\"}}");
+            JsonNode json = asJson(chunk);
+            assertEquals("chat.completion.chunk", json.get("object").asText());
+            assertEquals("assistant", json.get("choices").get(0).get("delta").get("role").asText());
+            assertTrue(json.get("choices").get(0).get("finish_reason").isNull());
+        }
+
+        @Test
+        @DisplayName("content_block_delta 的 text 变成 delta.content")
+        void contentBlockDeltaBecomesContent() throws Exception {
+            String chunk = adapter.transformStreamChunkPublic(
+                    "{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"你好\"}}");
+            JsonNode json = asJson(chunk);
+            assertEquals("你好", json.get("choices").get(0).get("delta").get("content").asText());
+            assertTrue(json.get("choices").get(0).get("finish_reason").isNull());
+        }
+
+        @Test
+        @DisplayName("message_delta 的 stop_reason 映射成 finish_reason")
+        void messageDeltaMapsStopReason() throws Exception {
+            JsonNode endTurn = asJson(adapter.transformStreamChunkPublic(
+                    "{\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"}}"));
+            assertEquals("stop", endTurn.get("choices").get(0).get("finish_reason").asText());
+
+            JsonNode maxTokens = asJson(adapter.transformStreamChunkPublic(
+                    "{\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"max_tokens\"}}"));
+            assertEquals("length", maxTokens.get("choices").get(0).get("finish_reason").asText());
+        }
+
+        @Test
+        @DisplayName("无正文事件返回 null（由处理器丢弃）")
+        void contentFreeEventsAreDropped() {
+            assertNull(adapter.transformStreamChunkPublic("{\"type\":\"ping\"}"));
+            assertNull(adapter.transformStreamChunkPublic(
+                    "{\"type\":\"content_block_start\",\"index\":0}"));
+            assertNull(adapter.transformStreamChunkPublic(
+                    "{\"type\":\"content_block_stop\",\"index\":0}"));
+            assertNull(adapter.transformStreamChunkPublic(
+                    "{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"input_json_delta\"}}"));
+        }
+
+        @Test
+        @DisplayName("message_stop 产出 [DONE] 终止标记")
+        void messageStopBecomesDone() {
+            assertEquals("[DONE]", adapter.transformStreamChunkPublic("{\"type\":\"message_stop\"}"));
+        }
+
+        @Test
+        @DisplayName("未知类型与非 JSON 原样返回")
+        void unknownAndNonJsonPassThrough() {
+            String unknown = "{\"type\":\"some_future_event\",\"v\":1}";
+            assertEquals(unknown, adapter.transformStreamChunkPublic(unknown));
+            String plain = "not-json-at-all";
+            assertEquals(plain, adapter.transformStreamChunkPublic(plain));
         }
     }
 

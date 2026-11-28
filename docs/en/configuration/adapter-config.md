@@ -26,6 +26,21 @@ JAiRouter supports adding new adapters through configuration-driven approach, wi
 | Anthropic Claude | Claude Format | ❌ Use built-in `claude` adapter |
 | Google Gemini | Gemini Format | ❌ Use built-in `gemini` adapter |
 
+### Cross-protocol streaming: how the body is converted chunk by chunk
+
+When the inbound call is OpenAI-style (`/v1/chat/completions`) but the upstream is Claude or Gemini, the gateway **translates each upstream event** into an OpenAI `chat.completion.chunk` (the text travels in `choices[0].delta.content`). It does not forward the raw upstream events as if they were OpenAI chunks — that produced frames without `choices`, and clients saw an empty body.
+
+| Inbound protocol | Upstream adapter | Streaming body |
+| --- | --- | --- |
+| OpenAI (`/v1/chat/completions`) | OpenAI-compatible (`normal`, etc.) | Passed through as is |
+| OpenAI | `claude` | Translated per chunk into `chat.completion.chunk` |
+| OpenAI | `gemini` | Translated per chunk into `chat.completion.chunk` |
+| Anthropic (`/v1/messages`) | `claude` | Anthropic native events passed through as is |
+
+What is covered: text deltas and the finish reason (`stop` / `length` / `content_filter`). What is **not** covered yet — verify these if you rely on cross-protocol streaming: `tool_calls` chunks, non-text `parts` (images, audio), per-chunk `usage` reported by upstream (`usage` is still emitted once by the gateway at the end of the stream), and Claude's extended-thinking events.
+
+---
+
 ---
 
 ## Method 1: Web UI Configuration (Recommended)

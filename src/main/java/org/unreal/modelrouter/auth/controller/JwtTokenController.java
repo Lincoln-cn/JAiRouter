@@ -70,6 +70,11 @@ public class JwtTokenController {
     @Autowired(required = false)
     private JwtTokenQueryService jwtTokenQueryService;
 
+    // #1248：validate 必须保持匿名（前端未登录时也用它判断本地令牌），
+    // 于是它天然是「令牌有效性探针」。这里按来源 IP 计失败次数并在越阈值时熔断 + 留痕。
+    @Autowired(required = false)
+    private org.unreal.modelrouter.auth.security.ratelimit.JwtValidateProbeGuard jwtValidateProbeGuard;
+
     @jakarta.annotation.PostConstruct
     public void init() {
         log.info("=== JwtTokenController initialized ===");
@@ -288,9 +293,20 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误")
     })
     public Mono<RouterResponse<TokenValidationResponse>> validateToken(
-            @Parameter(description = "令牌验证请求") @RequestBody final TokenValidationRequest request) {
+            @Parameter(description = "令牌验证请求") @RequestBody final TokenValidationRequest request,
+            final org.springframework.web.server.ServerWebExchange exchange) {
 
         log.debug("收到JWT令牌验证请求");
+
+        final String validateClientIp = exchange == null ? null : getClientIpAddress(exchange);
+        // #1248：同一来源短时间内连续失败到阈值后直接拒绝，让批量试令牌不再是零成本。
+        // 契约不变（仍然匿名），只是把「无条件可探测」收紧为「有限次可探测」。
+        if (jwtValidateProbeGuard != null && jwtValidateProbeGuard.isBlocked(validateClientIp)) {
+            return Mono.error(org.unreal.modelrouter.common.exception.ApiException.of(
+                    ErrorCode.RATE_LIMIT_EXCEEDED.code(),
+                    "令牌验证失败次数过多，请稍后再试",
+                    ErrorCode.RATE_LIMIT_EXCEEDED.status()));
+        }
 
         return tokenRefreshService.isTokenValid(request.getToken())
                 .flatMap(isValid -> {
@@ -314,6 +330,9 @@ public class JwtTokenController {
                                                 });
                                     } else {
                                         // 持久化状态显示令牌无效
+                                        if (jwtValidateProbeGuard != null) {
+                                            jwtValidateProbeGuard.recordFailure(validateClientIp, "persistence-invalid");
+                                        }
                                         TokenValidationResponse response = new TokenValidationResponse();
                                         response.setValid(false);
                                         response.setMessage("令牌已被撤销或过期");
@@ -324,6 +343,9 @@ public class JwtTokenController {
                                 });
                     } else {
                         // 令牌无效
+                        if (jwtValidateProbeGuard != null) {
+                            jwtValidateProbeGuard.recordFailure(validateClientIp, "invalid");
+                        }
                         TokenValidationResponse response = new TokenValidationResponse();
                         response.setValid(false);
                         response.setMessage("令牌无效或已被撤销");
@@ -335,6 +357,9 @@ public class JwtTokenController {
                 .onErrorResume(ex -> {
                     // #1197：校验失败的原文只进日志（JWT 内部细节不外显）
                     log.warn("JWT令牌验证失败: {}", ex.getMessage(), ex);
+                    if (jwtValidateProbeGuard != null) {
+                        jwtValidateProbeGuard.recordFailure(validateClientIp, "error");
+                    }
 
                     TokenValidationResponse response = new TokenValidationResponse();
                     response.setValid(false);

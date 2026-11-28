@@ -289,10 +289,76 @@ public class ClaudeAdapter extends BaseAdapter {
         };
     }
 
+    /**
+     * 把 Anthropic 的流式事件翻译成 OpenAI 的 {@code chat.completion.chunk}（issue #1242）。
+     *
+     * <p>只在「OpenAI 协议入站 + Claude 上游」这条链上被调用：{@link BaseAdapter} 把
+     * {@code this::transformStreamChunk} 传给 {@code StreamingRequestProcessor}，由它逐块调用。
+     * Anthropic 入站（{@code /v1/messages}）走的是 {@code AnthropicStreamingTranslator}，不经这里。
+     *
+     * @param chunk 上游一个 SSE 事件的 data（不含 {@code data: } 前缀）
+     * @return 等价的 OpenAI 分块；{@code null} 表示该事件不下发（如 {@code ping} /
+     *         {@code content_block_start}），由处理器过滤掉
+     */
     @Override
     protected String transformStreamChunk(final String chunk) {
-        // Claude 流式响应格式与 OpenAI 不同，需要转换
-        // 暂时返回原始格式，后续可以增强
-        return chunk;
+        if (chunk == null || chunk.isBlank()) {
+            return chunk;
+        }
+        try {
+            final JsonNode event = objectMapper.readTree(chunk);
+            final String type = event.path("type").asText("");
+            return switch (type) {
+                case "message_start" -> buildOpenAiChunk(null, "assistant", null);
+                case "content_block_delta" -> {
+                    final String text = event.path("delta").path("text").asText(null);
+                    yield (text == null || text.isEmpty()) ? null : buildOpenAiChunk(text, null, null);
+                }
+                case "message_delta" -> {
+                    final String stopReason = event.path("delta").path("stop_reason").asText(null);
+                    yield (stopReason == null || stopReason.isEmpty())
+                            ? null
+                            : buildOpenAiChunk(null, null, mapClaudeStopReason(stopReason));
+                }
+                // 终止标记交给处理器：它会在补 usage 帧后统一重发 [DONE]（#720 的既有约定）
+                case "message_stop" -> "[DONE]";
+                case "ping", "content_block_start", "content_block_stop" -> null;
+                default -> chunk;
+            };
+        } catch (tools.jackson.core.JacksonException e) {
+            log.debug("Failed to transform Claude stream chunk: {}", e.getMessage());
+            return chunk;
+        }
+    }
+
+    /**
+     * 构造一个 OpenAI 流式分块。
+     *
+     * @param content      正文增量，{@code null} 表示本块不带正文
+     * @param role         角色，只有首个分块需要
+     * @param finishReason 结束原因，{@code null} 表示流未结束
+     * @return OpenAI {@code chat.completion.chunk} 的 JSON
+     */
+    private String buildOpenAiChunk(final String content, final String role, final String finishReason) {
+        final ObjectNode chunk = objectMapper.createObjectNode();
+        chunk.put("id", "chatcmpl-proxy");
+        chunk.put("object", "chat.completion.chunk");
+        chunk.put("created", System.currentTimeMillis() / 1000L);
+        chunk.put("model", "");
+        final ObjectNode choice = chunk.putArray("choices").addObject();
+        choice.put("index", 0);
+        final ObjectNode delta = choice.putObject("delta");
+        if (role != null) {
+            delta.put("role", role);
+        }
+        if (content != null) {
+            delta.put("content", content);
+        }
+        if (finishReason == null) {
+            choice.putNull("finish_reason");
+        } else {
+            choice.put("finish_reason", finishReason);
+        }
+        return objectMapper.writeValueAsString(chunk);
     }
 }

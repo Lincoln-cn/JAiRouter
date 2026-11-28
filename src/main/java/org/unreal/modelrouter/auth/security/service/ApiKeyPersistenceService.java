@@ -58,6 +58,30 @@ public class ApiKeyPersistenceService {
     }
 
     /**
+     * 保存 API Key 数据到存储，失败时**抛出**而不是只记日志（issue #1245）.
+     *
+     * <p>写路径（创建 / 更新 / 删除 / 启用 / 禁用 / 重置配额）必须用本方法：
+     * {@link #saveApiKeysToStore(Map)} 把异常吞掉，于是内存已改、存储没改，接口照样返回成功 ——
+     * 其它副本永远读不到这次变更，重启后已删的 Key 还会复活。启动期的初始化 / 合并路径仍用
+     * 吞异常版本（那条路径失败不该阻断启动）。</p>
+     *
+     * @param apiKeyCache API Key 缓存（keyHash -> ApiKey）
+     * @throws IllegalStateException 存储写入失败
+     */
+    public void saveApiKeysToStoreOrThrow(final Map<String, ApiKey> apiKeyCache) {
+        try {
+            List<ApiKey> apiKeys = new ArrayList<>(apiKeyCache.values());
+            Map<String, Object> config = new HashMap<>();
+            config.put(STORE_API_KEYS, apiKeys);
+            storeManager.saveConfig(API_KEYS_STORE_KEY, config);
+            log.debug("保存了 {} 个API Key到存储", apiKeys.size());
+        } catch (RuntimeException e) {
+            log.error("保存API Key数据失败，本次改动未落库", e);
+            throw new IllegalStateException("保存 API Key 到存储失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
      * 只把单个 API Key 的最新状态写回存储（#715）.
      *
      * <p>此前每次 Token 用量更新都走 {@link #saveApiKeysToStore(Map)}：把内存缓存里的<b>全部</b>

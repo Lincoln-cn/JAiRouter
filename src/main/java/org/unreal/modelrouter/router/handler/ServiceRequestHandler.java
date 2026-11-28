@@ -50,6 +50,7 @@ import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.cache.SemanticAdmissionPolicy;
 import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.ratelimit.ConcurrentStreamLimiter;
 import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.router.ratelimit.ServiceRateLimitHolder;
@@ -62,6 +63,7 @@ import org.unreal.modelrouter.router.loadbalancer.SelectedInstanceHolder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -270,6 +272,17 @@ public class ServiceRequestHandler {
     private ApiKeyMinuteRateLimitService apiKeyMinuteRateLimitService;
 
     /**
+     * issue #1246: 单调用主体的并发请求上限（默认 100，0 表示不限制）。
+     *
+     * <p>分钟级配额管「打了多少次」，管不住「同时挂着多少条」。一个租户可以用很低的目标 QPS 起
+     * 几百条长连接流式请求，把全站共享的 {@code WebClientPool} 连接池占满，其它租户排队到
+     * {@code pending-acquire-timeout} 之后才拿到连接，表现为大面积 504 / 502。
+     * 未注入（直接 new 的单测）时不做并发限制。</p>
+     */
+    @Autowired(required = false)
+    private ConcurrentStreamLimiter concurrentStreamLimiter;
+
+    /**
      * v3.1 PR-4c: 全局 ObjectMapper（可选注入）。
      *
      * <p>仅用于「原生面（{@code /v1/**}）+ 响应缓存命中」时把缓存值序列化为<b>原生 JSON</b>
@@ -422,11 +435,67 @@ public class ServiceRequestHandler {
         // boundedElastic，避免在 Netty EventLoop 上执行并卡死整条 IO 线程
         // issue #119: 预留之后（selectInstance / 适配器解析 / 处理器链路）的任何错误统一回滚预留。
         // 回滚入口为 QuotaReservation 的恰一次结算，与处理器自身的 settleFailure 叠加不会重复冲正。
+        // issue #1246: 单主体并发上限。位置刻意选在所有早退分支之前——限流/配额/缓存命中
+        // 都算占用了连接，提前短路请求照样会占着连接池。
+        final ConcurrentStreamLimiter.Lease concurrencyLease = concurrentStreamLimiter == null
+                ? null
+                : concurrentStreamLimiter.acquire(extractCallerId(httpRequest));
+        if (concurrencyLease != null && !concurrencyLease.granted()) {
+            if (exchange != null) {
+                applyRateLimitRetryHints(exchange, HttpStatus.TOO_MANY_REQUESTS.value());
+            }
+            return Mono.error(new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many concurrent requests for this caller: at most "
+                            + concurrentStreamLimiter.maxConcurrentPerKey()
+                            + " may be in flight at once (jairouter.ratelimit.max-concurrent-per-key)"));
+        }
+
         return Mono.defer(() -> handleWithInstanceAdapterSync(
                         endpoint, modelName, authorization, httpRequest,
                         tracingContext, executor, exchange))
                 .subscribeOn(Schedulers.boundedElastic())
-                .doOnError(error -> QuotaReservation.settleFailure(QuotaReservation.from(httpRequest)));
+                .doOnError(error -> QuotaReservation.settleFailure(QuotaReservation.from(httpRequest)))
+                // 非流式：Mono 完成即名额归还；流式：把归还挂到响应的 Flux 终止信号上，
+                // 否则「Mono 完成」时下游才开始读流，名额会被提前释放。
+                .<ResponseEntity<?>>map(response -> releaseConcurrencyAfter(response, concurrencyLease))
+                .doOnError(error -> closeConcurrencyLease(concurrencyLease))
+                .doOnCancel(() -> closeConcurrencyLease(concurrencyLease));
+    }
+
+    /**
+     * 把并发名额的归还挂到响应的终止点上（issue #1246）。
+     *
+     * <p>流式响应体是 {@code Flux} 时，{@code Mono<ResponseEntity>} 完成只代表响应头就绪，
+     * 正文还在往后写——此时不能归还名额，否则限制形同虚设；因此把 {@code close()} 交给
+     * {@code doFinally}（完成、异常、取消三种终止都会触发）。</p>
+     *
+     * @param response 处理器返回的响应
+     * @param lease    进入时申请到的租约，可为 {@code null}（未注入限制器）
+     * @return 原响应，或把正文包了一层终止回调的响应
+     */
+    static ResponseEntity<?> releaseConcurrencyAfter(
+            final ResponseEntity<?> response, final ConcurrentStreamLimiter.Lease lease) {
+        if (lease == null) {
+            return response;
+        }
+        final Object body = response.getBody();
+        if (body instanceof Flux<?> flux) {
+            @SuppressWarnings("unchecked")
+            final Flux<Object> wrapped =
+                    ((Flux<Object>) flux).doFinally(signal -> lease.close());
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(response.getHeaders())
+                    .body(wrapped);
+        }
+        lease.close();
+        return response;
+    }
+
+    static void closeConcurrencyLease(final ConcurrentStreamLimiter.Lease lease) {
+        if (lease != null) {
+            lease.close();
+        }
     }
 
     private Mono<ResponseEntity<?>> handleWithInstanceAdapterSync(

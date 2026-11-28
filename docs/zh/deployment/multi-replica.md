@@ -77,11 +77,41 @@ jairouter:
 刻意**不**以 `HOSTNAME` 为据：普通 Docker 容器也会设置它，会把单机部署误判为多副本。
 这也是单机部署**绝不会**被自检打扰的原因——共享态开关在单机下关闭本就是正常状态。
 
+**但「不打扰单副本」有一个代价，部署前必须知道**：如果你在 Docker Compose（`--scale`）、
+多台机器加负载均衡、或任何**不注入 K8s 环境变量**的编排下跑多个副本，又没显式设置
+`JAIROUTER_REPLICAS`，自检会把你当成单副本并**完全跳过**——明明是多副本，却一条告警都没有。
+
+判据很简单：**只要不是单副本，就显式声明副本数**：
+
+```bash
+# 每个副本都设置同一个值（不是 1，也不是 0）
+JAIROUTER_REPLICAS=3
+```
+
+未声明时应用会打一条 `info` 级提示说明「按单副本处理」，可用来确认自己是否踩到这一点：
+
+```text
+未声明副本数（jairouter.cluster.replicas 为空或 <=0），按单副本处理、跳过共享态自检；
+多副本部署请显式设置 JAIROUTER_REPLICAS>1，或由 Downward API 注入 POD_NAME
+```
+
 三种模式的行为：
 
 - `OFF`：不检查，也不暴露健康详情。
 - `WARN`（默认）：启动时给出一条告警，逐项列出未开启的开关及其后果。**不改变** `/actuator/health` 状态。
 - `FAIL`：启动即失败（`IllegalStateException`），应用不会带病对外提供服务。
+
+`WARN` 是默认值，因为单副本与「配置确实齐全」的多副本都不该被打扰；但它对**编排层不可见**——
+容器照样 healthy。确认自己是多副本部署后，建议把口头告警升级成硬约束：
+
+```bash
+JAIROUTER_SHARED_STATE_MODE=FAIL          # 共享态缺失时直接启动失败
+JAIROUTER_SHARED_STATE_FAIL_HEALTH=true   # 或让 /actuator/health 一并报告 DOWN
+```
+
+`FAIL` 模式下应用起不来，`fail-health=true` 下容器变 unhealthy——两者都能被编排层感知，
+而**重启只能放大问题**，所以先修配置再重启。K8s 的 `liveness` / `readiness` 分组不受
+`fail-health` 影响（见下节）。
 
 ### 关于健康端点
 

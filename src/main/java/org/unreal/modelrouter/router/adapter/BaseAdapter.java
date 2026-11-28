@@ -476,8 +476,12 @@ public abstract class BaseAdapter implements ServiceCapability {
                     StreamingRequestProcessor.INCLUDE_USAGE_ATTRIBUTE, chatRequest.includeUsage());
         }
         Object transformedRequest = transformRequest(request, adapterType);
+        // #1242：把适配器自己的分块变换交给处理器（虚方法引用 ⇒ 子类 override 生效）。
+        // 之前走的是不带 transformFn 的重载，ClaudeAdapter / GeminiAdapter 的
+        // transformStreamChunk 从来不参与调用链，OpenAI 入站 + Anthropic/Gemini 上游时正文整段丢失。
         return processor.processStreamingRequest(transformedRequest, finalAuth, client,
-                finalPath, selectedInstance, serviceType, adapterType, httpRequest);
+                finalPath, selectedInstance, serviceType, adapterType,
+                this::transformStreamChunk, httpRequest);
     }
 
     // ==================== 抽象方法 ====================

@@ -81,7 +81,7 @@ class JwtTokenControllerIntegrationTest {
             when(jwtTokenValidator.extractUserId(anyString()))
                     .thenReturn(Mono.just("admin"));
 
-            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(request);
+            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(request, null);
 
             StepVerifier.create(result)
                     .assertNext(response -> {
@@ -102,7 +102,7 @@ class JwtTokenControllerIntegrationTest {
             when(tokenRefreshService.isTokenValid(anyString()))
                     .thenReturn(Mono.just(false));
 
-            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(request);
+            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(request, null);
 
             StepVerifier.create(result)
                     .assertNext(response -> {
@@ -121,7 +121,7 @@ class JwtTokenControllerIntegrationTest {
             when(tokenRefreshService.isTokenValid(anyString()))
                     .thenReturn(Mono.just(false));
 
-            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(request);
+            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(request, null);
 
             StepVerifier.create(result)
                     .assertNext(response -> {

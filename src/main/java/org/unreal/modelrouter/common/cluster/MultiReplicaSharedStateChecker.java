@@ -87,7 +87,17 @@ public class MultiReplicaSharedStateChecker implements ApplicationListener<Appli
                 log.info("多副本共享态自检通过：{} 项共享态开关均已开启",
                         MultiReplicaSharedStateGate.SHARED_STATE_SWITCHES.size());
             } else {
-                log.debug("单副本环境，无需共享态自检");
+                // #1244：这里判成「单副本」有两种可能 —— 显式声明了 1，或压根没声明且环境里
+                // 没有 K8s 信号。后者在 docker-compose scale / 多机负载均衡下，会把真实的多副本
+                // 部署当成单副本，自检静默跳过。所以未声明时至少留一条可检索的 info。
+                if (replicas <= 0) {
+                    log.info("未声明副本数（{} 为空或 <=0），按单副本处理、跳过共享态自检；"
+                                    + "多副本部署请显式设置 JAIROUTER_REPLICAS>1，"
+                                    + "或由 Downward API 注入 POD_NAME（详见 docs/zh/deployment/multi-replica.md）",
+                            REPLICAS_KEY);
+                } else {
+                    log.debug("单副本环境，无需共享态自检");
+                }
             }
             return;
         }
@@ -95,6 +105,11 @@ public class MultiReplicaSharedStateChecker implements ApplicationListener<Appli
         MultiReplicaSharedStateGate.enforce(mode, assessment);
         log.warn("{}{}", MultiReplicaSharedStateGate.describe(assessment),
                 failHealth ? "（按配置，/actuator/health 将一并报告 DOWN）" : "");
+        // #1244：WARN 是默认值，但它对编排层不可见（容器仍 healthy）。给出把口头告警变成
+        // 硬约束的两个开关，运维不必翻文档就知道下一步该改什么。
+        log.warn("如需让带病启动直接失败：设 JAIROUTER_SHARED_STATE_MODE=FAIL；"
+                        + "如需让容器/探针也感知：设 JAIROUTER_SHARED_STATE_FAIL_HEALTH=true"
+                        + "（K8s 的 liveness/readiness 分组不受影响）");
     }
 
     /**

@@ -92,6 +92,26 @@ deployment as multi-replica.
 misclassify a single-node deployment. This is also why single-replica deployments are never disturbed
 by the check — shared-state switches being off is the normal state there.
 
+**That kindness has a cost you must know before deploying**: if you run several replicas under Docker
+Compose (`--scale`), behind a load balancer on multiple hosts, or any orchestrator that does **not**
+inject Kubernetes environment variables, and you never set `JAIROUTER_REPLICAS`, the self-check treats
+you as single-replica and **skips entirely** — real multi-replica, zero warnings.
+
+The rule is simple: **if you are not single-replica, declare it**:
+
+```bash
+# Set the same value on every replica (not 1, not 0)
+JAIROUTER_REPLICAS=3
+```
+
+When it is undeclared the application logs an `info` line saying it fell back to single-replica, which
+is how you confirm whether you hit this:
+
+```text
+未声明副本数（jairouter.cluster.replicas 为空或 <=0），按单副本处理、跳过共享态自检；
+多副本部署请显式设置 JAIROUTER_REPLICAS>1，或由 Downward API 注入 POD_NAME
+```
+
 Behavior of the three modes:
 
 - `OFF`: no check, no health details.
@@ -99,6 +119,20 @@ Behavior of the three modes:
   `/actuator/health` status is **not** changed.
 - `FAIL`: startup aborts with an `IllegalStateException`; the application never serves traffic while
   misconfigured.
+
+`WARN` is the default because neither a single replica nor a correctly configured multi-replica
+deployment should be disturbed by it — but it is **invisible to the orchestrator**: the container stays
+healthy. Once you have confirmed you run multiple replicas, promote the warning to a hard constraint:
+
+```bash
+JAIROUTER_SHARED_STATE_MODE=FAIL          # abort startup when a shared-state switch is missing
+JAIROUTER_SHARED_STATE_FAIL_HEALTH=true   # or make /actuator/health report DOWN
+```
+
+With `FAIL` the instance refuses to start; with `fail-health=true` the container turns unhealthy. Both
+are visible to the orchestrator — and a **restart only amplifies the problem**, so fix the
+configuration before restarting. The Kubernetes `liveness` / `readiness` groups are unaffected by
+`fail-health` (see the next section).
 
 ### Dependency reachability (staging / prod only, v3.5.7+)
 

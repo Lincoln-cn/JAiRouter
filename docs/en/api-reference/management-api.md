@@ -105,7 +105,9 @@ Revoke current token.
 Revoke multiple tokens in batch.
 
 #### `POST /api/auth/jwt/validate`
-Validate a JWT token.
+Validate a JWT token. **Available anonymously** — the console calls it before sign-in to decide whether a locally cached token is still usable.
+
+Because it is anonymous it doubles as a natural "is this token valid" probe: once one source IP accumulates failures past the threshold (20 within 5 minutes by default), this endpoint answers 429, and the first crossing writes a `BRUTE_FORCE_ATTEMPT` audit event. Tune it via `jairouter.auth.jwt-validate-guard.*` (`enabled` / `max-failures-per-ip` / `window-minutes`). Clients that simply validate their own token never hit this limit.
 
 #### `GET /api/auth/jwt/blacklist/stats`
 Get JWT blacklist statistics.

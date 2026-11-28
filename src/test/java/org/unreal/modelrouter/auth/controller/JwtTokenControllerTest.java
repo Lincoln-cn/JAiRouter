@@ -76,7 +76,7 @@ class JwtTokenControllerTest {
             lenient().when(jwtTokenValidator.extractUserId(anyString())).thenReturn(Mono.just("testuser"));
 
             // When
-            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(testValidationRequest);
+            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(testValidationRequest, null);
 
             // Then
             StepVerifier.create(result)
@@ -92,7 +92,7 @@ class JwtTokenControllerTest {
             lenient().when(tokenRefreshService.isTokenValid(anyString())).thenReturn(Mono.just(false));
 
             // When
-            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(testValidationRequest);
+            Mono<RouterResponse<TokenValidationResponse>> result = controller.validateToken(testValidationRequest, null);
 
             // Then
             StepVerifier.create(result)

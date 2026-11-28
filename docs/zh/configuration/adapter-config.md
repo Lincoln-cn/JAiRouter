@@ -26,6 +26,21 @@ JAiRouter 支持通过配置驱动的方式添加新的 adapter，无需编写�
 | Anthropic Claude | Claude格式 | ❌ 需使用内置 `claude` adapter |
 | Google Gemini | Gemini格式 | ❌ 需使用内置 `gemini` adapter |
 
+### 跨协议流式：正文怎么逐块转换
+
+`/v1/chat/completions` 这类 OpenAI 协议入站、上游却是 Claude 或 Gemini 时，网关会把上游的流式事件**逐块翻译**成 OpenAI 的 `chat.completion.chunk`（正文在 `choices[0].delta.content` 里），而不是把上游的原始事件原样当成分块透传 —— 后者会让客户端读到一堆没有 `choices` 的帧，表现为正文全空。
+
+| 入站协议 | 上游适配器 | 流式正文 |
+| --- | --- | --- |
+| OpenAI（`/v1/chat/completions`） | OpenAI 兼容（`normal` 等） | 原样透传 |
+| OpenAI | `claude` | 逐块翻译成 `chat.completion.chunk` |
+| OpenAI | `gemini` | 逐块翻译成 `chat.completion.chunk` |
+| Anthropic（`/v1/messages`） | `claude` | Anthropic 原生事件按原样透传 |
+
+覆盖范围是正文增量与结束原因（`stop` / `length` / `content_filter`）。以下**不在**当前实现内，配了跨协议流式就要按这些边界验一遍：`tool_calls` 的分块、多模态 `parts`、上游逐块上报的 `usage`（`usage` 仍由网关在流末尾按自己的统计补一帧）、以及 Claude 的 extended thinking 事件。
+
+---
+
 ---
 
 ## 方式一：Web页面配置（推荐）
