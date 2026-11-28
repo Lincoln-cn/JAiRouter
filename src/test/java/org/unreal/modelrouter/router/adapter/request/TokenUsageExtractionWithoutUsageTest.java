@@ -97,6 +97,46 @@ class TokenUsageExtractionWithoutUsageTest {
     }
 
     @Test
+    @DisplayName("Anthropic 非流式响应用 input_tokens/output_tokens，不能被当成无 usage 去估算")
+    void usesAnthropicUsageFields() {
+        final String responseBody = "{\"model\":\"claude-3\",\"usage\":{\"input_tokens\":13,"
+                + "\"output_tokens\":52},\"content\":[{\"type\":\"text\",\"text\":\"ok\"}]}";
+
+        extractor.extractAndRecordTokenUsage(responseBody, "{\"messages\":[]}", "claude", INSTANCE, API_KEY_ID, null);
+
+        final ArgumentCaptor<Long> promptCaptor = ArgumentCaptor.forClass(Long.class);
+        final ArgumentCaptor<Long> completionCaptor = ArgumentCaptor.forClass(Long.class);
+        final ArgumentCaptor<Long> totalCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(recorder).recordTokenUsageNoAuth(eq("CHAT"), eq("claude-3"), eq("claude"), eq(INSTANCE),
+                isNull(), eq(API_KEY_ID), promptCaptor.capture(), completionCaptor.capture(), totalCaptor.capture(),
+                any(), isNull(), eq(true), isNull(), isNull(), isNull());
+
+        assertThat(promptCaptor.getValue()).isEqualTo(13L);
+        assertThat(completionCaptor.getValue()).isEqualTo(52L);
+        assertThat(totalCaptor.getValue()).isEqualTo(65L);
+    }
+
+    @Test
+    @DisplayName("Gemini 非流式响应用顶层 usageMetadata，且 total 由网关补齐")
+    void usesGeminiUsageMetadata() {
+        final String responseBody = "{\"model\":\"gemini-2.0\",\"usageMetadata\":{\"promptTokenCount\":7,"
+                + "\"candidatesTokenCount\":3,\"totalTokenCount\":10}}";
+
+        extractor.extractAndRecordTokenUsage(responseBody, "{\"contents\":[]}", "gemini", INSTANCE, API_KEY_ID, null);
+
+        final ArgumentCaptor<Long> promptCaptor = ArgumentCaptor.forClass(Long.class);
+        final ArgumentCaptor<Long> completionCaptor = ArgumentCaptor.forClass(Long.class);
+        final ArgumentCaptor<Long> totalCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(recorder).recordTokenUsageNoAuth(eq("CHAT"), eq("gemini-2.0"), eq("gemini"), eq(INSTANCE),
+                isNull(), eq(API_KEY_ID), promptCaptor.capture(), completionCaptor.capture(), totalCaptor.capture(),
+                any(), isNull(), eq(true), isNull(), isNull(), isNull());
+
+        assertThat(promptCaptor.getValue()).isEqualTo(7L);
+        assertThat(completionCaptor.getValue()).isEqualTo(3L);
+        assertThat(totalCaptor.getValue()).isEqualTo(10L);
+    }
+
+    @Test
     @DisplayName("既无 usage 也无任何文本时不写 0 token 记录")
     void recordsNothingWhenNothingToEstimate() {
         extractor.extractAndRecordTokenUsage("{}", null, ADAPTER, INSTANCE, API_KEY_ID, null);
