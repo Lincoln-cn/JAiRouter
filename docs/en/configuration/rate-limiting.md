@@ -61,6 +61,37 @@ The service-level limiter keys its bucket by **service type**: `rate-limit.capac
 - **Fair share per caller**: set `rate-limit.client-ip-enable: true` for that service (one bucket per caller), or — in cluster deployments behind no proxy — point `rate-limit.key-dimension` at API key / tenant (see [Client IP Rate Limiting](#client-ip-rate-limiting)).
 - **Startup visibility**: if any service has service-level limiting enabled without the client dimension, the startup log prints one `WARN` naming them, so "global protection" is not mistaken for "a quota per caller".
 
+### Concurrency ceiling: one caller cannot monopolize the outbound pool (#1246)
+
+A per-minute quota caps *how many* requests you send; it does not cap *how many are in flight*. A single
+caller can open hundreds of long-lived streaming requests at a very low target QPS and exhaust the
+platform-wide outbound connection pool (`jairouter.webclient.max-connections`, default `500`). Other
+tenants then wait in the pool queue past `pending-acquire-timeout` and see widespread `504` / `502`.
+
+This version caps the number of in-flight requests per **caller** (API Key ID or `jwt:<username>`):
+
+```yaml
+jairouter:
+  ratelimit:
+    # In-flight requests allowed per caller; <= 0 disables the cap
+    max-concurrent-per-key: 100
+```
+
+- **Over the cap returns `429`** with a body such as
+  `Too many concurrent requests for this caller: at most 100 may be in flight at once`, plus
+  `Retry-After: 1`. It shares the `429` status with the per-minute quota; the difference is that it keeps
+  rejecting until an in-flight request finishes.
+- **The slot is returned when the response terminates** — normal stream completion, upstream error, or
+  the client disconnecting. The last one is the easiest to forget and is exactly how a hung streaming
+  request holds a pool connection.
+- **Observability**: each rejection logs one `WARN` per caller (at most one per 60 seconds) naming the
+  caller, the current in-flight count, the ceiling, and how to raise it or disable it with `0`.
+
+> Choosing a value: `100` is the compromise between "far below pool capacity" and "does not block normal
+> batch traffic". If you raise `jairouter.webclient.max-connections`, re-evaluate this together with it —
+> the pool is shared platform-wide, so ceiling × caller count should not exceed pool capacity by much,
+> otherwise the limiter just moves the queue elsewhere.
+
 ## Service-Level Dynamic Rate Limiting Configuration (v2.8.8)
 
 Service-level limits can be configured **dynamically and hot-applied** from the Web console (no restart):
