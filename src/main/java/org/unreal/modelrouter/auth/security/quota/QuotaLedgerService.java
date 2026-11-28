@@ -621,14 +621,21 @@ public class QuotaLedgerService {
             String failure = null;
             for (final QuotaWindow window : properties.enabledWindows()) {
                 final QuotaCounterKey key = keyOf(dimension, window, now);
-                if (localBackend.incrementLocalIfPresent(key, requestDelta, tokenDelta) == null) {
-                    continue;
-                }
+                final boolean hasLocalSlot =
+                    localBackend.incrementLocalIfPresent(key, requestDelta, tokenDelta) != null;
                 if (!distributed) {
                     continue;
                 }
                 try {
-                    publish(key, requestDelta, tokenDelta, true);
+                    if (hasLocalSlot) {
+                        publish(key, requestDelta, tokenDelta, true);
+                    } else {
+                        // 本地槽位不存在（跨窗口结算：预留落在上个窗口；或槽位已被 cleanup/shutdown
+                        // 清掉）时，不能连 Redis 冲正一起跳过 —— 否则失败请求的 -1 / -tokens 永久
+                        // 丢失，分布式账本只多不少且没有任何日志或指标。
+                        // incrementIfPresent 保证冲正不会为它新建一个桶。
+                        publishIfPresent(key, requestDelta, tokenDelta);
+                    }
                 } catch (Exception e) {
                     failure = QuotaDistributedWriter.classify(e);
                     log.warn("Redis 计数结算补写失败，降级为本地计数: apiKeyId={}, window={}, reason={}, error={}",
@@ -962,6 +969,21 @@ public class QuotaLedgerService {
                          final long tokens,
                          final boolean registerPending) {
         distributedWriter.publish(key, requests, tokens, registerPending);
+    }
+
+    /**
+     * 仅当分布式后端已有该桶时累加（不建档，实现在 {@link QuotaDistributedWriter#publishIfPresent}）。
+     *
+     * <p>结算冲正专用：本地槽位缺失时仍要把冲正送到 Redis，但不能因此新建一个计数桶。</p>
+     *
+     * @param key      计数键
+     * @param requests 请求数增量（结算时为负）
+     * @param tokens   token 增量（结算时为负）
+     */
+    private void publishIfPresent(final QuotaCounterKey key,
+                                  final long requests,
+                                  final long tokens) {
+        distributedWriter.publishIfPresent(key, requests, tokens);
     }
 
     /**

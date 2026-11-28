@@ -146,6 +146,43 @@ final class QuotaDistributedWriter {
     }
 
     /**
+     * 仅当分布式后端**已有**该桶时累加（不建档），用于本地槽位缺失时的结算冲正。
+     *
+     * <p>结算的语义是「只冲正已存在的计数，不为结算新建计数」（{@code incrementIfPresent}
+     * 的接口约定）。本地槽位缺失（跨窗口结算、槽位被 cleanup/shutdown 清掉）时，
+     * {@link #publish} 用的 {@code increment} 会给冲正建一个新桶，因此这里改用
+     * {@code incrementIfPresent}：Redis 有桶就冲正，没有就什么都不做。</p>
+     *
+     * <p>失败处理与 {@link #publish} 一致：明确失败时把增量登记为待补写（下次
+     * {@code publish} 会带上），超时属「结果未知」直接放弃以避免重复计数。</p>
+     *
+     * @param key      计数键
+     * @param requests 请求数增量（结算时为负）
+     * @param tokens   token 增量（结算时为负）
+     */
+    void publishIfPresent(final QuotaCounterKey key,
+                          final long requests,
+                          final long tokens) {
+        final long[] pending = localBackend.takePending(key);
+        final long requestDelta = requests + (pending == null ? 0L : pending[0]);
+        final long tokenDelta = tokens + (pending == null ? 0L : pending[1]);
+        if (requestDelta == 0L && tokenDelta == 0L) {
+            return;
+        }
+        try {
+            execute(() -> backend.incrementIfPresent(key, requestDelta, tokenDelta));
+        } catch (RuntimeException e) {
+            if (isTimeout(e)) {
+                log.warn("Redis 冲正命令超时（结果未知），放弃补写以避免重复计数: window={}, windowStart={},"
+                    + " requests={}, tokens={}", key.window(), key.windowStart(), requestDelta, tokenDelta);
+            } else {
+                localBackend.addPending(key, requestDelta, tokenDelta);
+            }
+            throw e;
+        }
+    }
+
+    /**
      * 判断异常是否为超时（Reactor {@code block(timeout)} 把超时包装成
      * {@link IllegalStateException}，真实超时在因果链中）。
      *

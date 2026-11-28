@@ -29,7 +29,23 @@ public class WebClientCacheManager {
      * @return WebClient 实例
      */
     public WebClient getOrCreate(final String baseUrl) {
-        return cache.computeIfAbsent(baseUrl, this::createWebClient);
+        return getOrCreate(baseUrl, false);
+    }
+
+    /**
+     * 取该 baseUrl 对应的 WebClient（按是否流式区分缓存条目）。
+     *
+     * <p>流式与非流式用的是两套传输层超时（{@code WebClientPool} 的
+     * {@code streaming} 变体 = 600s，默认变体 = 60s，#701），因此必须分开缓存：
+     * 共用一个条目会让先创建的一方决定另一方的超时。</p>
+     *
+     * @param baseUrl   基础 URL
+     * @param streaming true 表示这是 SSE 流式请求，需要更长的传输层超时
+     * @return WebClient
+     */
+    public WebClient getOrCreate(final String baseUrl, final boolean streaming) {
+        return cache.computeIfAbsent(streaming ? baseUrl + "|streaming" : baseUrl,
+                key -> createWebClient(baseUrl, streaming));
     }
 
     /**
@@ -39,14 +55,16 @@ public class WebClientCacheManager {
      * @param baseUrl 基础URL
      * @return WebClient 实例
      */
-    private WebClient createWebClient(final String baseUrl) {
+    private WebClient createWebClient(final String baseUrl, final boolean streaming) {
         // R3-P0：出站前校验，覆盖历史脏数据（云元数据等）
         final String safeBaseUrl =
                 org.unreal.modelrouter.config.core.helper.SsrfGuard.validateOutboundBaseUrl(baseUrl);
         try {
             TracingWebClientFactory tracingFactory =
                     ApplicationContextProvider.getBean(TracingWebClientFactory.class);
-            return tracingFactory.createTracingWebClient(safeBaseUrl);
+            return streaming
+                    ? tracingFactory.createTracingWebClient(safeBaseUrl, true)
+                    : tracingFactory.createTracingWebClient(safeBaseUrl);
         } catch (Exception e) {
             // 追踪不可用（如 jairouter.tracing.enabled=false）：仍走 WebClientPool —— 出站解析守卫
             // （#266）只挂在它创建的客户端上，自建 WebClient 会绕过校验结果的绑定
@@ -54,12 +72,17 @@ public class WebClientCacheManager {
             // 追踪关闭不代表请求 ID 不存在：RequestIdWebFilter 与 tracing 是两套机制，
             // 这里仍挂上透传过滤器，保证 X-Request-Id 能到上游（3.8.8）
             final RequestIdPropagationFilter requestIdFilter = resolveRequestIdFilter();
+            // 追踪关闭不代表请求是流式的——变体必须跟着 streaming 走，
+            // 否则流式请求会被降到默认 60s 传输超时，长回答在中途被掐断
+            final String requestIdVariant = streaming ? "streaming-request-id" : "request-id";
             if (requestIdFilter == null) {
                 // 极简上下文（测试替身、自定义装配）里没有该 Bean：退回原有行为，
                 // 不因为「追踪附属组件缺失」让整条出站路径失败
-                return webClientPool.getOrCreate(safeBaseUrl);
+                return streaming
+                        ? webClientPool.getOrCreate(safeBaseUrl, "streaming", builder -> { })
+                        : webClientPool.getOrCreate(safeBaseUrl);
             }
-            return webClientPool.getOrCreate(safeBaseUrl, "request-id",
+            return webClientPool.getOrCreate(safeBaseUrl, requestIdVariant,
                     builder -> builder.filter(requestIdFilter));
         }
     }

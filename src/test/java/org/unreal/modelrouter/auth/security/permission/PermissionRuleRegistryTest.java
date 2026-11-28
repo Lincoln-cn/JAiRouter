@@ -197,6 +197,59 @@ class PermissionRuleRegistryTest {
                 PermissionCodes.SECURITY_LOGINGUARD_MANAGE);
     }
 
+    @Test
+    @DisplayName("限流配置的写操作要求 config:ratelimit:write（issue #1241）")
+    void rateLimitWriteRequiresWriteLevelCode() {
+        assertRuleCode(HttpMethod.PUT, "/api/services/chat/ratelimit", PermissionCodes.CONFIG_RATELIMIT_WRITE);
+        assertRuleCode(HttpMethod.POST, "/api/services/chat/ratelimit", PermissionCodes.CONFIG_RATELIMIT_WRITE);
+        assertRuleCode(HttpMethod.DELETE, "/api/services/chat/ratelimit", PermissionCodes.CONFIG_RATELIMIT_WRITE);
+        // 读面保持监控读码是刻意的：只读不构成越权，改它会破坏按 rl:monitoring:read 读该路径的客户端
+        assertRuleCode(HttpMethod.GET, "/api/services/chat/ratelimit", PermissionCodes.RL_MONITORING_READ);
+    }
+
+    /**
+     * 只读语义的 POST 端点（用 POST 传查询体，如审计查询 / 导出 / 脱敏试跑）。
+     *
+     * <p>它们由 {@link PermissionRule#post(String, String)} 登记、挂读码是刻意设计，
+     * 见该方法 javadoc。新增条目必须在这里登记并说明理由，避免「真写操作」混进来。
+     */
+    private static final Set<String> READ_ONLY_POST_PATTERNS = Set.of(
+            "/api/security/audit/extended/query",
+            "/api/tracing/query/export",
+            "/api/config/sanitization/test",
+            "/api/config/sanitization/scope/preview");
+
+    @Test
+    @DisplayName("PUT/PATCH/DELETE 不得只要求 :read 码（issue #1241 的通用守卫）")
+    void modifyingMethodsDoNotRequireOnlyReadLevelCode() {
+        List<String> offenders = registry.getRules().stream()
+                .filter(rule -> rule.methods().stream()
+                        .anyMatch(method -> method == HttpMethod.PUT
+                                || method == HttpMethod.PATCH
+                                || method == HttpMethod.DELETE))
+                .filter(rule -> !rule.permissionCodes().isEmpty())
+                .filter(rule -> rule.permissionCodes().stream().allMatch(code -> code.endsWith(":read")))
+                .map(rule -> rule.methods() + " " + rule.pathPattern() + " -> " + rule.permissionCodes())
+                .collect(Collectors.toList());
+        assertTrue(offenders.isEmpty(),
+                "这些改状态的 HTTP 方法只要求了 :read 码，任何持该读码的主体都能执行写操作（#1241）: " + offenders);
+    }
+
+    @Test
+    @DisplayName("POST 只挂 :read 码的，必须是已登记的只读语义端点")
+    void readOnlyPostRulesAreExplicitlyRegistered() {
+        List<String> unregistered = registry.getRules().stream()
+                .filter(rule -> rule.methods().size() == 1 && rule.methods().contains(HttpMethod.POST))
+                .filter(rule -> !rule.permissionCodes().isEmpty())
+                .filter(rule -> rule.permissionCodes().stream().allMatch(code -> code.endsWith(":read")))
+                .map(PermissionRule::pathPattern)
+                .filter(pattern -> !READ_ONLY_POST_PATTERNS.contains(pattern))
+                .collect(Collectors.toList());
+        assertTrue(unregistered.isEmpty(),
+                "这些 POST 规则只挂读码但没登记为只读语义端点；若它真的会改状态，"
+                        + "请改用 :write 码，否则加入 READ_ONLY_POST_PATTERNS（#1241）: " + unregistered);
+    }
+
     private void assertRuleCode(final HttpMethod method, final String path, final String expectedCode) {
         PermissionRule rule = registry.findRule(method, path)
                 .orElseThrow(() -> new AssertionError(method + " " + path + " 未命中任何权限规则"));

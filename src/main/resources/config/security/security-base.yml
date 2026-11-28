@@ -50,11 +50,10 @@ jairouter:
       response:
         enabled: false
         # PII 模式与 config/auth/sanitization.yml 同步（顺序即执行顺序）。
-        # 词表保持本文件原有的 password/account：#561 起不再含通用英文词 key，
-        # 避免 "press any key to continue" 这类正常文案被误伤。
-        sensitive-words:
-          - "password"
-          - "account"
+        # ⚠️ 敏感词表**不要**在本文件重复定义：list 类型不会合并，后导入的一处会整体
+        # 覆盖前一处。此前这里写的是 password/account，把 sanitization.yml 的
+        # secret/token 顶掉了（本文件在 application.yml:56 导入、晚于 :37 的 sanitization.yml）。
+        # 词表的唯一来源 = config/auth/sanitization.yml 的 response.sensitive-words。
         # ⚠️ 顺序 = 执行顺序，先长后短：身份证 → 银行卡 → 手机号 → 邮箱（#561）。
         pii-patterns:
           - "(?<!\\d)\\d{17}[\\dXx](?!\\d)"

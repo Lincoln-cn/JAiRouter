@@ -205,13 +205,90 @@ public class AnthropicStreamingTranslator {
                                                        final long inputTokens) {
 
         return Flux.defer(() -> {
-            final StreamState state = new StreamState();
-            final Flux<ServerSentEvent<String>> deltaEvents = downstream
+            final Flux<ServerSentEvent<?>> events = downstream
                     .filter(element -> element instanceof ServerSentEvent)
-                    .concatMap(element -> Flux.fromIterable(
-                            toDeltaEvents((ServerSentEvent<?>) element, state)))
-                    .concatWith(Flux.defer(() -> Flux.fromIterable(
-                            finishEvents(state))));
+                    .map(element -> (ServerSentEvent<?>) element);
+
+            // 下游已经是 Anthropic 原生事件流（claude / gemini 实例直连）时原样透传。
+            // 否则 toDeltaEvents 只认 choices[]，每个事件都会被丢弃，客户端只收到本地拼的
+            // message_start / content_block_start / message_stop —— 正文全空（#1242）。
+            return events.switchOnFirst((signal, firstAndRest) ->
+                    signal.hasValue() && isNativeAnthropicEvent(signal.get())
+                            ? passthrough(firstAndRest)
+                            : translate(firstAndRest, requestedModel, inputTokens));
+        });
+    }
+
+    /**
+     * 判断一个下游事件是不是 Anthropic 原生事件（按 {@code data.type} 字段）.
+     *
+     * <p>判据取事件载荷里的 {@code type}：{@code message_start} / {@code content_block_*}
+     * / {@code message_delta} / {@code message_stop} / {@code ping}。OpenAI 风格的块没有该字段，
+     * 因此不会被误判。</p>
+     *
+     * @param event 下游 SSE 事件
+     * @return 是 Anthropic 原生事件时 {@code true}
+     */
+    private boolean isNativeAnthropicEvent(final ServerSentEvent<?> event) {
+        final String payload = payloadOf(event);
+        if (payload == null || payload.isEmpty()) {
+            return false;
+        }
+        final JsonNode root = readTree(payload);
+        if (root == null || !root.isObject()) {
+            return false;
+        }
+        final JsonNode type = root.get("type");
+        if (type == null || !type.isTextual()) {
+            return false;
+        }
+        final String value = type.asText();
+        return value.startsWith("message_") || value.startsWith("content_block_")
+                || "ping".equals(value);
+    }
+
+    /**
+     * 原样透传下游事件（下游已是 Anthropic 格式，不需要也不允许再翻译）.
+     *
+     * @param firstAndRest 已带上首元素的原始事件流
+     * @return 与下游同序、同内容的事件流
+     */
+    private Flux<ServerSentEvent<String>> passthrough(final Flux<ServerSentEvent<?>> firstAndRest) {
+        return firstAndRest.map(event -> {
+            final ServerSentEvent.Builder<String> builder = ServerSentEvent.<String>builder()
+                    .data(event.data() == null ? null : String.valueOf(event.data()));
+            if (event.id() != null) {
+                builder.id(event.id());
+            }
+            if (event.event() != null) {
+                builder.event(event.event());
+            }
+            if (event.comment() != null) {
+                builder.comment(event.comment());
+            }
+            if (event.retry() != null) {
+                builder.retry(event.retry());
+            }
+            return builder.build();
+        });
+    }
+
+    /**
+     * 把一个 OpenAI 风格的下游事件流翻译成 Anthropic 事件序列.
+     *
+     * @param firstAndRest    下游事件流（含首元素）
+     * @param requestedModel  请求侧模型名（写入 {@code message_start.message.model}）
+     * @param inputTokens     请求侧估算输入 token 数
+     * @return Anthropic 事件流
+     */
+    private Flux<ServerSentEvent<String>> translate(final Flux<ServerSentEvent<?>> firstAndRest,
+                                                    final String requestedModel,
+                                                    final long inputTokens) {
+        return Flux.defer(() -> {
+            final StreamState state = new StreamState();
+            final Flux<ServerSentEvent<String>> deltaEvents = firstAndRest
+                    .concatMap(element -> Flux.fromIterable(toDeltaEvents(element, state)))
+                    .concatWith(Flux.defer(() -> Flux.fromIterable(finishEvents(state))));
 
             return Flux.fromIterable(startEvents(requestedModel, inputTokens))
                     .concatWith(deltaEvents)
