@@ -350,6 +350,10 @@ public class StreamingRequestProcessor {
                     // 可逆脱敏：先把占位符换回原文，再做适配器变换（占位符本身与目标协议无关）
                     final String restoredChunk = detokenizeChunk(piiScopeId, guardedChunk);
                     ServerSentEvent<String> sse = transformAndWrapChunk(restoredChunk, transformChunkFn);
+                    if (sse == droppedChunk()) {
+                        // #1242：适配器判定该上游事件无需下发，整块跳过（计数、缓存、记账都不参与）
+                        return sse;
+                    }
                     // v2.9.10: 收集变换后 data 串用于流式缓存（v3.2.3: 受缓存字符预算约束）
                     if (transformedChunks != null && !cacheOverBudget.get()) {
                         final String data = sse.data();
@@ -514,6 +518,9 @@ public class StreamingRequestProcessor {
                                 }, err -> logger.debug("流式调用历史脱敏订阅失败: {}", err.getMessage()));
                     }
                 })
+                // #1242：适配器丢弃的事件（见 transformAndWrapChunk 的哨兵约定）在这里滤掉，
+                // 否则客户端会读到一个内容无意义的占位帧。
+                .filter(event -> event != droppedChunk())
                 .doOnError(throwable -> {
                     // v3.2.3 (#126/#127): 释放累积缓冲（空闲超时/异常终止时立即归还内存）。
                     // onError 与 onNext 串行，此处与 map() 无并发；同步仅统一监视器约定。
@@ -665,11 +672,19 @@ public class StreamingRequestProcessor {
      */
     private ServerSentEvent<String> transformAndWrapChunk(final String chunk,
                                                             final Function<String, String> transformFn) {
-        String transformed;
+        final String transformed;
         if (transformFn != null) {
             transformed = transformFn.apply(chunk);
         } else {
             transformed = responseTransformer.transformStreamChunk(chunk);
+        }
+
+        // #1242：适配器可以返回 null 表示「这个上游事件不下发」（Anthropic 的 ping /
+        // content_block_start / content_block_stop 之类没有正文的事件）。这里换成哨兵对象返回 ——
+        // Reactor 的 map 不允许 onNext 为 null（会直接抛 NPE 并中断整条流），
+        // 所以「丢弃」只能靠一个可识别的占位符 + 下游 filter。
+        if (transformed == null) {
+            return droppedChunk();
         }
 
         return ServerSentEvent.<String>builder()
@@ -696,6 +711,23 @@ public class StreamingRequestProcessor {
     private static ServerSentEvent<String> doneEvent() {
         return ServerSentEvent.<String>builder().data("[DONE]").build();
     }
+
+    /**
+     * #1242：「该上游事件不下发」的哨兵。
+     *
+     * <p>用哨兵而不是 null，是因为 Reactor 的 {@code map} 在 {@code onNext} 为 null 时会抛
+     * {@code NullPointerException} 并终止整条流 —— 那样一个 Anthropic 的 {@code ping}
+     * 就能把整个响应打断。哨兵在下游被 filter 掉，不会出现在客户端可见的流里。</p>
+     *
+     * @return 可识别的丢弃标记
+     */
+    private static ServerSentEvent<String> droppedChunk() {
+        return DROPPED_CHUNK;
+    }
+
+    /** #1242：丢弃标记的单一实例（用引用相等判定，避免与真实内容撞值）。 */
+    private static final ServerSentEvent<String> DROPPED_CHUNK =
+            ServerSentEvent.<String>builder().data("__dropped-chunk__").build();
 
     /**
      * #720：构造 usage 帧（OpenAI 语义：{@code choices} 为空数组，usage 三个计数）。

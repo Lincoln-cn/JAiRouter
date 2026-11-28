@@ -376,10 +376,64 @@ public class GeminiAdapter extends BaseAdapter {
         };
     }
 
+    /**
+     * 把 Gemini 的流式响应块翻译成 OpenAI 的 {@code chat.completion.chunk}（issue #1242）。
+     *
+     * <p>只在「OpenAI 协议入站 + Gemini 上游」这条链上被调用：{@link BaseAdapter} 把
+     * {@code this::transformStreamChunk} 传给 {@code StreamingRequestProcessor}，由它逐块调用。
+     *
+     * @param chunk 上游一个流式响应块的 data（不含 {@code data: } 前缀）
+     * @return 等价的 OpenAI 分块；{@code null} 表示该块既没有正文也没有结束信息，不必下发
+     */
     @Override
     protected String transformStreamChunk(final String chunk) {
-        // Gemini 流式响应格式与 OpenAI 不同，需要转换
-        // 暂时返回原始格式，后续可以增强
-        return chunk;
+        if (chunk == null || chunk.isBlank()) {
+            return chunk;
+        }
+        try {
+            final JsonNode node = objectMapper.readTree(chunk);
+            final JsonNode candidate = node.path("candidates").path(0);
+            final String text = candidate.path("content").path("parts").path(0).path("text").asText(null);
+            final String rawFinishReason = candidate.path("finishReason").asText("");
+            final String finishReason =
+                    rawFinishReason.isEmpty() || "FINISH_REASON_UNSPECIFIED".equals(rawFinishReason)
+                            ? null
+                            : mapGeminiFinishReason(rawFinishReason);
+            if ((text == null || text.isEmpty()) && finishReason == null) {
+                // 没有正文也没有结束原因：这类块（只有 usageMetadata / safetyRatings）不必下发
+                return null;
+            }
+            return buildOpenAiChunk(text == null || text.isEmpty() ? null : text, finishReason);
+        } catch (tools.jackson.core.JacksonException e) {
+            log.debug("Failed to transform Gemini stream chunk: {}", e.getMessage());
+            return chunk;
+        }
+    }
+
+    /**
+     * 构造一个 OpenAI 流式分块。
+     *
+     * @param content      正文增量，{@code null} 表示本块不带正文
+     * @param finishReason 结束原因，{@code null} 表示流未结束
+     * @return OpenAI {@code chat.completion.chunk} 的 JSON
+     */
+    private String buildOpenAiChunk(final String content, final String finishReason) {
+        final ObjectNode chunk = objectMapper.createObjectNode();
+        chunk.put("id", "chatcmpl-proxy");
+        chunk.put("object", "chat.completion.chunk");
+        chunk.put("created", System.currentTimeMillis() / 1000L);
+        chunk.put("model", "");
+        final ObjectNode choice = chunk.putArray("choices").addObject();
+        choice.put("index", 0);
+        final ObjectNode delta = choice.putObject("delta");
+        if (content != null) {
+            delta.put("content", content);
+        }
+        if (finishReason == null) {
+            choice.putNull("finish_reason");
+        } else {
+            choice.put("finish_reason", finishReason);
+        }
+        return objectMapper.writeValueAsString(chunk);
     }
 }

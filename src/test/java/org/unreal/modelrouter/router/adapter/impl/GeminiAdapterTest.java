@@ -98,6 +98,7 @@ class GeminiAdapterTest {
             return getAuthorizationHeader(authorization, adapterType);
         }
         public Map<String, String> getAdditionalHeadersPublic() { return getAdditionalHeaders(); }
+        public String transformStreamChunkPublic(String chunk) { return transformStreamChunk(chunk); }
     }
 
     // ========== 基本能力测试 ==========
@@ -417,6 +418,62 @@ class GeminiAdapterTest {
             JsonNode embeddingReq = geminiRequest.get("requests").get(0);
             assertEquals("models/text-embedding-004", embeddingReq.get("model").asText());
             assertEquals("Hello world", embeddingReq.get("content").get("parts").get(0).get("text").asText());
+        }
+    }
+
+    // ========== 流式分块转换（issue #1242） ==========
+
+    @Nested
+    @DisplayName("Gemini → OpenAI 流式分块转换")
+    class StreamChunkTransformation {
+
+        private JsonNode asJson(String chunk) throws Exception {
+            assertNotNull(chunk, "该事件本应产出 OpenAI 分块");
+            return objectMapper.readTree(chunk);
+        }
+
+        @Test
+        @DisplayName("candidate 的 text 变成 delta.content")
+        void textBecomesContent() throws Exception {
+            String chunk = adapter.transformStreamChunkPublic(
+                    "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"你好\"}],\"role\":\"model\"}}]}");
+            JsonNode json = asJson(chunk);
+            assertEquals("chat.completion.chunk", json.get("object").asText());
+            assertEquals("你好", json.get("choices").get(0).get("delta").get("content").asText());
+            assertTrue(json.get("choices").get(0).get("finish_reason").isNull());
+        }
+
+        @Test
+        @DisplayName("finishReason 映射成 finish_reason")
+        void finishReasonIsMapped() throws Exception {
+            JsonNode stop = asJson(adapter.transformStreamChunkPublic(
+                    "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"完\"}]},\"finishReason\":\"STOP\"}]}"));
+            assertEquals("完", stop.get("choices").get(0).get("delta").get("content").asText());
+            assertEquals("stop", stop.get("choices").get(0).get("finish_reason").asText());
+
+            JsonNode truncated = asJson(adapter.transformStreamChunkPublic(
+                    "{\"candidates\":[{\"finishReason\":\"MAX_TOKENS\"}]}"));
+            assertEquals("length", truncated.get("choices").get(0).get("finish_reason").asText());
+
+            JsonNode filtered = asJson(adapter.transformStreamChunkPublic(
+                    "{\"candidates\":[{\"finishReason\":\"SAFETY\"}]}"));
+            assertEquals("content_filter", filtered.get("choices").get(0).get("finish_reason").asText());
+        }
+
+        @Test
+        @DisplayName("既无正文也无结束原因的块返回 null")
+        void emptyBlockIsDropped() {
+            assertNull(adapter.transformStreamChunkPublic(
+                    "{\"usageMetadata\":{\"promptTokenCount\":3}}"));
+            assertNull(adapter.transformStreamChunkPublic(
+                    "{\"candidates\":[{\"finishReason\":\"FINISH_REASON_UNSPECIFIED\"}]}"));
+        }
+
+        @Test
+        @DisplayName("非 JSON 原样返回")
+        void nonJsonPassesThrough() {
+            String plain = "not-json";
+            assertEquals(plain, adapter.transformStreamChunkPublic(plain));
         }
     }
 }
