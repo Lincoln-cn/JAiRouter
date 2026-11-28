@@ -215,7 +215,7 @@ class ApiKeyServiceTest {
                     })
                     .verifyComplete();
 
-            verify(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+            verify(apiKeyPersistenceService).saveApiKeysToStoreOrThrow(any(Map.class));
             // 事件发布验证已移除（辅助功能）
         }
 
@@ -287,7 +287,7 @@ class ApiKeyServiceTest {
                     .assertNext(vo -> assertEquals("Updated Description", vo.getDescription()))
                     .verifyComplete();
 
-            verify(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+            verify(apiKeyPersistenceService).saveApiKeysToStoreOrThrow(any(Map.class));
         }
 
         @Test
@@ -302,7 +302,7 @@ class ApiKeyServiceTest {
                     .assertNext(vo -> assertEquals(
                             List.of("10.0.0.1", "192.168.0.0/16"), vo.getAllowedIpAddresses()))
                     .verifyComplete();
-            verify(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+            verify(apiKeyPersistenceService).saveApiKeysToStoreOrThrow(any(Map.class));
         }
 
         @Test
@@ -347,7 +347,7 @@ class ApiKeyServiceTest {
                     .verifyComplete();
 
             assertFalse(keyIdIndex.containsKey("test-key-id"));
-            verify(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+            verify(apiKeyPersistenceService).saveApiKeysToStoreOrThrow(any(Map.class));
             // 事件发布验证已移除（辅助功能）
         }
 
@@ -423,7 +423,7 @@ class ApiKeyServiceTest {
                     .assertNext(vo -> assertTrue(vo.isEnabled()))
                     .verifyComplete();
 
-            verify(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+            verify(apiKeyPersistenceService).saveApiKeysToStoreOrThrow(any(Map.class));
         }
 
         @Test
@@ -450,7 +450,7 @@ class ApiKeyServiceTest {
             assertEquals(1L, testApiKey.getUsage().getTotalRequests());
             // #811：用量统计只回写这一个 Key，不再整表覆盖
             verify(apiKeyPersistenceService).saveSingleApiKey(any(Map.class), any());
-            verify(apiKeyPersistenceService, never()).saveApiKeysToStore(any(Map.class));
+            verify(apiKeyPersistenceService, never()).saveApiKeysToStoreOrThrow(any(Map.class));
         }
 
         @Test

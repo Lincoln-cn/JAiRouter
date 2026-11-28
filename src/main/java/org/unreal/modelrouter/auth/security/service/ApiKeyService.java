@@ -128,7 +128,13 @@ public class ApiKeyService {
                 .usage(UsageStatistics.builder().totalRequests(0L).successfulRequests(0L).failedRequests(0L)
                     .dailyUsage(new HashMap<>()).dailyTokenUsage(new HashMap<>()).build()).build();
             apiKeyCache.put(kh, ak); keyIdIndex.put(kid, kh);
-            apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+            try {
+                apiKeyPersistenceService.saveApiKeysToStoreOrThrow(apiKeyCache);
+            } catch (IllegalStateException e) {
+                // #1245：持久化失败要回滚内存，否则本副本能用一个「重启就消失」的 Key
+                apiKeyCache.remove(kh); keyIdIndex.remove(kid);
+                throw e;
+            }
             eventPublisher.publishEvent(ApiKeyAuditEvent.created(kid, by, ip));
             log.info("创建API Key成功: {}", kid);
             return ApiKeyCreationVO.builder().keyId(kid).keyValue(kv).description(ak.getDescription())
@@ -173,7 +179,8 @@ public class ApiKeyService {
                 QuotaLimits.validateAlertThreshold(req.getQuotaAlertThreshold());
                 ak.setQuotaAlertThreshold(req.getQuotaAlertThreshold());
             }
-            apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+            // #1245：失败要冒出去（接口返回错误），不能改了内存就报成功
+            apiKeyPersistenceService.saveApiKeysToStoreOrThrow(apiKeyCache);
             log.info("更新API Key成功: {}", kid);
             return convertToVO(ak);
         });
@@ -185,8 +192,14 @@ public class ApiKeyService {
         return Mono.fromRunnable(() -> {
             String kh = keyIdIndex.get(kid);
             if (kh == null) throw new IllegalArgumentException("API Key不存在: " + kid);
-            apiKeyCache.remove(kh); keyIdIndex.remove(kid);
-            apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+            final ApiKey removed = apiKeyCache.remove(kh); keyIdIndex.remove(kid);
+            try {
+                apiKeyPersistenceService.saveApiKeysToStoreOrThrow(apiKeyCache);
+            } catch (IllegalStateException e) {
+                // #1245：删不掉存储就把缓存恢复回去，避免「本副本已删、其它副本仍在用」
+                if (removed != null) { apiKeyCache.put(kh, removed); keyIdIndex.put(kid, kh); }
+                throw e;
+            }
             eventPublisher.publishEvent(ApiKeyAuditEvent.revoked(kid, "手动删除", by));
             log.info("删除API Key成功: {}", kid);
         });
@@ -231,8 +244,14 @@ public class ApiKeyService {
             if (kh == null) throw new IllegalArgumentException("API Key不存在: " + kid);
             ApiKey ak = apiKeyCache.get(kh);
             if (ak == null) throw new IllegalArgumentException("API Key缓存不一致: " + kid);
+            final boolean previous = ak.isEnabled();
             ak.setEnabled(true);
-            apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+            try {
+                apiKeyPersistenceService.saveApiKeysToStoreOrThrow(apiKeyCache);
+            } catch (IllegalStateException e) {
+                ak.setEnabled(previous);   // #1245：没落库就退回原状态
+                throw e;
+            }
             log.info("启用API Key成功: {}", kid);
             return convertToVO(ak);
         });
@@ -244,8 +263,14 @@ public class ApiKeyService {
             if (kh == null) throw new IllegalArgumentException("API Key不存在: " + kid);
             ApiKey ak = apiKeyCache.get(kh);
             if (ak == null) throw new IllegalArgumentException("API Key缓存不一致: " + kid);
+            final boolean previous = ak.isEnabled();
             ak.setEnabled(false);
-            apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+            try {
+                apiKeyPersistenceService.saveApiKeysToStoreOrThrow(apiKeyCache);
+            } catch (IllegalStateException e) {
+                ak.setEnabled(previous);   // #1245：没落库就退回原状态，别让「禁用」只停在本副本内存里
+                throw e;
+            }
             log.info("禁用API Key成功: {}", kid);
             return convertToVO(ak);
         });
@@ -423,7 +448,8 @@ public class ApiKeyService {
                 throw new IllegalArgumentException("API Key或usage不存在: " + kid);
             }
             ak.getUsage().resetDaily();
-            apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+            // #1245：重置也要可见地失败（计数器已在内存里重置，不落库其它副本会继续按旧值算）
+            apiKeyPersistenceService.saveApiKeysToStoreOrThrow(apiKeyCache);
             log.info("重置API Key每日配额: {}", kid);
         });
     }
