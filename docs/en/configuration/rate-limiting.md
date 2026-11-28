@@ -71,11 +71,13 @@ tenants then wait in the pool queue past `pending-acquire-timeout` and see wides
 This version caps the number of in-flight requests per **caller** (API Key ID or `jwt:<username>`):
 
 ```yaml
-jairouter:
-  ratelimit:
-    # In-flight requests allowed per caller; <= 0 disables the cap
-    max-concurrent-per-key: 100
+# In-flight requests allowed per caller; <= 0 disables the cap
+jairouter.ratelimit.max-concurrent-per-key: 100
 ```
+
+These keys are not part of the service-level `model.ratelimit.*` group managed through
+`/api/config/ratelimit/**`: the former bounds how many requests are in flight at once, the latter bounds
+how many requests a service may receive per minute.
 
 - **Over the cap returns `429`** with a body such as
   `Too many concurrent requests for this caller: at most 100 may be in flight at once`, plus

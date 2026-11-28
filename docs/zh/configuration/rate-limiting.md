@@ -70,11 +70,12 @@ graph TB
 从本版本起，网关按**调用主体**（API Key ID 或 `jwt:<用户名>`）限制同时进行中的请求数：
 
 ```yaml
-jairouter:
-  ratelimit:
-    # 单个调用主体允许的并发请求数；<= 0 表示不限制
-    max-concurrent-per-key: 100
+# 单个调用主体允许的并发请求数；<= 0 表示不限制
+jairouter.ratelimit.max-concurrent-per-key: 100
 ```
+
+这组键与「服务级限流」的 `model.ratelimit.*`（`/api/config/ratelimit/**` 管的那套）不是同一处配置：
+前者约束「同时挂着多少条」，后者约束「每分钟打多少次」。
 
 - **超限返回 `429`**，响应体形如
   `Too many concurrent requests for this caller: at most 100 may be in flight at once`，
