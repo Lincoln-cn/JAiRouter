@@ -60,10 +60,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-11-27T17:49:38.758590",
-      "ContentHash": "f121886015f927a8",
-      "GitCommit": "fb5e6e7b",
+      "Version": "1.0.11",
+      "LastModified": "2026-11-28T11:53:46.263451",
+      "ContentHash": "7229b6a8f010481c",
+      "GitCommit": "a82e5e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -111,10 +111,10 @@
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-11-27T18:13:53.901174",
-      "ContentHash": "ed55fcac7a7095f4",
-      "GitCommit": "84db1a7f",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-28T11:53:46.281898",
+      "ContentHash": "317cb7cff65ea957",
+      "GitCommit": "a82e5e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -267,10 +267,10 @@
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-11-12T15:06:27.837116",
-      "ContentHash": "759e0b3e60aa87c8",
-      "GitCommit": "53ff72ac",
+      "Version": "1.0.8",
+      "LastModified": "2026-11-28T11:53:46.327151",
+      "ContentHash": "1b4b13f831c6d6aa",
+      "GitCommit": "a82e5e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -477,10 +477,10 @@
     },
     "docs/en/deployment/multi-replica.md": {
       "FilePath": "docs/en/deployment/multi-replica.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-11-18T02:42:14.921882",
-      "ContentHash": "5bd85b0f7b402df1",
-      "GitCommit": "c594608d",
+      "Version": "1.0.10",
+      "LastModified": "2026-11-28T11:53:46.433544",
+      "ContentHash": "dd7d108e760915d5",
+      "GitCommit": "a82e5e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1243,10 +1243,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-11-27T17:49:39.375072",
-      "ContentHash": "fdc671aa7d11c406",
-      "GitCommit": "fb5e6e7b",
+      "Version": "1.0.11",
+      "LastModified": "2026-11-28T11:53:46.921067",
+      "ContentHash": "2f2d7f660db1cb4f",
+      "GitCommit": "a82e5e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1294,10 +1294,10 @@
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-11-27T18:13:54.795871",
-      "ContentHash": "48422781c5017f4d",
-      "GitCommit": "84db1a7f",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-28T11:53:46.939630",
+      "ContentHash": "2c5f71bcc062e300",
+      "GitCommit": "a82e5e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1449,10 +1449,10 @@
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-11-12T15:06:28.564870",
-      "ContentHash": "b518ca0f9e8c69eb",
-      "GitCommit": "53ff72ac",
+      "Version": "1.0.8",
+      "LastModified": "2026-11-28T11:53:46.987812",
+      "ContentHash": "3ca8a694b4422c66",
+      "GitCommit": "a82e5e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1658,10 +1658,10 @@
     },
     "docs/zh/deployment/multi-replica.md": {
       "FilePath": "docs/zh/deployment/multi-replica.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-11-18T02:42:15.521658",
-      "ContentHash": "d8417745f76b6c41",
-      "GitCommit": "c594608d",
+      "Version": "1.0.10",
+      "LastModified": "2026-11-28T11:53:47.103838",
+      "ContentHash": "986c5280a6dd3e3f",
+      "GitCommit": "a82e5e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -9131,7 +9131,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-27T18:13:54.795881",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-28T11:53:46.263463",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/adapter-config.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-28T11:53:46.281905",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/rate-limiting.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-28T11:53:46.327159",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/multi-replica.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-28T11:53:46.433555",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-28T11:53:46.921079",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/adapter-config.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-28T11:53:46.939637",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/rate-limiting.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-28T11:53:46.987823",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/multi-replica.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-28T11:53:47.103849",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-28T09:47:40.917739"
+  "last_updated": "2026-11-28T11:53:47.612163"
 }
