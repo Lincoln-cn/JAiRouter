@@ -47,8 +47,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.9.0                   # pom.xml
-latest_release:  v3.9.0 (2026-11-20)
+project_version: 3.9.1                   # pom.xml
+latest_release:  v3.9.1 (2026-11-28)
 stack:
   backend:  Java 17 + Spring Boot 4.1.2 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -65,7 +65,7 @@ surfaces:
   - /actuator/**  # health, readiness, Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   5,400+ test methods across 650+ test classes
+  scale:   5,500+ test methods across 680+ test classes
 license: Apache-2.0
 ```
 
@@ -497,7 +497,7 @@ instance's own configuration, so what you copy is what this gateway actually ser
 
 ## Status
 
-**Latest release: v3.9.0 (2026-11-20).** Per-release notes, upgrade notes and known limits live in the
+**Latest release: v3.9.1 (2026-11-28).** Per-release notes, upgrade notes and known limits live in the
 [changelog](docs/en/reference/changelog.md); downloads and container tags are on
 [Releases](https://github.com/Lincoln-cn/JAiRouter/releases).
 

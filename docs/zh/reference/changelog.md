@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.9.0
-> **最后更新**: 2026-11-20
+> **文档版本**: 3.9.1
+> **最后更新**: 2026-11-28
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -22,7 +22,20 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
-### [Unreleased] - 下线 `/api/tracing/query/performance/errors`
+### [3.9.1] - 2026-11-28 - 计费准确性、多副本一致性与跨协议流式
+
+#### 缺陷修复
+
+- **跨协议流式正文丢失**：以 OpenAI 协议接入 claude / gemini 实例时，适配器的分块转换方法从未进入调用链，正文整段丢失；现已接入，并处理 Anthropic `ping` 之类无正文档位。
+- **计费漏记**：流式与非流式两条链路的用量解析都只认 OpenAI 字段，anthropic 的 `input_tokens` / `output_tokens`、gemini 的 `usageMetadata` 读不到 ⇒ 流式整条请求不落库、非流式落到文本估算；现按上游形状归一，并补 `total` 缺失时的补齐规则。
+- **并发名额跨副本**：新增 `jairouter.ratelimit.concurrent-scope`（默认 `local` 保持原行为），设为 `cluster` 时用 Redis 做全局计数；名额键 TTL 以秒为单位，崩溃未归还时到期自然释放。
+- **配置首存冲突**：跨副本并发首次写入同一配置项撞上唯一约束时自动重试（最多 3 次），不再把异常抛给调用方。
+
+#### 运维注意
+
+- `concurrent-scope=cluster` 需要同时开启 `jairouter.security.cache.redis.enabled` 并配置 Redis；缺失时启动日志打 ERROR 并退回本地计数（按副本各算一份）。
+
+### [3.9.1] - 2026-11-28 - 下线 `/api/tracing/query/performance/errors`
 
 `GET /api/tracing/query/performance/errors` 已移除。它是 `/api/tracing/query/error-analysis` 的
 功能子集 —— `errorTrend` 来自同一个方法，错误率分布少了 `operation` / `instance` / `client`
@@ -35,7 +48,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 - **同时清理**：前端 `getErrorAnalysis()` 与 `ErrorAnalysis` / `ServiceErrorRate` /
   `CommonError` 三个类型定义。
 
-### [Unreleased] - 控制台菜单重分类、深色可读性与列表页统一
+### [3.9.1] - 2026-11-28 - 控制台菜单重分类、深色可读性与列表页统一
 
 - **菜单重分类**（不改变 URL、权限码与页面数量，仍是 **8 组 35 项 / 49 个页面**）：
   - 审计日志从「安全」移到「运行观测」；
@@ -45,7 +58,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 - **深色模式可读性修复**（[#1178](https://github.com/Lincoln-cn/JAiRouter/issues/1178)）：手动切深色时 `body` 文字沿用首帧内联的近黑色（对比度 1.03:1），配置项标签几乎不可见；现由 `tokens.css` 的基座规则接管文字色，并补上 `html.dark` 首帧样式、表头色与 `.config-label` 系列标签色。
 - **列表页与混排页规范落地**：12 个集合页统一为「统计卡 → 工具栏 → 表格 → 空态」结构，编辑统一右侧抽屉、危险操作统一二次确认（`ConfirmAction`）；混合页按「拆 tab / 只读卡下移」重排。
 
-### [Unreleased] - 登录保护配置（阈值落库 + 解除锁定）
+### [3.9.1] - 2026-11-28 - 登录保护配置（阈值落库 + 解除锁定）
 
 - **新增 `security:loginguard:read` / `security:loginguard:manage`**（权限码 76 个）：前者看阈值与当前被锁主体，后者改阈值与解除锁定。内置角色模板仍是 6 个，配对表增至 11 对；OPERATOR（55 码）不持 `loginguard:manage`，按 B11 规则也不获得对应读码。
 - **新增表 `security_login_guard_config`**（单行，`config_id = 'default'`）：`config/auth/login-guard.yml` 的 `jairouter.auth.login-bruteforce.*` 只在表里还没有那一行时作为初始值，之后以数据库为准（同 `jwt_accounts` 口径）。dev profile 单独放宽为 20 次 / 5 分钟窗口 / 锁 5 分钟。
@@ -54,7 +67,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 - **新增页面**：安全 → 登录保护（`/security/login-guard`），含阈值表单、当前被锁主体列表与服务端解锁。
 - 迁移 `V17__login_guard_config.sql` 会建表并将 `security_audit.event_type` 扩到 33 个值；已有部署升级后首次启动会自动落库一行。
 
-### [Unreleased] - SLA 接入凭据（一次性令牌 + refresh）
+### [3.9.1] - 2026-11-28 - SLA 接入凭据（一次性令牌 + refresh）
 
 - **新增 `system:sla:read` / `system:sla:manage`**（权限码 74 个），内置角色模板增至 6 个：`SLA_READONLY`（35 码，只读巡检面）与 `SLA_OPERATOR`（53 码，只读巡检面 + 配置写）。
 - **新增 SLA 接入端点**：`POST /api/auth/sla/bootstrap`（匿名，用一次性令牌换凭据）、`POST /api/auth/sla/refresh`（匿名，换 access token）；管理端 `/api/security/sla/**`（账号 CRUD、签发一次性令牌、吊销）。
@@ -68,7 +81,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
   - `expiresIn` 单位是**秒**（默认 3600）；文档示例曾误写 60，已更正。
   - 新增内置角色现在会对存量库按模板首次播种；此前增量收敛对「库里一行都没有的角色」直接跳过，导致升级后 SLA 令牌登录成功、所有请求 403。
 
-### [Unreleased] - 调用历史正文与元数据分权
+### [3.9.1] - 2026-11-28 - 调用历史正文与元数据分权
 
 `callhistory:view` 拆成 `callhistory:read` + `callhistory:full-content`：
 
@@ -76,7 +89,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **角色影响**：OPERATOR 由「全部 `:read`」规则自动获得 `callhistory:read`（54 码），可在控制台看调用记录与摘要；`callhistory:full-content` 默认仅 ADMIN；USER / VIEWER 两个码都不持有（VIEWER 显式排除以保持 31 码）。全量权限码 70 → 71。
 * **迁移说明**：`callhistory:view` 已不在权限码全集里；手工给角色勾过该码的部署需在「系统 → 权限管理」改勾 `callhistory:read`（要看正文还需 `callhistory:full-content`）。
 
-### [Unreleased] - 监控配置页、双入口收口与应急操作影响面
+### [3.9.1] - 2026-11-28 - 监控配置页、双入口收口与应急操作影响面
 
 * **新增「系统 → 监控配置」页**：两项 tab —— `监控配置`（`/monitoring/config`，热改监控开关、指标前缀、采集间隔、采集类别、6 档采样率与采集性能；只改内存，重启后回到配置文件）与 `运行时与应急`（`/monitoring/config/runtime`，展示健康、降级、错误、缓存与两级熔断状态，并提供错误重置、强制恢复、清缓存、熔断开合等应急操作，均二次确认）。菜单可见按 `monitoring:config:read`、写按钮按 `monitoring:config:write`，内置角色里只有 ADMIN 与 OPERATOR 能进。
 * **热改与应急操作写审计**：新增审计事件 `MONITORING_CONFIG_CHANGED`（`AuditEventType` 26 → 27，H2 与 PostgreSQL 各一条 V15 迁移），记录操作者、动作与细节；审计写入失败不影响操作本身。

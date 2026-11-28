@@ -46,8 +46,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.9.0                   # pom.xml
-latest_release:  v3.9.0 (2026-11-20)
+project_version: 3.9.1                   # pom.xml
+latest_release:  v3.9.1 (2026-11-28)
 stack:
   backend:  Java 17 + Spring Boot 4.1.2（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -64,7 +64,7 @@ surfaces:
   - /actuator/**  # 健康、就绪、Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   650+ 个测试类、5,400+ 个测试方法
+  scale:   680+ 个测试类、5,500+ 个测试方法
 license: Apache-2.0
 ```
 
@@ -271,7 +271,7 @@ print(response.choices[0].message.content)
 | `src/main/java/org/unreal/modelrouter/config/` | 配置服务：热重载、版本与回滚、校验、控制台接口 |
 | `src/main/resources/config/**` | 模块化 YAML 配置，由 `application.yml` 的 `spring.config.import` 引入 |
 | `src/main/resources/db/migration/{h2,postgres}/` | 版本化 schema 迁移（`Flyway`），两种方言各一个目录 |
-| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`；5,400+ 个测试方法 |
+| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`；5,500+ 个测试方法 |
 | `frontend/` | Vue 3 + TypeScript 控制台（Vite `base: /admin/`） |
 | `docs/zh/`、`docs/en/` | MkDocs 文档，中英保持对称 |
 | `deploy/` | Kubernetes 清单、compose 文件、部署脚本 |
@@ -467,7 +467,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 提 PR 前请先跑：
 
 ```bash
-./mvnw test -o                       # 650+ 个测试类、5,400+ 个测试方法，必须保持全绿
+./mvnw test -o                       # 680+ 个测试类、5,500+ 个测试方法，必须保持全绿
 cd frontend && npm run type-check    # 前端类型门闩
 ```
 
